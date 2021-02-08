@@ -523,9 +523,15 @@ compiler_unit_check(struct compiler_unit *u)
 {
     basicblock *block;
     for (block = u->u_blocks; block != NULL; block = block->b_list) {
+#ifdef __VMS
+        assert((uintptr_t)block != (uintptr_t)(void*)0xcbcbcbcbU);
+        assert((uintptr_t)block != (uintptr_t)(void*)0xfbfbfbfbU);
+        assert((uintptr_t)block != (uintptr_t)(void*)0xdbdbdbdbU);
+#else
         assert((uintptr_t)block != 0xcbcbcbcbU);
         assert((uintptr_t)block != 0xfbfbfbfbU);
         assert((uintptr_t)block != 0xdbdbdbdbU);
+#endif /* __VMS */
         if (block->b_instr != NULL) {
             assert(block->b_ialloc > 0);
             assert(block->b_iused >= 0);

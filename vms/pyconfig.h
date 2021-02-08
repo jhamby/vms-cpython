@@ -1688,6 +1688,9 @@
 
 #define readonly readonly$
 
+#undef O_BINARY
+#define O_BINARY 0100
+
 #if __CRTL_VER > 80400000
 #define HAVE_ROUND 1
 #else

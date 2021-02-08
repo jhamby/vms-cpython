@@ -57,7 +57,11 @@ _Py_device_encoding(int fd)
 {
     int valid;
     _Py_BEGIN_SUPPRESS_IPH
+#ifdef __VMS
+    valid = (1 == isatty(fd));
+#else
     valid = isatty(fd);
+#endif
     _Py_END_SUPPRESS_IPH
     if (!valid)
         Py_RETURN_NONE;
@@ -1164,7 +1168,7 @@ set_inheritable(int fd, int inheritable, int raise, int *atomic_flag_works)
     HANDLE handle;
     DWORD flags;
 #else
-#if defined(HAVE_SYS_IOCTL_H) && defined(FIOCLEX) && defined(FIONCLEX)
+#if defined(HAVE_SYS_IOCTL_H) && defined(FIOCLEX) && defined(FIONCLEX) && !defined(__VMS)
     static int ioctl_works = -1;
     int request;
     int err;
@@ -1219,7 +1223,7 @@ set_inheritable(int fd, int inheritable, int raise, int *atomic_flag_works)
 
 #else
 
-#if defined(HAVE_SYS_IOCTL_H) && defined(FIOCLEX) && defined(FIONCLEX)
+#if defined(HAVE_SYS_IOCTL_H) && defined(FIOCLEX) && defined(FIONCLEX) && !defined(__VMS)
     if (ioctl_works != 0 && raise != 0) {
         /* fast-path: ioctl() only requires one syscall */
         /* caveat: raise=0 is an indicator that we must be async-signal-safe
@@ -1262,6 +1266,22 @@ set_inheritable(int fd, int inheritable, int raise, int *atomic_flag_works)
     }
 #endif
 
+#ifdef __VMS
+    if (inheritable) {
+        // the only way to set inheritable safely
+        int _dup_ = dup(fd);
+        fd = dup2(_dup_, fd);
+        close(_dup_);
+    }
+    else {
+        res = fcntl(fd, F_SETFD, FD_CLOEXEC);
+        if (res < 0) {
+            if (raise)
+                PyErr_SetFromErrno(PyExc_OSError);
+            return -1;
+        }
+    }
+#else
     /* slow-path: fcntl() requires two syscalls */
     flags = fcntl(fd, F_GETFD);
     if (flags < 0) {
@@ -1288,6 +1308,7 @@ set_inheritable(int fd, int inheritable, int raise, int *atomic_flag_works)
             PyErr_SetFromErrno(PyExc_OSError);
         return -1;
     }
+#endif /* __VMS */
     return 0;
 #endif
 }
@@ -1361,6 +1382,11 @@ _Py_open_impl(const char *pathname, int flags, int gil_held)
 
         do {
             Py_BEGIN_ALLOW_THREADS
+#ifdef __VMS
+            if (flags & O_BINARY) {
+                fd = open(pathname, flags & ~O_BINARY, 0777, "ctx=bin");
+            } else
+#endif
             fd = open(pathname, flags);
             Py_END_ALLOW_THREADS
         } while (fd < 0
@@ -1575,8 +1601,19 @@ _Py_fopen_obj(PyObject *path, const char *mode)
    (the syscall is not retried).
 
    Release the GIL to call read(). The caller must hold the GIL. */
+#ifdef __VMS
+extern int decc$feature_get(const char*, int);
+extern unsigned long read_pipe_bytes(int fd, char *buf, int size, int *pid_ptr);
+Py_ssize_t
+_Py_read(int fd, void *buf, size_t count) {
+    return _Py_read_pid(fd, buf, count, 0);
+}
+Py_ssize_t
+_Py_read_pid(int fd, void *buf, size_t count, int pid)
+#else
 Py_ssize_t
 _Py_read(int fd, void *buf, size_t count)
+#endif
 {
     Py_ssize_t n;
     int err;
@@ -1597,6 +1634,19 @@ _Py_read(int fd, void *buf, size_t count)
     do {
         Py_BEGIN_ALLOW_THREADS
         errno = 0;
+#ifdef __VMS
+        if (pid) {
+            int mailBoxSize = decc$feature_get("DECC$PIPE_BUFFER_SIZE", 1);
+            if (count > mailBoxSize) {
+                count = mailBoxSize;
+            }
+            int writer_pid = 0;
+            n = read_pipe_bytes(fd, buf, count, &writer_pid);
+            while (n == 0 && pid != writer_pid) {
+                n = read_pipe_bytes(fd, buf, count, &writer_pid);
+            }
+        } else
+#endif
 #ifdef MS_WINDOWS
         n = read(fd, buf, (int)count);
 #else
@@ -1935,7 +1985,11 @@ _Py_wgetcwd(wchar_t *buf, size_t buflen)
     wchar_t *wname;
     size_t len;
 
+#ifdef __VMS
+    if (getcwd(fname, Py_ARRAY_LENGTH(fname), 0) == NULL)
+#else
     if (getcwd(fname, Py_ARRAY_LENGTH(fname)) == NULL)
+#endif
         return NULL;
     wname = Py_DecodeLocale(fname, &len);
     if (wname == NULL)

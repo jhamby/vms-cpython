@@ -39,10 +39,11 @@ PLATFORM = OpenVMS
 SOABI = cpython-3a-ia64-openvms
 
 CC_QUALIFIERS = -
-$(CC_QUALIFIERS) -
-/NAMES=(AS_IS,SHORTENED) -
+$(CC_QUALIFIERS)-
+/NAMES=(AS_IS,SHORTENED)-
 /WARNINGS=(WARNINGS=ALL, DISABLE=(EXTRASEMI))
-! /SHOW=(EXPANSION,INCLUDE)
+!/POINTER_SIZE=64
+!/SHOW=(EXPANSION,INCLUDE)
 
 CC_DEFINES = -
 $(CC_DEFINES), -
@@ -148,7 +149,7 @@ CC_CORE_BUILTIN_CFLAGS = $(CC_QUALIFIERS)/DEFINE=("Py_BUILD_CORE_BUILTIN",$(CC_D
     $(LINK)$(LINK_FLAGS)/SHARE=python$build_out:[$(DYNLOAD_DIR)]$(NOTDIR $(MMS$TARGET_NAME)).EXE $(MMS$SOURCE_LIST),[.vms.opt]$(NOTDIR $(MMS$TARGET_NAME)).opt/OPT
 
 ##########################################################################
-TARGET : [.$(OUT_DIR)]libpython3^.10.olb
+TARGET : [.$(OUT_DIR)]python$shr.exe
     ! TARGET BUILT
 
 CLEAN :
@@ -733,3 +734,8 @@ $(PYTHON_HEADERS)
 # Library
 [.$(OUT_DIR)]libpython3^.10.olb : [.$(OUT_DIR)]libpython3^.10.olb($(LIBRARY_OBJS))
     continue
+
+############################################################################
+# Shared library
+[.$(OUT_DIR)]python$shr.exe : [.$(OUT_DIR)]libpython3^.10.olb
+    $(LINK)$(LINKFLAGS)/SHARE=python$build_out:[000000]$(NOTDIR $(MMS$TARGET_NAME)).EXE [.vms.opt]$(PYTHON$SHR_OPT).opt/OPT

@@ -51,10 +51,17 @@ static inline int _PyMem_IsPtrFreed(void *ptr)
             || value == (uintptr_t)0xDDDDDDDDDDDDDDDD
             || value == (uintptr_t)0xFDFDFDFDFDFDFDFD);
 #elif SIZEOF_VOID_P == 4
+#ifdef __VMS
+    return (value == 0
+            || value == (uintptr_t)(void*)0xCDCDCDCD
+            || value == (uintptr_t)(void*)0xDDDDDDDD
+            || value == (uintptr_t)(void*)0xFDFDFDFD);
+#else
     return (value == 0
             || value == (uintptr_t)0xCDCDCDCD
             || value == (uintptr_t)0xDDDDDDDD
             || value == (uintptr_t)0xFDFDFDFD);
+#endif /* __VMS */
 #else
 #  error "unknown pointer size"
 #endif
