@@ -153,11 +153,21 @@ RAISE_ERROR_KNOWN_LOCATION(Parser *p, PyObject *errtype, int lineno,
 #define UNUSED(expr) do { (void)(expr); } while (0)
 #define EXTRA_EXPR(head, tail) head->lineno, head->col_offset, tail->end_lineno, tail->end_col_offset, p->arena
 #define EXTRA _start_lineno, _start_col_offset, _end_lineno, _end_col_offset, p->arena
+#ifdef __VMS
+#define RAISE_SYNTAX_ERROR(msg) _PyPegen_raise_error(p, PyExc_SyntaxError, msg)
+#define RAISE_INDENTATION_ERROR(msg) _PyPegen_raise_error(p, PyExc_IndentationError, msg)
+#define RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, msg) \
+    RAISE_ERROR_KNOWN_LOCATION(p, PyExc_SyntaxError, (a)->lineno, (a)->col_offset, msg)
+#define RAISE_SYNTAX_ERROR_P(msg, ...) _PyPegen_raise_error(p, PyExc_SyntaxError, msg, ##__VA_ARGS__)
+#define RAISE_INDENTATION_ERROR_P(msg, ...) _PyPegen_raise_error(p, PyExc_IndentationError, msg, ##__VA_ARGS__)
+#define RAISE_SYNTAX_ERROR_KNOWN_LOCATION_P(a, msg, ...) \
+    RAISE_ERROR_KNOWN_LOCATION(p, PyExc_SyntaxError, (a)->lineno, (a)->col_offset, msg, ##__VA_ARGS__)
+#else
 #define RAISE_SYNTAX_ERROR(msg, ...) _PyPegen_raise_error(p, PyExc_SyntaxError, msg, ##__VA_ARGS__)
 #define RAISE_INDENTATION_ERROR(msg, ...) _PyPegen_raise_error(p, PyExc_IndentationError, msg, ##__VA_ARGS__)
 #define RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, msg, ...) \
     RAISE_ERROR_KNOWN_LOCATION(p, PyExc_SyntaxError, (a)->lineno, (a)->col_offset, msg, ##__VA_ARGS__)
-
+#endif
 Py_LOCAL_INLINE(void *)
 CHECK_CALL(Parser *p, void *result)
 {
@@ -213,8 +223,13 @@ INVALID_VERSION_CHECK(Parser *p, int version, char *msg, void *node)
     }
     if (p->feature_version < version) {
         p->error_indicator = 1;
+        #ifdef __VMS
+        return RAISE_SYNTAX_ERROR_P("%s only supported in Python 3.%i and greater",
+                                  msg, version);
+        #else
         return RAISE_SYNTAX_ERROR("%s only supported in Python 3.%i and greater",
                                   msg, version);
+        #endif
     }
     return node;
 }
@@ -287,11 +302,19 @@ _RAISE_SYNTAX_ERROR_INVALID_TARGET(Parser *p, TARGETS_TYPE type, void *e)
         else {
             msg = "cannot delete %s";
         }
+        #ifdef __VMS
+        return RAISE_SYNTAX_ERROR_KNOWN_LOCATION_P(
+            invalid_target,
+            msg,
+            _PyPegen_get_expr_name(invalid_target)
+        );
+        #else
         return RAISE_SYNTAX_ERROR_KNOWN_LOCATION(
             invalid_target,
             msg,
             _PyPegen_get_expr_name(invalid_target)
         );
+        #endif
     }
     return RAISE_SYNTAX_ERROR("invalid syntax");
 }

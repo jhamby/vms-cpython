@@ -2,6 +2,9 @@
 
 #include "Python.h"
 #include "code.h"
+#ifdef RERAISE
+#undef RERAISE
+#endif
 #include "opcode.h"
 #include "structmember.h"         // PyMemberDef
 #include "pycore_code.h"          // _PyOpcache

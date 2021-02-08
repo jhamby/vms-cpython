@@ -7,6 +7,9 @@
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "frameobject.h"
 #include "structmember.h"         // PyMemberDef
+#ifdef RERAISE
+#undef RERAISE
+#endif
 #include "opcode.h"
 
 static PyObject *gen_close(PyGenObject *, PyObject *);

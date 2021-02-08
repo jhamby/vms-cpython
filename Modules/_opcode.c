@@ -1,4 +1,7 @@
 #include "Python.h"
+#ifdef RERAISE
+#undef RERAISE
+#endif
 #include "opcode.h"
 
 /*[clinic input]

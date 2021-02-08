@@ -26,6 +26,9 @@
 #include "code.h"
 #include "dictobject.h"
 #include "frameobject.h"
+#ifdef RERAISE
+#undef RERAISE
+#endif
 #include "opcode.h"
 #include "pydtrace.h"
 #include "setobject.h"

@@ -6,6 +6,9 @@
 
 #include "code.h"
 #include "frameobject.h"
+#ifdef RERAISE
+#undef RERAISE
+#endif
 #include "opcode.h"
 #include "structmember.h"         // PyMemberDef
 

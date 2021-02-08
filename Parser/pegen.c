@@ -250,12 +250,20 @@ raise_decode_error(Parser *p)
         PyErr_Fetch(&type, &value, &tback);
         errstr = PyObject_Str(value);
         if (errstr) {
+            #ifdef __VMS
+            RAISE_SYNTAX_ERROR_P("(%s) %U", errtype, errstr);
+            #else
             RAISE_SYNTAX_ERROR("(%s) %U", errtype, errstr);
+            #endif
             Py_DECREF(errstr);
         }
         else {
             PyErr_Clear();
+            #ifdef __VMS
+            RAISE_SYNTAX_ERROR_P("(%s) unknown error", errtype);
+            #else
             RAISE_SYNTAX_ERROR("(%s) unknown error", errtype);
+            #endif
         }
         Py_XDECREF(type);
         Py_XDECREF(value);

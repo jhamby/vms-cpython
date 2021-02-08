@@ -29,6 +29,9 @@
 #include "code.h"
 #include "symtable.h"
 #define NEED_OPCODE_JUMP_TABLES
+#ifdef RERAISE
+#undef RERAISE
+#endif
 #include "opcode.h"
 #include "wordcode_helpers.h"
 

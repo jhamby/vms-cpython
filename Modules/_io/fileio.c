@@ -733,7 +733,14 @@ _io_FileIO_readall_impl(fileio *self)
     while (1) {
         if (bytes_read >= (Py_ssize_t)bufsize) {
             bufsize = new_buffersize(self, bytes_read);
+            #ifdef __VMS
+            #pragma message save
+            #pragma message disable QUESTCOMPARE
+            #endif
             if (bufsize > PY_SSIZE_T_MAX || bufsize <= 0) {
+            #ifdef __VMS
+            #pragma message restore
+            #endif
                 PyErr_SetString(PyExc_OverflowError,
                                 "unbounded read returned more bytes "
                                 "than a Python bytes object can hold");

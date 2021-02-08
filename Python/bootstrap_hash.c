@@ -25,7 +25,7 @@
 #  include <sanitizer/msan_interface.h>
 #endif
 
-#if defined(__APPLE__) && defined(__has_builtin) 
+#if defined(__APPLE__) && defined(__has_builtin)
 #  if __has_builtin(__builtin_available)
 #    define HAVE_GETENTRYPY_GETRANDOM_RUNTIME __builtin_available(macOS 10.12, iOS 10.10, tvOS 10.0, watchOS 3.0, *)
 #  endif
@@ -39,6 +39,43 @@
 int _Py_HashSecret_Initialized = 0;
 #else
 static int _Py_HashSecret_Initialized = 0;
+#endif
+
+#ifdef __VMS
+//
+// Credits:
+// ========
+//	License: Creative Commons CC0
+//		http://creativecommons.org/publicdomain/zero/1.0/legalcode
+//	Author:	James Sainsbury
+//		toves@sdf.lonestar.org
+//
+#include <timers.h>
+
+static
+int getentropy (char entropy[], size_t entropy_size)
+{
+	static unsigned short   seed[3] = {0};
+    static unsigned short   seed_init = 0;
+
+    if (!seed_init) {
+        struct timespec tv;
+        getclock(TIMEOFDAY, &tv);
+        memcpy(&seed, ((unsigned char*)&tv) + (sizeof(tv) - sizeof(seed)), sizeof(seed));
+        seed_init = 1;
+    }
+
+    int         i = 0;
+    long int    r = jrand48(seed);
+    int         step = sizeof(r);
+    while ((i+step) < entropy_size) {
+        memcpy (&entropy[i], &r, step);
+        r = jrand48(seed);
+        i += step;
+    }
+    memcpy (&entropy[i], &r, (entropy_size - i));
+    return 0;
+}
 #endif
 
 #ifdef MS_WINDOWS
@@ -221,7 +258,7 @@ py_getrandom(void *buffer, Py_ssize_t size, int blocking, int raise)
 
 #if defined(__APPLE__) && defined(__has_attribute) && __has_attribute(availability)
 static int
-py_getentropy(char *buffer, Py_ssize_t size, int raise) 
+py_getentropy(char *buffer, Py_ssize_t size, int raise)
         __attribute__((availability(macos,introduced=10.12)))
         __attribute__((availability(ios,introduced=10.0)))
         __attribute__((availability(tvos,introduced=10.0)))

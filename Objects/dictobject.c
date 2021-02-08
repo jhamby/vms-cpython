@@ -467,7 +467,18 @@ estimate_keysize(Py_ssize_t n)
 /* This immutable, empty PyDictKeysObject is used for PyDict_Clear()
  * (which cannot fail and thus can do no allocation).
  */
+#ifndef __VMS
 static PyDictKeysObject empty_keys_struct = {
+#else
+struct _dictkeysobject_to_fill {
+    Py_ssize_t dk_refcnt;
+    Py_ssize_t dk_size;
+    dict_lookup_func dk_lookup;
+    Py_ssize_t dk_usable;
+    Py_ssize_t dk_nentries;
+    char dk_indices[8];
+} static empty_keys_struct = {
+#endif
         1, /* dk_refcnt */
         1, /* dk_size */
         lookdict_split, /* dk_lookup */
@@ -479,7 +490,7 @@ static PyDictKeysObject empty_keys_struct = {
 
 static PyObject *empty_values[1] = { NULL };
 
-#define Py_EMPTY_KEYS &empty_keys_struct
+#define Py_EMPTY_KEYS ((PyDictKeysObject*)&empty_keys_struct)
 
 /* Uncomment to check the dict content in _PyDict_CheckConsistency() */
 /* #define DEBUG_PYDICT */

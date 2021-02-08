@@ -6,6 +6,8 @@
 #include "pegen.h"
 #include "string_parser.h"
 
+#include <stdint.h>
+
 //// STRING HANDLING FUNCTIONS ////
 
 static int
@@ -27,7 +29,11 @@ warn_invalid_escape_sequence(Parser *p, unsigned char first_invalid_escape_char,
                since _PyPegen_raise_error uses p->tokens[p->fill - 1] for the
                error location, if p->known_err_token is not set. */
             p->known_err_token = t;
+            #ifdef __VMS
+            RAISE_SYNTAX_ERROR_P("invalid escape sequence \\%c", first_invalid_escape_char);
+            #else
             RAISE_SYNTAX_ERROR("invalid escape sequence \\%c", first_invalid_escape_char);
+            #endif
         }
         Py_DECREF(msg);
         return -1;
@@ -671,7 +677,11 @@ fstring_find_expr(Parser *p, const char **str, const char *end, int raw, int rec
             break;
         } else if (ch == ']' || ch == '}' || ch == ')') {
             if (!nested_depth) {
+                #ifdef __VMS
+                RAISE_SYNTAX_ERROR_P("f-string: unmatched '%c'", ch);
+                #else
                 RAISE_SYNTAX_ERROR("f-string: unmatched '%c'", ch);
+                #endif
                 goto error;
             }
             nested_depth--;
@@ -680,10 +690,17 @@ fstring_find_expr(Parser *p, const char **str, const char *end, int raw, int rec
                   (opening == '[' && ch == ']') ||
                   (opening == '{' && ch == '}')))
             {
+                #ifdef __VMS
+                RAISE_SYNTAX_ERROR_P(
+                          "f-string: closing parenthesis '%c' "
+                          "does not match opening parenthesis '%c'",
+                          ch, opening);
+                #else
                 RAISE_SYNTAX_ERROR(
                           "f-string: closing parenthesis '%c' "
                           "does not match opening parenthesis '%c'",
                           ch, opening);
+                #endif
                 goto error;
             }
         } else {
@@ -701,7 +718,11 @@ fstring_find_expr(Parser *p, const char **str, const char *end, int raw, int rec
     }
     if (nested_depth) {
         int opening = (unsigned char)parenstack[nested_depth - 1];
+        #ifdef __VMS
+        RAISE_SYNTAX_ERROR_P("f-string: unmatched '%c'", opening);
+        #else
         RAISE_SYNTAX_ERROR("f-string: unmatched '%c'", opening);
+        #endif
         goto error;
     }
 

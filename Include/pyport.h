@@ -205,6 +205,9 @@ typedef int Py_ssize_clean_t;
 #endif
 
 #include <math.h> /* Moved here from the math section, before extern "C" */
+#ifdef __VMS
+#include <fp.h>
+#endif
 
 /********************************************
  * WRAPPER FOR <time.h> and/or <sys/time.h> *

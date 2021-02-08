@@ -315,6 +315,20 @@ corresponding Unix manual entries for more information on calls.");
 #    define HAVE_FSYNC      1
 #    define fsync _commit
 #  else
+#  ifdef __VMS
+     /* OpenVMS */
+#    define HAVE_EXECV      1
+#    define HAVE_GETEGID    1
+#    define HAVE_GETEUID    1
+#    define HAVE_GETGID     1
+#    define HAVE_GETPPID    1
+#    define HAVE_GETUID     1
+#    define HAVE_KILL       1
+#    define HAVE_OPENDIR    1
+#    define HAVE_PIPE       1
+#    define HAVE_SYSTEM     1
+#    define HAVE_WAIT       1
+#  else
      /* Unix functions that the configure script doesn't check for */
 #    ifndef __VXWORKS__
 #      define HAVE_EXECV      1
@@ -334,6 +348,7 @@ corresponding Unix manual entries for more information on calls.");
 #    define HAVE_SYSTEM     1
 #    define HAVE_WAIT       1
 #    define HAVE_TTYNAME    1
+#  endif  /* __VMS */
 #  endif  /* _MSC_VER */
 #endif  /* ! __WATCOMC__ || __QNX__ */
 
@@ -7347,6 +7362,11 @@ os_getpid_impl(PyObject *module)
 }
 #endif /* HAVE_GETPID */
 
+#ifdef __VMS
+// OpenVMS defines NGROUPS_MAX as 0... WHAT?!
+#undef NGROUPS_MAX
+#define NGROUPS_MAX 64
+#endif
 #ifdef NGROUPS_MAX
 #define MAX_GROUPS NGROUPS_MAX
 #else

@@ -2078,7 +2078,14 @@ _Py_dg_strtod(const char *s00, char **se)
         else {
             if (bc.scale && y <= 2*P*Exp_msk1) {
                 if (aadj <= 0x7fffffff) {
+                    #ifdef __VMS
+                    #pragma message save
+                    #pragma message disable QUESTCOMPARE
+                    #endif
                     if ((z = (ULong)aadj) <= 0)
+                    #ifdef __VMS
+                    #pragma message restore
+                    #endif
                         z = 1;
                     aadj = z;
                     aadj1 = dsign ? aadj : -aadj;

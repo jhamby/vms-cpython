@@ -61,6 +61,11 @@
 # define FD_DIR "/proc/self/fd"
 #endif
 
+#ifdef __VMS
+// OpenVMS defines NGROUPS_MAX as 0... WHAT?!
+#undef NGROUPS_MAX
+#define NGROUPS_MAX 64
+#endif
 #ifdef NGROUPS_MAX
 #define MAX_GROUPS NGROUPS_MAX
 #else
