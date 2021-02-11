@@ -3,6 +3,8 @@ import shutil
 import subprocess
 import sys
 
+_IS_OPENVMS = (sys.platform == "OpenVMS")
+
 # find_library(name) returns the pathname of a library, or None.
 if os.name == "nt":
 
@@ -78,6 +80,18 @@ elif os.name == "posix" and sys.platform == "darwin":
                 return _dyld_find(name)
             except ValueError:
                 continue
+        return None
+
+elif _IS_OPENVMS:
+    def find_library(name):
+        if name == "c":
+            return "decc$shr"
+        try:
+            import vms.decc
+            if vms.decc.dlopen_test(name):
+                return name
+        except:
+            pass
         return None
 
 elif sys.platform.startswith("aix"):

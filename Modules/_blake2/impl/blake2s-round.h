@@ -10,7 +10,9 @@
    You should have received a copy of the CC0 Public Domain Dedication along with
    this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 */
+#ifndef __VMS
 #pragma once
+#endif
 #ifndef __BLAKE2S_ROUND_H__
 #define __BLAKE2S_ROUND_H__
 
@@ -86,6 +88,6 @@
   LOAD_MSG_ ##r ##_4(buf4); \
   G2(row1,row2,row3,row4,buf4); \
   UNDIAGONALIZE(row1,row2,row3,row4); \
- 
+
 #endif
 

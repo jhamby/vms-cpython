@@ -825,6 +825,31 @@ time_strftime(PyObject *self, PyObject *args)
 
     fmtlen = time_strlen(fmt);
 
+#ifdef __VMS
+    if (fmtlen > 0 && fmt[fmtlen-1] == '%') {
+        // test if percent is trailing
+        int is_trailing_percent = 0;
+        const time_char *fmt_ptr = fmt;
+        while(*fmt_ptr) {
+            if (*fmt_ptr == '%') {
+                ++fmt_ptr;
+                if (*fmt_ptr == '%') {
+                    ++fmt_ptr;
+                } else if (!*fmt_ptr){
+                    is_trailing_percent = 1;
+                    break;
+                }
+            } else {
+                ++fmt_ptr;
+            }
+        }
+        if (is_trailing_percent) {
+            PyErr_SetString(PyExc_ValueError, "Invalid format string");
+            return NULL;
+        }
+    }
+#endif /* __VMS */
+
     /* I hate these functions that presume you know how big the output
      * will be ahead of time...
      */

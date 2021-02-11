@@ -13,6 +13,8 @@ import math as _math
 import sys
 from operator import index as _index
 
+_IS_OPENVMS = (sys.platform == "OpenVMS")
+
 def _cmp(x, y):
     return 0 if x == y else 1 if x > y else -1
 
@@ -1662,7 +1664,7 @@ class datetime(date):
             # thus we can't perform fold detection for values of time less
             # than the max time fold. See comments in _datetimemodule's
             # version of this method for more details.
-            if t < max_fold_seconds and sys.platform.startswith("win"):
+            if t < max_fold_seconds and (sys.platform.startswith("win") or _IS_OPENVMS):
                 return result
 
             y, m, d, hh, mm, ss = converter(t - max_fold_seconds)[:6]

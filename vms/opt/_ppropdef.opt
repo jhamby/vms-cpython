@@ -1,0 +1,5 @@
+sys$library:pthread$rtl.exe/SHARE
+python$build_out:[000000]python3_10$shr.exe/SHARE
+GSMATCH=LEQUAL,1,0
+CASE_SENSITIVE=YES
+SYMBOL_VECTOR=(PyInit__ppropdef=PROCEDURE)

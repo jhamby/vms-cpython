@@ -1216,6 +1216,11 @@ calendarrule_new(uint8_t month, uint8_t week, uint8_t day, int8_t hour,
     //   5, 1 <= m <= 12, where week 5 means "the last d day in month m" which
     //   may occur in either the fourth or the fifth week). Week 1 is the first
     //   week in which the d'th day occurs. Day zero is Sunday.
+    #ifdef __VMS
+    // month and week are unsigned
+    #pragma message save
+    #pragma message disable QUESTCOMPARE
+    #endif
     if (month <= 0 || month > 12) {
         PyErr_Format(PyExc_ValueError, "Month must be in (0, 12]");
         return -1;
@@ -1225,6 +1230,10 @@ calendarrule_new(uint8_t month, uint8_t week, uint8_t day, int8_t hour,
         PyErr_Format(PyExc_ValueError, "Week must be in (0, 5]");
         return -1;
     }
+
+    #ifdef __VMS
+    #pragma message restore
+    #endif
 
     // If the 'day' parameter type is changed to a signed type,
     // "day < 0" check must be added.

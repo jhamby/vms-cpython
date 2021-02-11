@@ -6,7 +6,7 @@
 /*
 ** Sets current value for a feature
 */
-static void set(char *name, int value) {
+static void set(const char *name, int value) {
     errno = 0;
     int index = decc$feature_get_index(name);
     if (index > 0) {
@@ -17,7 +17,7 @@ static void set(char *name, int value) {
 /*
 ** Sets default value for a feature
 */
-static void set_default(char *name, int value) {
+static void set_default(const char *name, int value) {
     errno = 0;
     int index = decc$feature_get_index(name);
     if (index > 0) {

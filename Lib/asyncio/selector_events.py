@@ -13,6 +13,8 @@ import selectors
 import socket
 import warnings
 import weakref
+import sys
+_IS_OPENVMS = (sys.platform == "OpenVMS")
 try:
     import ssl
 except ImportError:  # pragma: no cover
@@ -632,6 +634,12 @@ class _SelectorTransport(transports._FlowControlMixin,
         if 'peername' not in self._extra:
             try:
                 self._extra['peername'] = sock.getpeername()
+                if _IS_OPENVMS:
+                    try:
+                        if self._extra['peername'][0] == '0.0.0.0':
+                            self._extra['peername'] = None
+                    except:
+                        self._extra['peername'] = None
             except socket.error:
                 self._extra['peername'] = None
         self._sock = sock

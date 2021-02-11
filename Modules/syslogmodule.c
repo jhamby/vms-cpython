@@ -223,7 +223,11 @@ syslog_setlogmask(PyObject *self, PyObject *args)
     if (PySys_Audit("syslog.setlogmask", "(O)", args ? args : Py_None) < 0) {
         return NULL;
     }
+#ifdef __VMS
+    omaskpri = 0;
+#else
     omaskpri = setlogmask(maskpri);
+#endif /* __VMS */
     return PyLong_FromLong(omaskpri);
 }
 

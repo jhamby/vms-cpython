@@ -12,6 +12,7 @@ import math
 import select
 import sys
 
+_IS_OPENVMS = (sys.platform == "OpenVMS")
 
 # generic events, that must be mapped to implementation-specific ones
 EVENT_READ = (1 << 0)
@@ -607,7 +608,9 @@ def _can_use(method):
 # Choose the best implementation, roughly:
 #    epoll|kqueue|devpoll > poll > select.
 # select() also can't accept a FD > FD_SETSIZE (usually around 1024)
-if _can_use('kqueue'):
+if _IS_OPENVMS:
+    DefaultSelector = SelectSelector
+elif _can_use('kqueue'):
     DefaultSelector = KqueueSelector
 elif _can_use('epoll'):
     DefaultSelector = EpollSelector

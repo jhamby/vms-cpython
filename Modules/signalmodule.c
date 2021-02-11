@@ -775,6 +775,7 @@ signal_set_wakeup_fd(PyObject *self, PyObject *args, PyObject *kwds)
     else
         return PyLong_FromLong(-1);
 #else
+    #ifndef __VMS   /* do not test blocking */
     if (fd != -1) {
         int blocking;
 
@@ -791,6 +792,7 @@ signal_set_wakeup_fd(PyObject *self, PyObject *args, PyObject *kwds)
             return NULL;
         }
     }
+    #endif /* __VMS */
 
     int old_fd = wakeup.fd;
     wakeup.fd = fd;

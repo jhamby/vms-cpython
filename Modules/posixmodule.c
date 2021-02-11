@@ -1670,6 +1670,71 @@ convertenviron(void)
         Py_DECREF(k);
         Py_DECREF(v);
     }
+#ifdef __VMS
+    static const char* prefillNames[] = {
+        "PYTHONHOME",
+        "PYTHONPATH",
+        "PYTHONSTARTUP",
+        "PYTHONOPTIMIZE",
+        "PYTHONBREAKPOINT",
+        "PYTHONDEBUG",
+        "PYTHONINSPECT",
+        "PYTHONUNBUFFERED",
+        "PYTHONVERBOSE",
+        "PYTHONCASEOK",
+        "PYTHONDONTWRITEBYTECODE",
+        "PYTHONPYCACHEPREFIX",
+        "PYTHONHASHSEED",
+        "PYTHONIOENCODING",
+        "PYTHONNOUSERSITE",
+        "PYTHONUSERBASE",
+        "PYTHONEXECUTABLE",
+        "PYTHONWARNINGS",
+        "PYTHONFAULTHANDLER",
+        "PYTHONTRACEMALLOC",
+        "PYTHONPROFILEIMPORTTIME",
+        "PYTHONASYNCIODEBUG",
+        "PYTHONMALLOC",
+        "PYTHONMALLOCSTATS",
+        "PYTHONLEGACYWINDOWSFSENCODING",
+        "PYTHONLEGACYWINDOWSSTDIO",
+        "PYTHONCOERCECLOCALE",
+        "PYTHONDEVMODE",
+        "PYTHONUTF8",
+        "PYTHONTHREADDEBUG",
+        "PYTHONDUMPREFS",
+        NULL
+        };
+    const char**ppName = prefillNames;
+    for (; *ppName != NULL; ppName++) {
+        PyObject *k;
+        PyObject *v;
+        const char *pEnvValue = getenv(*ppName);
+        if (pEnvValue == NULL)
+            continue;
+        k = PyBytes_FromString(*ppName);
+        if (k == NULL) {
+            Py_DECREF(d);
+            return NULL;
+        }
+        v = PyBytes_FromString(pEnvValue);
+        if (v == NULL) {
+            Py_DECREF(k);
+            Py_DECREF(d);
+            return NULL;
+        }
+        if (PyDict_GetItemWithError(d, k) == NULL) {
+            if (PyErr_Occurred() || PyDict_SetItem(d, k, v) != 0) {
+                Py_DECREF(v);
+                Py_DECREF(k);
+                Py_DECREF(d);
+                return NULL;
+            }
+        }
+        Py_DECREF(k);
+        Py_DECREF(v);
+    }
+#endif
     return d;
 }
 
@@ -3800,6 +3865,10 @@ posix_getcwd(int use_bytes)
     char *cwd = NULL;
     size_t buflen = 0;
 
+#ifdef __VMS
+    int try_get_cwd = 1;
+#endif
+
     Py_BEGIN_ALLOW_THREADS
     do {
         char *newbuf;
@@ -3817,7 +3886,22 @@ posix_getcwd(int use_bytes)
         }
         buf = newbuf;
 
+#ifdef __VMS
+        // getcwd() must set ENOENT if default directory is deleted
+        cwd = getcwd(buf, buflen, 1);
+        if (cwd) {
+            cwd = getcwd(buf, buflen, 0);
+            if (!cwd) {
+                if (!try_get_cwd) {
+                    errno = ENOENT;
+                } else {
+                    --try_get_cwd;
+                }
+            }
+        }
+#else
         cwd = getcwd(buf, buflen);
+#endif
     } while (cwd == NULL && errno == ERANGE);
     Py_END_ALLOW_THREADS
 
@@ -4758,6 +4842,19 @@ os_rmdir_impl(PyObject *module, path_t *path, int dir_fd)
     }
 #endif
 
+#ifdef __VMS
+    if (result) {
+        STRUCT_STAT t_st;
+        int t_result;
+        Py_BEGIN_ALLOW_THREADS
+        t_result = STAT(path->narrow, &t_st);
+        Py_END_ALLOW_THREADS
+        if (t_result == 0 && !S_ISDIR(t_st.st_mode)) {
+            errno = ENOTDIR;
+        }
+    }
+#endif /* __VMS */
+
     if (result)
         return path_error(path);
 
@@ -4880,6 +4977,28 @@ BOOL WINAPI Py_DeleteFileW(LPCWSTR lpFileName)
 #endif /* MS_WINDOWS */
 
 
+#ifdef __VMS
+#include <descrip.h>
+#include <lib$routines.h>
+
+extern int decc$to_vms(const char *, int (*)(char *, int, void *), int, int, ...);
+
+int delete_non_unlinkable_link_callback(char *name, int flag, void* userdata) {
+    struct dsc$descriptor_s file_name = {0, DSC$K_DTYPE_T, DSC$K_CLASS_S, 0};
+    file_name.dsc$w_length = strlen(name);
+    file_name.dsc$a_pointer = name;
+    *(int*)userdata = lib$delete_file(&file_name);
+    return 0;
+}
+
+int delete_non_unlinkable_link(const char *path) {
+    int del_code = 0;
+    decc$to_vms(path, delete_non_unlinkable_link_callback, 0, 1, &del_code);
+    return del_code;
+}
+
+#endif /* __VMS */
+
 /*[clinic input]
 os.unlink
 
@@ -4926,7 +5045,49 @@ os_unlink_impl(PyObject *module, path_t *path, int dir_fd)
       }
     } else
 #endif /* HAVE_UNLINKAT */
+#ifdef __VMS
+        int t_len = strlen(path->narrow);
+        if (path->narrow[t_len - 1] == ';' ) {
+            // remove the latest version only
+            char *t_path = PyMem_Malloc(t_len);
+            strncpy(t_path, path->narrow, t_len);
+            t_path[t_len - 1] = 0;
+            result = unlink(t_path);
+            PyMem_FREE(t_path);
+        } else {
+            // remove all versions
+            result = unlink(path->narrow);
+            if (result == 0) {
+                while (!(result = unlink(path->narrow))) {
+                    // pass
+                }
+                if (errno == ENOENT) {
+                    errno = 0;
+                    result = 0;
+                }
+            } else {
+                int t_errno = errno;
+                STRUCT_STAT buf;
+                int stat_code = LSTAT(path->narrow, &buf);
+                if (stat_code == 0) {
+                    if (S_ISLNK(buf.st_mode)) {
+                        // unlink reports that file does not exist, but it exists and it is a link
+                        // so we should use lib$delete_file
+                        errno = 0;
+                        result = (1 != delete_non_unlinkable_link(path->narrow));
+                    } else if (S_ISDIR(buf.st_mode)) {
+                        errno = EISDIR;
+                    } else {
+                        errno = t_errno;
+                    }
+                } else {
+                    errno = t_errno;
+                }
+            }
+        }
+#else   /* non __VMS */
         result = unlink(path->narrow);
+#endif  /* __VMS */
 #endif
     _Py_END_SUPPRESS_IPH
     Py_END_ALLOW_THREADS
@@ -5017,6 +5178,14 @@ os_uname_impl(PyObject *module)
     value = PyStructSequence_New((PyTypeObject *)UnameResultType);
     if (value == NULL)
         return NULL;
+
+#ifdef __VMS
+    char *t = u.machine;
+    while (*t) {
+       if (!isalnum(*t) && (*t != '_')) *t = '_';
+       t++;
+    }
+#endif /* __VMS */
 
 #define SET(i, field) \
     { \
@@ -8503,7 +8672,23 @@ os_readlink_impl(PyObject *module, path_t *path, int dir_fd)
         }
     } else
 #endif
+#ifdef __VMS
+        {
+            length = -1;
+            STRUCT_STAT stat_buff;
+            if (LSTAT(path->narrow, &stat_buff) == 0) {
+                // so, the file is accessible
+                if (S_ISLNK(stat_buff.st_mode)) {
+                    length = readlink(path->narrow, buffer, MAXPATHLEN);
+                } else {
+                    // the file is not a link
+                    errno = EINVAL;
+                }
+            }
+        }
+#else   /* non __VMS */
         length = readlink(path->narrow, buffer, MAXPATHLEN);
+#endif  /* __VMS */
     Py_END_ALLOW_THREADS
 
 #ifdef HAVE_READLINKAT
@@ -9099,7 +9284,15 @@ os_open_impl(PyObject *module, path_t *path, int flags, int mode, int dir_fd)
             }
         } else
 #endif /* HAVE_OPENAT */
+#ifdef __VMS
+            if (flags & O_BINARY) {
+                fd = open(path->narrow, flags & ~O_BINARY, mode, "ctx=bin");
+            } else {
+                fd = open(path->narrow, flags, mode);
+            }
+#else   /* non __VMS */
             fd = open(path->narrow, flags, mode);
+#endif  /* __VMS */
 #endif /* !MS_WINDOWS */
         Py_END_ALLOW_THREADS
     } while (fd < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
@@ -9416,6 +9609,68 @@ os_read_impl(PyObject *module, int fd, Py_ssize_t length)
 
     return buffer;
 }
+
+#ifdef __VMS
+extern unsigned long read_pipe_bytes(int fd, char *buf, int size, int* pid_ptr);
+extern int decc$feature_get(const char*, int);
+
+static PyObject *
+os_read_pipe_impl(PyObject *module, int fd)
+{
+    Py_ssize_t n;
+    PyObject *buffer;
+    Py_ssize_t length;
+
+    length = decc$feature_get("DECC$PIPE_BUFFER_SIZE", 1);
+
+    buffer = PyBytes_FromStringAndSize((char *)NULL, length);
+    if (buffer == NULL)
+        return NULL;
+
+    int pid = -1;
+    Py_BEGIN_ALLOW_THREADS
+    n = read_pipe_bytes(fd, PyBytes_AS_STRING(buffer), length, &pid);
+    Py_END_ALLOW_THREADS
+    if (n == -1) {
+        Py_DECREF(buffer);
+        return NULL;
+    }
+
+    if (n != length)
+        _PyBytes_Resize(&buffer, n);
+
+    return Py_BuildValue("(Ni)", buffer, pid);
+
+}
+
+#define OS_READ_PIPE_METHODDEF    \
+    {"read_pipe", (PyCFunction)(void(*)(void))os_read_pipe, METH_FASTCALL, os_read__doc__},
+
+static PyObject *
+os_read_pipe(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    int fd;
+    Py_ssize_t length;
+
+    if (!_PyArg_CheckPositional("read_pipe", nargs, 1, 1)) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    fd = _PyLong_AsInt(args[0]);
+    if (fd == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = os_read_pipe_impl(module, fd);
+
+exit:
+    return return_value;
+}
+#endif /* __VMS */
 
 #if (defined(HAVE_SENDFILE) && (defined(__FreeBSD__) || defined(__DragonFly__) \
                                 || defined(__APPLE__))) \
@@ -10017,6 +10272,9 @@ os_isatty_impl(PyObject *module, int fd)
     _Py_BEGIN_SUPPRESS_IPH
     return_value = isatty(fd);
     _Py_END_SUPPRESS_IPH
+#ifdef __VMS
+    return_value = (return_value == 1);
+#endif
     return return_value;
 }
 
@@ -14057,6 +14315,10 @@ ScandirIterator_iternext(ScandirIterator *iterator)
         name_len = NAMLEN(direntp);
         is_dot = direntp->d_name[0] == '.' &&
                  (name_len == 1 || (direntp->d_name[1] == '.' && name_len == 2));
+#ifdef __VMS
+        // only first three words are usable
+        direntp->d_ino = direntp->d_ino & 0xffffffffffff;
+#endif
         if (!is_dot) {
             PyObject *module = PyType_GetModule(Py_TYPE(iterator));
             entry = DirEntry_from_posix_info(module,
@@ -14260,6 +14522,20 @@ os_scandir_impl(PyObject *module, path_t *path)
             path_str = ".";
 
         Py_BEGIN_ALLOW_THREADS
+#ifdef __VMS
+        {
+            STRUCT_STAT t_st;
+            int t_result = STAT(path_str, &t_st);
+            if (t_result == 0) {
+                if (!S_ISDIR(t_st.st_mode)) {
+                    errno = ENOTDIR;
+                } else if (!(t_st.st_mode & (S_IRUSR | S_IRGRP | S_IROTH))) {
+                    errno = EACCES;
+                }
+            }
+        }
+        if (errno == 0) // for the next line with opendir()
+#endif /* __VMS */
         iterator->dirp = opendir(path_str);
         Py_END_ALLOW_THREADS
     }
@@ -14722,6 +14998,9 @@ static PyMethodDef posix_methods[] = {
     OS_LOCKF_METHODDEF
     OS_LSEEK_METHODDEF
     OS_READ_METHODDEF
+#ifdef __VMS
+    OS_READ_PIPE_METHODDEF
+#endif
     OS_READV_METHODDEF
     OS_PREAD_METHODDEF
     OS_PREADV_METHODDEF

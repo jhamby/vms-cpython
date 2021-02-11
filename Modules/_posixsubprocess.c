@@ -463,7 +463,225 @@ reset_signal_handlers(const sigset_t *child_sigmask)
 }
 #endif /* VFORK_USABLE */
 
+#ifdef __VMS
+/*
+ * This function is code executed in the child process immediately after vfork
+ * to set things up and call exec().
+ *
+ */
+#include <processes.h>
+#include <unixlib.h>
+#include <errno.h>
+#include <unixio.h>
+#include <efndef.h>
+#include <clidef.h>
+#include <stsdef.h>
+#include <descrip.h>
+#include <lib$routines.h>
 
+#include <ffi.h>
+#include "ctypes/ctypes.h"
+
+static void child_complete(int arg) {
+    if (arg) {
+        // arg is a returncode_ast_struct
+        CDataObject *returncode_ast = (CDataObject *)arg;
+        if (returncode_ast->ob_base.ob_refcnt > 1) {
+            // do not call DECREF for the last reference
+            Py_XDECREF(returncode_ast);
+        } else {
+            // TODO: decrease reference later
+        }
+    }
+    return;
+}
+
+static int
+exec_dcl(char *const argv[], int p2cread, int c2pwrite, PyObject* returncode_ast) {
+    int status = -1;
+    int pid = -1;
+    unsigned char efn = EFN$C_ENF;
+    int flags = CLI$M_NOWAIT;
+    struct dsc$descriptor_s execute = {0, DSC$K_DTYPE_T, DSC$K_CLASS_S, 0};
+    struct dsc$descriptor_s input = {0, DSC$K_DTYPE_T, DSC$K_CLASS_S, 0};
+    struct dsc$descriptor_s output = {0, DSC$K_DTYPE_T, DSC$K_CLASS_S, 0};
+    char input_name[PATH_MAX + 1] = "";
+    char output_name[PATH_MAX + 1] = "";
+    struct dsc$descriptor_s *input_ptr = NULL;
+    struct dsc$descriptor_s *output_ptr = NULL;
+
+    if (p2cread != -1) {
+        if (getname(p2cread, input_name, 1)) {
+            input.dsc$w_length = strlen(input_name);
+            input.dsc$a_pointer = (char *)input_name;
+            input_ptr = &input;
+        }
+    }
+
+    if (c2pwrite != -1) {
+        if (getname(c2pwrite, output_name, 1)) {
+            output.dsc$w_length = strlen(output_name);
+            output.dsc$a_pointer = (char *)output_name;
+            output_ptr = &output;
+        }
+    }
+
+    int i = 1;  // skip DCL
+    int exec_len = 0;
+    while (argv[i]) {
+        exec_len += strlen(argv[i]) + 1;
+        ++i;
+    }
+
+    char *execute_str = PyMem_MALLOC(exec_len + 1);
+
+    i = 1;
+    execute_str[0] = 0;
+    while (argv[i]) {
+        if (i > 1) {
+            strcat(execute_str, " ");
+        }
+        strcat(execute_str, argv[i]);
+        ++i;
+    }
+
+    execute.dsc$w_length = strlen(execute_str);
+    execute.dsc$a_pointer = (char *)execute_str;
+
+    int *returncode_ast_ref = NULL;
+
+    if (returncode_ast) {
+        // keep object
+        Py_XINCREF(returncode_ast);
+        returncode_ast_ref = &((CDataObject *)returncode_ast)->b_value.i;
+    }
+
+    status = lib$spawn(
+        &execute,
+        input_ptr,
+        output_ptr,
+        &flags,
+        NULL,
+        &pid,
+        returncode_ast_ref,
+        &efn,
+        &child_complete,
+        returncode_ast);
+
+    if (!$VMS_STATUS_SUCCESS(status)) {
+        pid = -1;
+        if (returncode_ast) {
+            Py_XDECREF(returncode_ast);
+        }
+    }
+
+    PyMem_FREE(execute_str);
+
+    return (pid);
+}
+
+static int
+safe_make_inherit(int fd) {
+    if (fd != -1) {
+        int _dup_ = dup(fd);
+        if (_dup_ != -1) {
+            int retcode = dup2(_dup_, fd);
+            close(_dup_);
+            return retcode;
+        }
+    }
+    return -1;
+}
+
+/* OpenVMS fake child_exec
+*/
+
+_Py_NO_INLINE static pid_t
+vms_child_exec(char *const exec_array[],
+           char *const argv[],
+           char *const envp[],
+           const char *cwd,
+           int p2cread, int p2cwrite,
+           int c2pread, int c2pwrite,
+           int errread, int errwrite,
+           int errpipe_read, int errpipe_write,
+           int close_fds, int restore_signals,
+           int call_setsid,
+           int call_setgid, gid_t gid,
+           int call_setgroups, size_t groups_size, const gid_t *groups,
+           int call_setuid, uid_t uid, int child_umask,
+           const void *child_sigmask,
+           PyObject *py_fds_to_keep,
+           PyObject *preexec_fn,
+           PyObject *preexec_fn_args_tuple,
+           PyObject *returncode_ast)
+{
+    int pid = -1;
+    int exec_error = 0;
+
+    if (make_inheritable(py_fds_to_keep, errpipe_write) < 0) {
+        goto egress;
+    }
+
+    if (p2cwrite != -1)
+        fcntl(p2cwrite, F_SETFD, FD_CLOEXEC);
+    if (c2pread != -1)
+        fcntl(c2pread, F_SETFD, FD_CLOEXEC);
+    if (errread != -1)
+        fcntl(errread, F_SETFD, FD_CLOEXEC);
+    if (errpipe_read != -1)
+        fcntl(errpipe_read, F_SETFD, FD_CLOEXEC);
+    if (errpipe_write != -1)
+        fcntl(errpipe_write, F_SETFD, FD_CLOEXEC);
+
+    // make them inherited safely
+    safe_make_inherit(p2cread);
+    safe_make_inherit(c2pwrite);
+    safe_make_inherit(errwrite);
+
+    // we should always set CWD, even if it is NULL - to restore default value
+    decc$set_child_default_dir(cwd);
+
+    if (argv && *argv && strcmp(*argv, "DCL") == 0) {
+        pid = exec_dcl(argv, p2cread, c2pwrite, returncode_ast);
+    } else {
+        decc$set_child_standard_streams(p2cread, c2pwrite, errwrite);
+        pid = vfork();
+        if (pid == 0) {
+            for (int i = 0; exec_array[i] != NULL; ++i) {
+                const char *executable = exec_array[i];
+                if (envp) {
+                    execve(executable, argv, envp);
+                } else {
+                    execv(executable, argv);
+                }
+                if (errno != ENOENT && errno != ENOTDIR) {
+                    break;
+                }
+            }
+            exec_error = errno;
+            if (!exec_error) {
+                exec_error = -1;
+            }
+            exit(EXIT_FAILURE);
+        }
+    }
+
+egress:
+    // No report, we are at parent process
+
+    // Test if exec() is failed
+    if (exec_error) {
+        if (pid > 0) {
+            waitpid(pid, NULL, 0);
+        }
+        pid = -1;
+        errno = exec_error;
+    }
+
+    return pid;
+}
+#else
 /*
  * This function is code executed in the child process immediately after
  * (v)fork to set things up and call exec().
@@ -684,7 +902,7 @@ error:
         _Py_write_noraise(errpipe_write, err_msg, strlen(err_msg));
     }
 }
-
+#endif /* __VMS */
 
 /* The main purpose of this wrapper function is to isolate vfork() from both
  * subprocess_fork_exec() and child_exec(). A child process created via
@@ -711,7 +929,11 @@ do_fork_exec(char *const exec_array[],
              const void *child_sigmask,
              PyObject *py_fds_to_keep,
              PyObject *preexec_fn,
-             PyObject *preexec_fn_args_tuple)
+             PyObject *preexec_fn_args_tuple
+        #ifdef __VMS
+            , PyObject *returncode_ast
+        #endif
+             )
 {
 
     pid_t pid;
@@ -727,6 +949,17 @@ do_fork_exec(char *const exec_array[],
         pid = vfork();
     } else
 #endif
+
+#ifdef __VMS
+    return vms_child_exec(exec_array, argv, envp, cwd,
+               p2cread, p2cwrite, c2pread, c2pwrite,
+               errread, errwrite, errpipe_read, errpipe_write,
+               close_fds, restore_signals, call_setsid,
+               call_setgid, gid, call_setgroups, groups_size, groups,
+               call_setuid, uid, child_umask, child_sigmask,
+               py_fds_to_keep, preexec_fn, preexec_fn_args_tuple,
+               returncode_ast);
+#else
     {
         pid = fork();
     }
@@ -757,6 +990,7 @@ do_fork_exec(char *const exec_array[],
                py_fds_to_keep, preexec_fn, preexec_fn_args_tuple);
     _exit(255);
     return 0;  /* Dead code to avoid a potential compiler warning. */
+#endif /* __VMS */
 }
 
 
@@ -786,9 +1020,16 @@ subprocess_fork_exec(PyObject *module, PyObject *args)
     int need_after_fork = 0;
     int saved_errno = 0;
     _posixsubprocessstate *state = get_posixsubprocess_state(module);
+    #ifdef __VMS
+    PyObject *returncode_ast = NULL;
+    #endif
 
     if (!PyArg_ParseTuple(
+        #ifdef __VMS
+            args, "OOpO!OOiiiiiiiiiiOOOiO|O:fork_exec",
+        #else
             args, "OOpO!OOiiiiiiiiiiOOOiO:fork_exec",
+        #endif
             &process_args, &executable_list,
             &close_fds, &PyTuple_Type, &py_fds_to_keep,
             &cwd_obj, &env_list,
@@ -796,7 +1037,11 @@ subprocess_fork_exec(PyObject *module, PyObject *args)
             &errread, &errwrite, &errpipe_read, &errpipe_write,
             &restore_signals, &call_setsid,
             &gid_object, &groups_list, &uid_object, &child_umask,
-            &preexec_fn))
+            &preexec_fn
+        #ifdef __VMS
+            , &returncode_ast
+        #endif
+            ))
         return NULL;
 
     if ((preexec_fn != Py_None) &&
@@ -989,7 +1234,9 @@ subprocess_fork_exec(PyObject *module, PyObject *args)
         preexec_fn_args_tuple = PyTuple_New(0);
         if (!preexec_fn_args_tuple)
             goto cleanup;
+    #ifdef HAVE_FORK
         PyOS_BeforeFork();
+    #endif
         need_after_fork = 1;
     }
 
@@ -1024,7 +1271,11 @@ subprocess_fork_exec(PyObject *module, PyObject *args)
                        close_fds, restore_signals, call_setsid,
                        call_setgid, gid, call_setgroups, num_groups, groups,
                        call_setuid, uid, child_umask, old_sigmask,
-                       py_fds_to_keep, preexec_fn, preexec_fn_args_tuple);
+                       py_fds_to_keep, preexec_fn, preexec_fn_args_tuple
+                    #ifdef __VMS
+                       , returncode_ast
+                    #endif
+                       );
 
     /* Parent (original) process */
     if (pid == -1) {
@@ -1050,8 +1301,11 @@ subprocess_fork_exec(PyObject *module, PyObject *args)
     }
 #endif
 
-    if (need_after_fork)
+    if (need_after_fork) {
+    #ifdef HAVE_FORK
         PyOS_AfterFork_Parent();
+    #endif
+    }
 
 cleanup:
     if (saved_errno != 0) {

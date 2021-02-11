@@ -60,6 +60,8 @@ from errno import EALREADY, EINPROGRESS, EWOULDBLOCK, ECONNRESET, EINVAL, \
 _DISCONNECTED = frozenset({ECONNRESET, ENOTCONN, ESHUTDOWN, ECONNABORTED, EPIPE,
                            EBADF})
 
+_IS_OPENVMS = (sys.platform == "OpenVMS")
+
 try:
     socket_map
 except NameError:
@@ -581,7 +583,7 @@ def close_all(map=None, ignore_all=False):
 #
 # Regardless, this is useful for pipes, and stdin/stdout...
 
-if os.name == 'posix':
+if os.name == 'posix' and not _IS_OPENVMS:
     class file_wrapper:
         # Here we override just enough to make a file
         # look like a socket for the purposes of asyncore.

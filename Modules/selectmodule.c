@@ -279,6 +279,13 @@ select_select_impl(PyObject *module, PyObject *rlist, PyObject *wlist,
             return NULL;
         }
 
+#ifdef __VMS
+        if (timeout < 0) {
+            PyErr_SetString(PyExc_ValueError, "timeout must be non-negative");
+            return NULL;
+        }
+#endif
+
         if (_PyTime_AsTimeval(timeout, &tv, _PyTime_ROUND_TIMEOUT) == -1)
             return NULL;
         if (tv.tv_sec < 0) {
@@ -324,7 +331,12 @@ select_select_impl(PyObject *module, PyObject *rlist, PyObject *wlist,
     do {
         Py_BEGIN_ALLOW_THREADS
         errno = 0;
+    #ifdef __VMS
+        int g_vms_select (int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, struct timeval *timeout);
+        n = g_vms_select(max, &ifdset, &ofdset, &efdset, tvp);
+    #else
         n = select(max, &ifdset, &ofdset, &efdset, tvp);
+    #endif
         Py_END_ALLOW_THREADS
 
         if (errno != EINTR)

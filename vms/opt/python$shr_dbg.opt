@@ -1,5 +1,5 @@
 python$build_out:[000000]libpython3^.10.olb/LIBRARY
-sys$library:pthread$rtl.exe/share
+sys$library:pthread$rtl.exe/SHARE
 GSMATCH=LEQUAL,1,0
 CASE_SENSITIVE=YES
 

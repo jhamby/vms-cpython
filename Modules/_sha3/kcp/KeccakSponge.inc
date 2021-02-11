@@ -41,8 +41,15 @@ int Sponge(unsigned int rate, unsigned int capacity, const unsigned char *input,
 
     if (rate+capacity != SnP_width)
         return 1;
+    #ifdef __VMS
+    #pragma message save
+    #pragma message disable QUESTCOMPARE
+    #endif
     if ((rate <= 0) || (rate > SnP_width) || ((rate % 8) != 0))
         return 1;
+    #ifdef __VMS
+    #pragma message restore
+    #endif
     if (suffix == 0)
         return 1;
 
@@ -144,8 +151,15 @@ int SpongeInitialize(SpongeInstance *instance, unsigned int rate, unsigned int c
 {
     if (rate+capacity != SnP_width)
         return 1;
+    #ifdef __VMS
+    #pragma message save
+    #pragma message disable QUESTCOMPARE
+    #endif
     if ((rate <= 0) || (rate > SnP_width) || ((rate % 8) != 0))
         return 1;
+    #ifdef __VMS
+    #pragma message restore
+    #endif
     SnP_StaticInitialize();
     SnP_Initialize(instance->state);
     instance->rate = rate;

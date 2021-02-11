@@ -349,6 +349,9 @@ PyOS_StdioReadline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
 
 char *(*PyOS_ReadlineFunctionPointer)(FILE *, FILE *, const char *) = NULL;
 
+#ifdef __VMS
+extern char* vms_SMG_Readline(FILE *, FILE *, const char *);
+#endif
 
 /* Interface used by tokenizer.c and bltinmodule.c */
 
@@ -367,7 +370,11 @@ PyOS_Readline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
 
 
     if (PyOS_ReadlineFunctionPointer == NULL) {
+#ifdef __VMS
+        PyOS_ReadlineFunctionPointer = vms_SMG_Readline;
+#else
         PyOS_ReadlineFunctionPointer = PyOS_StdioReadline;
+#endif
     }
 
     if (_PyOS_ReadlineLock == NULL) {
@@ -387,7 +394,11 @@ PyOS_Readline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
      * a tty.  This can happen, for example if python is run like
      * this: python -i < test1.py
      */
+    #ifdef __VMS
+    if (1 != isatty (fileno (sys_stdin)) || 1 != isatty (fileno (sys_stdout)))
+    #else
     if (!isatty (fileno (sys_stdin)) || !isatty (fileno (sys_stdout)))
+    #endif
         rv = PyOS_StdioReadline (sys_stdin, sys_stdout, prompt);
     else
         rv = (*PyOS_ReadlineFunctionPointer)(sys_stdin, sys_stdout,

@@ -13,6 +13,8 @@ import sys
 import threading
 import warnings
 
+_IS_OPENVMS = (sys.platform == "OpenVMS")
+
 from . import base_events
 from . import base_subprocess
 from . import constants
@@ -116,7 +118,8 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
             signal.signal(sig, _sighandler_noop)
 
             # Set SA_RESTART to limit EINTR occurrences.
-            signal.siginterrupt(sig, False)
+            if not _IS_OPENVMS:
+                signal.siginterrupt(sig, False)
         except OSError as exc:
             del self._signal_handlers[sig]
             if not self._signal_handlers:

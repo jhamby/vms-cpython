@@ -1667,7 +1667,7 @@
 #undef size_t
 
 /* Define to `int' if <sys/socket.h> does not define. */
-#undef socklen_t
+#define socklen_t size_t
 
 /* Define to `int' if <sys/types.h> doesn't define. */
 #undef uid_t
@@ -1678,7 +1678,12 @@
 #define STRICT_SYSV_CURSES /* Don't use ncurses extensions */
 #endif
 
+/***********************************************************/
 #ifdef __VMS
+
+#include <builtins.h>
+
+#define alloca(n) __ALLOCA(n)
 
 #define PLATLIBDIR "lib"
 
@@ -1690,6 +1695,10 @@
 
 #undef O_BINARY
 #define O_BINARY 0100
+
+#ifndef MAP_ANONYMOUS
+#define MAP_ANONYMOUS 0x10
+#endif
 
 #if __CRTL_VER > 80400000
 #define HAVE_ROUND 1

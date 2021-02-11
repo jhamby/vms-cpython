@@ -91,7 +91,11 @@ static inline int config_run_code(const PyConfig *config)
 static int
 stdin_is_interactive(const PyConfig *config)
 {
+    #ifdef __VMS
+    return (1 == isatty(fileno(stdin)) || config->interactive);
+    #else
     return (isatty(fileno(stdin)) || config->interactive);
+    #endif
 }
 
 
@@ -208,7 +212,11 @@ pymain_import_readline(const PyConfig *config)
     if (!config->inspect && config_run_code(config)) {
         return;
     }
+    #ifdef __VMS
+    if (0 == isatty(fileno(stdin))) {
+    #else
     if (!isatty(fileno(stdin))) {
+    #endif
         return;
     }
 

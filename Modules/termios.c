@@ -234,6 +234,10 @@ static PyObject *
 termios_tcsendbreak_impl(PyObject *module, int fd, int duration)
 /*[clinic end generated code: output=5945f589b5d3ac66 input=dc2f32417691f8ed]*/
 {
+#ifdef __VMS
+    errno = ENOSYS;
+    return PyErr_SetFromErrno(TermiosError);
+#endif
     termiosmodulestate *state = PyModule_GetState(module);
     if (tcsendbreak(fd, duration) == -1) {
         return PyErr_SetFromErrno(state->TermiosError);
@@ -255,6 +259,10 @@ static PyObject *
 termios_tcdrain_impl(PyObject *module, int fd)
 /*[clinic end generated code: output=5fd86944c6255955 input=c99241b140b32447]*/
 {
+#ifdef __VMS
+    errno = ENOSYS;
+    return PyErr_SetFromErrno(TermiosError);
+#endif
     termiosmodulestate *state = PyModule_GetState(module);
     if (tcdrain(fd) == -1) {
         return PyErr_SetFromErrno(state->TermiosError);
@@ -281,6 +289,10 @@ static PyObject *
 termios_tcflush_impl(PyObject *module, int fd, int queue)
 /*[clinic end generated code: output=2424f80312ec2f21 input=0f7d08122ddc07b5]*/
 {
+#ifdef __VMS
+    errno = ENOSYS;
+    return PyErr_SetFromErrno(TermiosError);
+#endif
     termiosmodulestate *state = PyModule_GetState(module);
     if (tcflush(fd, queue) == -1) {
         return PyErr_SetFromErrno(state->TermiosError);
@@ -307,6 +319,10 @@ static PyObject *
 termios_tcflow_impl(PyObject *module, int fd, int action)
 /*[clinic end generated code: output=afd10928e6ea66eb input=c6aff0640b6efd9c]*/
 {
+#ifdef __VMS
+    errno = ENOSYS;
+    return PyErr_SetFromErrno(TermiosError);
+#endif
     termiosmodulestate *state = PyModule_GetState(module);
     if (tcflow(fd, action) == -1) {
         return PyErr_SetFromErrno(state->TermiosError);
@@ -1004,7 +1020,7 @@ static void termiosmodule_free(void *m) {
     termiosmodule_clear((PyObject *)m);
 }
 
-static int 
+static int
 termios_exec(PyObject *mod)
 {
     struct constant *constant = termios_constants;

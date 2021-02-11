@@ -43,6 +43,8 @@ from socket import _GLOBAL_DEFAULT_TIMEOUT
 __all__ = ["FTP", "error_reply", "error_temp", "error_perm", "error_proto",
            "all_errors"]
 
+_IS_OPENVMS = (sys.platform == "OpenVMS")
+
 # Magic number from <socket.h>
 MSG_OOB = 0x1                           # Process data out of band
 
@@ -308,7 +310,10 @@ class FTP:
 
     def makeport(self):
         '''Create a new socket and send a PORT command for it.'''
-        sock = socket.create_server(("", 0), family=self.af, backlog=1)
+        if _IS_OPENVMS:
+            sock = socket.create_server(("127.0.0.1", 0), family=self.af, backlog=1)
+        else:
+            sock = socket.create_server(("", 0), family=self.af, backlog=1)
         port = sock.getsockname()[1] # Get proper port
         host = self.sock.getsockname()[0] # Get proper host
         if self.af == socket.AF_INET:

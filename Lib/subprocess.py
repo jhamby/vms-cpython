@@ -54,6 +54,10 @@ import contextlib
 from time import monotonic as _time
 import types
 
+_IS_OPENVMS = (sys.platform == "OpenVMS")
+if _IS_OPENVMS:
+    import ctypes
+
 try:
     import pwd
 except ImportError:
@@ -226,10 +230,13 @@ else:
     # poll/select have the advantage of not requiring any extra file
     # descriptor, contrarily to epoll/kqueue (also, they require a single
     # syscall).
-    if hasattr(selectors, 'PollSelector'):
-        _PopenSelector = selectors.PollSelector
-    else:
+    if _IS_OPENVMS:
         _PopenSelector = selectors.SelectSelector
+    else:
+        if hasattr(selectors, 'PollSelector'):
+            _PopenSelector = selectors.PollSelector
+        else:
+            _PopenSelector = selectors.SelectSelector
 
 
 if _mswindows:
@@ -793,6 +800,10 @@ class Popen(object):
                                  "platforms")
         else:
             # POSIX
+            if _IS_OPENVMS:
+                if preexec_fn is not None:
+                    raise ValueError("preexec_fn is not supported on OpenVMS "
+                                    "platforms")
             if pass_fds and not close_fds:
                 warnings.warn("pass_fds overriding close_fds.", RuntimeWarning)
                 close_fds = True
@@ -809,6 +820,8 @@ class Popen(object):
         self.stderr = None
         self.pid = None
         self.returncode = None
+        if _IS_OPENVMS:
+            self.returncode_ast = ctypes.c_longlong(-1)
         self.encoding = encoding
         self.errors = errors
         self.pipesize = pipesize
@@ -1126,13 +1139,36 @@ class Popen(object):
             [self.stdin, self.stdout, self.stderr].count(None) >= 2):
             stdout = None
             stderr = None
+            if _IS_OPENVMS:
+                def read_std(std):
+                    ret_data = []
+                    while True:
+                        data, pid = os.read_pipe(std.fileno())
+                        if not data:
+                            if self.pid != pid:
+                                continue
+                            else:
+                                break
+                        ret_data.append(data)
+                    ret_data = b''.join(ret_data)
+                    if self.text_mode:
+                        ret_data = self._translate_newlines(ret_data,
+                                    std.encoding,
+                                    std.errors)
+                return ret_data
             if self.stdin:
                 self._stdin_write(input)
             elif self.stdout:
-                stdout = self.stdout.read()
+                if _IS_OPENVMS:
+                    stdout = read_std(self.stdout)
+                else:
+                    stdout = self.stdout.read()
                 self.stdout.close()
             elif self.stderr:
-                stderr = self.stderr.read()
+                if _IS_OPENVMS:
+                    stderr = read_std(self.stderr)
+                else:
+                    stderr = self.stderr.read()
                 self.stderr.close()
             self.wait()
         else:
@@ -1699,12 +1735,19 @@ class Popen(object):
                 args = list(args)
 
             if shell:
-                # On Android the default shell is at '/system/bin/sh'.
-                unix_shell = ('/system/bin/sh' if
-                          hasattr(sys, 'getandroidapilevel') else '/bin/sh')
-                args = [unix_shell, "-c"] + args
-                if executable:
-                    args[0] = executable
+                if _IS_OPENVMS:
+                    # DCL is a keyword :)
+                    args = ["DCL"] + args
+                    if self.stderr:
+                        self.stderr.close()
+                        self.stderr = None
+                else:
+                    # On Android the default shell is at '/system/bin/sh'.
+                    unix_shell = ('/system/bin/sh' if
+                            hasattr(sys, 'getandroidapilevel') else '/bin/sh')
+                    args = [unix_shell, "-c"] + args
+                    if executable:
+                        args[0] = executable
 
             if executable is None:
                 executable = args[0]
@@ -1761,7 +1804,7 @@ class Popen(object):
                     else:
                         env_list = None  # Use execv instead of execve.
                     executable = os.fsencode(executable)
-                    if os.path.dirname(executable):
+                    if os.path.dirname(executable) or (_IS_OPENVMS and shell):
                         executable_list = (executable,)
                     else:
                         # This matches the behavior of os._execvpe().
@@ -1770,7 +1813,20 @@ class Popen(object):
                             for dir in os.get_exec_path(env))
                     fds_to_keep = set(pass_fds)
                     fds_to_keep.add(errpipe_write)
-                    self.pid = _posixsubprocess.fork_exec(
+                    if _IS_OPENVMS:
+                        self.pid = _posixsubprocess.fork_exec(
+                            args, executable_list,
+                            close_fds, tuple(sorted(map(int, fds_to_keep))),
+                            cwd, env_list,
+                            p2cread, p2cwrite, c2pread, c2pwrite,
+                            errread, errwrite,
+                            errpipe_read, errpipe_write,
+                            restore_signals, start_new_session,
+                            gid, gids, uid, umask,
+                            preexec_fn,
+                            self.returncode_ast)
+                    else:
+                        self.pid = _posixsubprocess.fork_exec(
                             args, executable_list,
                             close_fds, tuple(sorted(map(int, fds_to_keep))),
                             cwd, env_list,
@@ -1781,6 +1837,15 @@ class Popen(object):
                             gid, gids, uid, umask,
                             preexec_fn)
                     self._child_created = True
+                    if _IS_OPENVMS:
+                        for pipe in [self.stdout, self.stderr]:
+                            while pipe:
+                                if hasattr(pipe, "_pid"):
+                                    pipe._pid = self.pid
+                                if hasattr(pipe, "raw"):
+                                    pipe = pipe.raw
+                                else:
+                                    break
                 finally:
                     # be sure the FD is closed no matter what
                     os.close(errpipe_write)
@@ -1848,10 +1913,23 @@ class Popen(object):
             """All callers to this function MUST hold self._waitpid_lock."""
             # This method is called (indirectly) by __del__, so it cannot
             # refer to anything outside of its local scope.
-            if _WIFSTOPPED(sts):
-                self.returncode = -_WSTOPSIG(sts)
+            if _IS_OPENVMS and self.returncode_ast.value != -1:
+                # Get return code from AST
+                def vms_code_convert(code):
+                    code = code & 7
+                    return {
+                        1: 0,   # success
+                        0: 1,   # warning
+                        3: 2,   # information
+                        2: 3,   # error
+                        4: 4,   # fatal
+                    }[code]
+                self.returncode = vms_code_convert(self.returncode_ast.value)
             else:
-                self.returncode = waitstatus_to_exitcode(sts)
+                if _WIFSTOPPED(sts):
+                    self.returncode = -_WSTOPSIG(sts)
+                else:
+                    self.returncode = waitstatus_to_exitcode(sts)
 
         def _internal_poll(self, _deadstate=None, _waitpid=os.waitpid,
                 _WNOHANG=os.WNOHANG, _ECHILD=errno.ECHILD):
@@ -2015,10 +2093,16 @@ class Popen(object):
                                     selector.unregister(key.fileobj)
                                     key.fileobj.close()
                         elif key.fileobj in (self.stdout, self.stderr):
-                            data = os.read(key.fd, 32768)
+                            if _IS_OPENVMS:
+                                data, pid = os.read_pipe(key.fd)
+                            else:
+                                data = os.read(key.fd, 32768)
                             if not data:
-                                selector.unregister(key.fileobj)
-                                key.fileobj.close()
+                                if _IS_OPENVMS and self.pid != pid:
+                                    continue
+                                else:
+                                    selector.unregister(key.fileobj)
+                                    key.fileobj.close()
                             self._fileobj2output[key.fileobj].append(data)
 
             self.wait(timeout=self._remaining_time(endtime))

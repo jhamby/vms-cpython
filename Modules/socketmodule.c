@@ -3069,11 +3069,18 @@ sock_getsockopt(PySocketSockObject *s, PyObject *args)
         return NULL;
         }
 #endif
+#ifdef __VMS
+#pragma message save
+#pragma message disable QUESTCOMPARE
+#endif
     if (buflen <= 0 || buflen > 1024) {
         PyErr_SetString(PyExc_OSError,
                         "getsockopt buflen out of range");
         return NULL;
     }
+#ifdef __VMS
+#pragma message restore
+#endif
     buf = PyBytes_FromStringAndSize((char *)NULL, buflen);
     if (buf == NULL)
         return NULL;

@@ -47,6 +47,8 @@ import struct
 import copy
 import re
 
+_IS_OPENVMS = (sys.platform == "OpenVMS")
+
 try:
     import pwd
 except ImportError:
@@ -2046,8 +2048,13 @@ class TarFile(object):
             dirpath = os.path.join(path, tarinfo.name)
             try:
                 self.chown(tarinfo, dirpath, numeric_owner=numeric_owner)
-                self.utime(tarinfo, dirpath)
-                self.chmod(tarinfo, dirpath)
+                if _IS_OPENVMS:
+                    # OpenVMS chmod modifies the time
+                    self.chmod(tarinfo, dirpath)
+                    self.utime(tarinfo, dirpath)
+                else:
+                    self.utime(tarinfo, dirpath)
+                    self.chmod(tarinfo, dirpath)
             except ExtractError as e:
                 if self.errorlevel > 1:
                     raise

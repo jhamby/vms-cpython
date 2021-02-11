@@ -6,8 +6,11 @@ import os
 import posixpath
 import re
 import sys
+_IS_OPENVMS = (sys.platform == "OpenVMS")
 from _collections_abc import Sequence
 from errno import EINVAL, ENOENT, ENOTDIR, EBADF, ELOOP
+if _IS_OPENVMS:
+    from errno import EPERM
 from operator import attrgetter
 from stat import S_ISDIR, S_ISLNK, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
 from urllib.parse import quote_from_bytes as urlquote_from_bytes
@@ -345,8 +348,12 @@ class _PosixFlavour(_Flavour):
                 try:
                     target = accessor.readlink(newpath)
                 except OSError as e:
-                    if e.errno != EINVAL and strict:
-                        raise
+                    if _IS_OPENVMS:
+                        if e.errno not in (EINVAL,EPERM) and strict:
+                            raise
+                    else:
+                        if e.errno != EINVAL and strict:
+                            raise
                     # Not a symlink, or non-strict mode. We just leave the path
                     # untouched.
                     path = newpath

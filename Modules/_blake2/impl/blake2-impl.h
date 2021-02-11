@@ -10,7 +10,9 @@
    You should have received a copy of the CC0 Public Domain Dedication along with
    this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 */
+#ifndef __VMS
 #pragma once
+#endif
 #ifndef __BLAKE2_IMPL_H__
 #define __BLAKE2_IMPL_H__
 
@@ -140,7 +142,7 @@ static inline void secure_zero_memory(void *v, size_t n)
 {
 #if defined(_WIN32) || defined(WIN32)
   SecureZeroMemory(v, n);
-#elif defined(__hpux)
+#elif defined(__hpux) || defined(__VMS)
   static void *(*const volatile memset_v)(void *, int, size_t) = &memset;
   memset_v(v, 0, n);
 #else

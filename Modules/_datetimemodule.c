@@ -4998,6 +4998,10 @@ datetime_from_timet_and_us(PyObject *cls, TM_FUNC f, time_t timet, int us,
      */
 #ifdef MS_WINDOWS
         && (timet - max_fold_seconds > 0)
+#elif defined(__VMS)
+    /* On OpenVMS, a signed time_t is treated as unsigned
+    */
+        && (timet > (time_t)max_fold_seconds)
 #endif
         ) {
         long long probe_seconds, result_seconds, transition;

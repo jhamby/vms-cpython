@@ -51,7 +51,7 @@ _pathseps_with_colon = {f':{s}' for s in path_separators}
 
 # Bootstrap-related code ######################################################
 _CASE_INSENSITIVE_PLATFORMS_STR_KEY = 'win',
-_CASE_INSENSITIVE_PLATFORMS_BYTES_KEY = 'cygwin', 'darwin'
+_CASE_INSENSITIVE_PLATFORMS_BYTES_KEY = 'cygwin', 'darwin', 'OpenVMS'
 _CASE_INSENSITIVE_PLATFORMS =  (_CASE_INSENSITIVE_PLATFORMS_BYTES_KEY
                                 + _CASE_INSENSITIVE_PLATFORMS_STR_KEY)
 
@@ -1513,7 +1513,7 @@ class FileFinder:
             contents = []
         # We store two cached versions, to handle runtime changes of the
         # PYTHONCASEOK environment variable.
-        if not sys.platform.startswith('win'):
+        if not sys.platform.startswith(('win', 'OpenVMS')):
             self._path_cache = set(contents)
         else:
             # Windows users can import modules with case-insensitive file

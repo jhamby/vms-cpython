@@ -49,6 +49,8 @@ import weakref as _weakref
 import _thread
 _allocate_lock = _thread.allocate_lock
 
+_IS_OPENVMS = (_sys.platform == "OpenVMS")
+
 _text_openflags = _os.O_RDWR | _os.O_CREAT | _os.O_EXCL
 if hasattr(_os, 'O_NOFOLLOW'):
     _text_openflags |= _os.O_NOFOLLOW
@@ -245,6 +247,10 @@ def _mkstemp_inner(dir, pre, suf, flags, output_type):
         file = _os.path.join(dir, pre + name + suf)
         _sys.audit("tempfile.mkstemp", file)
         try:
+            if _IS_OPENVMS:
+                # OpenVMS can easly create the file aaa. even if the directory aaa.DIR exists
+                if _os.access(file, _os.F_OK):
+                    continue
             fd = _os.open(file, flags, 0o600)
         except FileExistsError:
             continue    # try again
@@ -353,6 +359,10 @@ def mkdtemp(suffix=None, prefix=None, dir=None):
         file = _os.path.join(dir, prefix + name + suffix)
         _sys.audit("tempfile.mkdtemp", file)
         try:
+            if _IS_OPENVMS:
+                # OpenVMS can easly create the directory aaa.DIR even if the file aaa. exists
+                if _os.access(file, _os.F_OK):
+                    continue
             _os.mkdir(file, 0o700)
         except FileExistsError:
             continue    # try again
@@ -546,7 +556,7 @@ def NamedTemporaryFile(mode='w+b', buffering=-1, encoding=None,
         _os.close(fd)
         raise
 
-if _os.name != 'posix' or _sys.platform == 'cygwin':
+if _os.name != 'posix' or _sys.platform == 'cygwin' or _IS_OPENVMS:
     # On non-POSIX and Cygwin systems, assume that we cannot unlink a file
     # while it is open.
     TemporaryFile = NamedTemporaryFile
