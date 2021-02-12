@@ -17,6 +17,8 @@ from distutils.extension import Extension
 from distutils.util import get_platform
 from distutils import log
 
+_IS_OPENVMS = (sys.platform == "OpenVMS")
+
 from site import USER_BASE
 
 # An extension name is just a dot-separated list of Python NAMEs (ie.
@@ -618,6 +620,8 @@ class build_ext(Command):
         just "swig" -- it should be in the PATH.  Tries a bit harder on
         Windows.
         """
+        if _IS_OPENVMS:
+            return "mcr swig$root:[bin]swig.exe"
         if os.name == "posix":
             return "swig"
         elif os.name == "nt":
@@ -723,6 +727,9 @@ class build_ext(Command):
                 # don't extend ext.libraries, it may be shared with other
                 # extensions, it is a reference to the original list
                 return ext.libraries + [pythonlib]
+        elif _IS_OPENVMS:
+            pythonlib = "/python3_10$root/lib/python3_10$shr.exe"
+            return ext.libraries + [pythonlib]
         else:
             # On Android only the main executable and LD_PRELOADs are considered
             # to be RTLD_GLOBAL, all the dependencies of the main executable

@@ -688,6 +688,17 @@ PyModule_AddIntConstant(PyObject *m, const char *name, long value)
     return res;
 }
 
+PyModule_AddUnsignedLongLongConstant(PyObject *m, const char *name, unsigned long long value)
+{
+    PyObject *obj = PyLong_FromUnsignedLongLong(value);
+    if (!obj) {
+        return -1;
+    }
+    int res = PyModule_AddObjectRef(m, name, obj);
+    Py_DECREF(obj);
+    return res;
+}
+
 int
 PyModule_AddStringConstant(PyObject *m, const char *name, const char *value)
 {

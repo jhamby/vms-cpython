@@ -28,6 +28,7 @@ import sys, os, time, io, re, traceback, warnings, weakref, collections.abc
 from string import Template
 from string import Formatter as StrFormatter
 
+_IS_OPENVMS = (sys.platform == "OpenVMS")
 
 __all__ = ['BASIC_FORMAT', 'BufferingFormatter', 'CRITICAL', 'DEBUG', 'ERROR',
            'FATAL', 'FileHandler', 'Filter', 'Formatter', 'Handler', 'INFO',
@@ -1076,6 +1077,8 @@ class StreamHandler(Handler):
         try:
             if self.stream and hasattr(self.stream, "flush"):
                 self.stream.flush()
+            if self.stream and hasattr(self.stream, "fileno") and _IS_OPENVMS:
+                os.fsync(self.stream.fileno())
         finally:
             self.release()
 

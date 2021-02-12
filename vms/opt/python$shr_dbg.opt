@@ -1240,6 +1240,7 @@ PyCMethod_New=PROCEDURE-
 ! Module modsupport
 SYMBOL_VECTOR=(-
 PyModule_AddIntConstant=PROCEDURE,-
+PyModule_AddUnsignedLon049bkp0$=PROCEDURE,-
 PyModule_AddObject=PROCEDURE,-
 PyModule_AddObjectRef=PROCEDURE,-
 PyModule_AddStringConstant=PROCEDURE,-

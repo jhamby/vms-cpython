@@ -11,6 +11,7 @@ import os
 import sys
 import test.support
 
+_IS_OPENVMS = (sys.platform == "OpenVMS")
 
 def is_multiprocess_flag(arg):
     return arg.startswith('-j') or arg.startswith('--multiprocess')
@@ -44,6 +45,9 @@ def main(regrtest_args):
     args.extend(regrtest_args)
     print(' '.join(args))
     if sys.platform == 'win32':
+        from subprocess import call
+        sys.exit(call(args))
+    elif _IS_OPENVMS:
         from subprocess import call
         sys.exit(call(args))
     else:

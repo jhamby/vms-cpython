@@ -17,11 +17,7 @@ static struct PyModuleDef _accdef_module = {
 
 PyMODINIT_FUNC
 PyInit__accdef(void) {
-    PyObject *m = NULL;
-    char buff[64];
-
-    m = PyModule_Create(&_accdef_module);
-
+    PyObject *m = PyModule_Create(&_accdef_module);
     PyModule_AddIntConstant(m, "ACC_K_TERMLEN", 84);
     PyModule_AddIntConstant(m, "ACC_C_TERMLEN", 84);
     PyModule_AddIntConstant(m, "ACC_K_JOB_LEN", 108);

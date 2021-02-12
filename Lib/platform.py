@@ -603,7 +603,7 @@ def _syscmd_file(target, default=''):
         default in case the command should fail.
 
     """
-    if sys.platform in ('dos', 'win32', 'win16'):
+    if sys.platform in ('dos', 'win32', 'win16', 'OpenVMS'):
         # XXX Others too ?
         return default
 
@@ -736,11 +736,18 @@ class _Processor:
     def get_OpenVMS():
         try:
             import vms_lib
-        except ImportError:
-            pass
-        else:
             csid, cpu_number = vms_lib.getsyi('SYI$_CPU', 0)
             return 'Alpha' if cpu_number >= 128 else 'VAX'
+        except ImportError:
+            try:
+                import vms.lib
+                import vms.syidef
+                from vms.ssdef import SS__NORMAL
+                sts, processor, csid = vms.lib.getsyi(vms.syidef.SYI__ARCH_NAME, None)
+                if sts == SS__NORMAL:
+                    return processor
+            except ImportError:
+                pass
 
     def from_subprocess():
         """

@@ -757,80 +757,80 @@ $(PYTHON_HEADERS)
 # Dynamic modules
 
 LIBDYNLOAD_VMS = -
-[.$(OUT_DIR).$(DYNLOAD_DIR)]_accdef.exe
-! [.$(OUT_DIR).$(DYNLOAD_DIR)]_acldef.exe -
-! [.$(OUT_DIR).$(DYNLOAD_DIR)]_acrdef.exe -
-! [.$(OUT_DIR).$(DYNLOAD_DIR)]_armdef.exe -
-! [.$(OUT_DIR).$(DYNLOAD_DIR)]_brkdef.exe -
-! [.$(OUT_DIR).$(DYNLOAD_DIR)]_capdef.exe -
-! [.$(OUT_DIR).$(DYNLOAD_DIR)]_chpdef.exe -
-! [.$(OUT_DIR).$(DYNLOAD_DIR)]_ciadef.exe -
-! [.$(OUT_DIR).$(DYNLOAD_DIR)]_clidef.exe -
-! [.$(OUT_DIR).$(DYNLOAD_DIR)]_cmbdef.exe -
-! [.$(OUT_DIR).$(DYNLOAD_DIR)]_cvtfnmdef.exe -
-! [.$(OUT_DIR).$(DYNLOAD_DIR)]_dcdef.exe -
-! [.$(OUT_DIR).$(DYNLOAD_DIR)]_decc.exe -
-! [.$(OUT_DIR).$(DYNLOAD_DIR)]_dmtdef.exe -
-! [.$(OUT_DIR).$(DYNLOAD_DIR)]_dpsdef.exe -
-! [.$(OUT_DIR).$(DYNLOAD_DIR)]_dscdef.exe -
-! [.$(OUT_DIR).$(DYNLOAD_DIR)]_dvidef.exe -
-! [.$(OUT_DIR).$(DYNLOAD_DIR)]_dvsdef.exe -
-! [.$(OUT_DIR).$(DYNLOAD_DIR)]_efndef.exe -
-! [.$(OUT_DIR).$(DYNLOAD_DIR)]_eradef.exe -
-! [.$(OUT_DIR).$(DYNLOAD_DIR)]_fabdef.exe -
-! [.$(OUT_DIR).$(DYNLOAD_DIR)]_fdldef.exe -
-! [.$(OUT_DIR).$(DYNLOAD_DIR)]_fpdef.exe -
-! [.$(OUT_DIR).$(DYNLOAD_DIR)]_fscndef.exe -
-! [.$(OUT_DIR).$(DYNLOAD_DIR)]_iccdef.exe -
-! [.$(OUT_DIR).$(DYNLOAD_DIR)]_ile3.exe -
-! [.$(OUT_DIR).$(DYNLOAD_DIR)]_iledef.exe -
-! [.$(OUT_DIR).$(DYNLOAD_DIR)]_impdef.exe -
-! [.$(OUT_DIR).$(DYNLOAD_DIR)]_initdef.exe -
-! [.$(OUT_DIR).$(DYNLOAD_DIR)]_iodef.exe -
-! [.$(OUT_DIR).$(DYNLOAD_DIR)]_issdef.exe -
-! [.$(OUT_DIR).$(DYNLOAD_DIR)]_jbcmsgdef.exe -
-! [.$(OUT_DIR).$(DYNLOAD_DIR)]_jpidef.exe -
-! [.$(OUT_DIR).$(DYNLOAD_DIR)]_kgbdef.exe -
-! [.$(OUT_DIR).$(DYNLOAD_DIR)]_lckdef.exe -
-! [.$(OUT_DIR).$(DYNLOAD_DIR)]_lib.exe -
-! [.$(OUT_DIR).$(DYNLOAD_DIR)]_libclidef.exe -
-! [.$(OUT_DIR).$(DYNLOAD_DIR)]_libdtdef.exe -
-! [.$(OUT_DIR).$(DYNLOAD_DIR)]_libfisdef.exe -
-! [.$(OUT_DIR).$(DYNLOAD_DIR)]_lkidef.exe -
-! [.$(OUT_DIR).$(DYNLOAD_DIR)]_lnmdef.exe -
-! [.$(OUT_DIR).$(DYNLOAD_DIR)]_maildef.exe -
-! [.$(OUT_DIR).$(DYNLOAD_DIR)]_mntdef.exe -
-! [.$(OUT_DIR).$(DYNLOAD_DIR)]_nsadef.exe -
-! [.$(OUT_DIR).$(DYNLOAD_DIR)]_ossdef.exe -
-! [.$(OUT_DIR).$(DYNLOAD_DIR)]_pcbdef.exe -
-! [.$(OUT_DIR).$(DYNLOAD_DIR)]_ppropdef.exe -
-! [.$(OUT_DIR).$(DYNLOAD_DIR)]_pqldef.exe -
-! [.$(OUT_DIR).$(DYNLOAD_DIR)]_prcdef.exe -
-! [.$(OUT_DIR).$(DYNLOAD_DIR)]_prdef.exe -
-! [.$(OUT_DIR).$(DYNLOAD_DIR)]_prvdef.exe -
-! [.$(OUT_DIR).$(DYNLOAD_DIR)]_prxdef.exe -
-! [.$(OUT_DIR).$(DYNLOAD_DIR)]_pscandef.exe -
-! [.$(OUT_DIR).$(DYNLOAD_DIR)]_psldef.exe -
-! [.$(OUT_DIR).$(DYNLOAD_DIR)]_pxbdef.exe -
-! [.$(OUT_DIR).$(DYNLOAD_DIR)]_quidef.exe -
-! [.$(OUT_DIR).$(DYNLOAD_DIR)]_rabdef.exe -
-! [.$(OUT_DIR).$(DYNLOAD_DIR)]_regdef.exe -
-! [.$(OUT_DIR).$(DYNLOAD_DIR)]_rmidef.exe -
-! [.$(OUT_DIR).$(DYNLOAD_DIR)]_rms.exe -
-! [.$(OUT_DIR).$(DYNLOAD_DIR)]_rmsdef.exe -
-! [.$(OUT_DIR).$(DYNLOAD_DIR)]_rsdmdef.exe -
-! [.$(OUT_DIR).$(DYNLOAD_DIR)]_sdvdef.exe -
-! [.$(OUT_DIR).$(DYNLOAD_DIR)]_sjcdef.exe -
-! [.$(OUT_DIR).$(DYNLOAD_DIR)]_ssdef.exe -
-! [.$(OUT_DIR).$(DYNLOAD_DIR)]_statedef.exe -
-! [.$(OUT_DIR).$(DYNLOAD_DIR)]_stenvdef.exe -
-! [.$(OUT_DIR).$(DYNLOAD_DIR)]_stsdef.exe -
-! [.$(OUT_DIR).$(DYNLOAD_DIR)]_syidef.exe -
-! [.$(OUT_DIR).$(DYNLOAD_DIR)]_sys.exe -
-! [.$(OUT_DIR).$(DYNLOAD_DIR)]_uafdef.exe -
-! [.$(OUT_DIR).$(DYNLOAD_DIR)]_uaidef.exe -
-! [.$(OUT_DIR).$(DYNLOAD_DIR)]_rdb.exe -
-! [.$(OUT_DIR).$(DYNLOAD_DIR)]_rec.exe -
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_accdef.exe -
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_acldef.exe -
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_acrdef.exe -
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_armdef.exe -
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_brkdef.exe -
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_capdef.exe -
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_chpdef.exe -
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_ciadef.exe -
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_clidef.exe -
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_cmbdef.exe -
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_cvtfnmdef.exe -
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_dcdef.exe -
+- ! [.$(OUT_DIR).$(DYNLOAD_DIR)]_decc.exe
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_dmtdef.exe -
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_dpsdef.exe -
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_dscdef.exe -
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_dvidef.exe -
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_dvsdef.exe -
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_efndef.exe -
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_eradef.exe -
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_fabdef.exe -
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_fdldef.exe -
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_fpdef.exe -
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_fscndef.exe -
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_iccdef.exe -
+- ! [.$(OUT_DIR).$(DYNLOAD_DIR)]_ile3.exe
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_iledef.exe -
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_impdef.exe -
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_initdef.exe -
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_iodef.exe -
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_issdef.exe -
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_jbcmsgdef.exe -
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_jpidef.exe -
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_kgbdef.exe -
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_lckdef.exe -
+- ! [.$(OUT_DIR).$(DYNLOAD_DIR)]_lib.exe
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_libclidef.exe -
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_libdtdef.exe -
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_libfisdef.exe -
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_lkidef.exe -
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_lnmdef.exe -
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_maildef.exe -
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_mntdef.exe -
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_nsadef.exe -
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_ossdef.exe -
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_pcbdef.exe -
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_ppropdef.exe -
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_pqldef.exe -
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_prcdef.exe -
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_prdef.exe -
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_prvdef.exe -
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_prxdef.exe -
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_pscandef.exe -
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_psldef.exe -
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_pxbdef.exe -
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_quidef.exe -
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_rabdef.exe -
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_regdef.exe -
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_rmidef.exe -
+- ! [.$(OUT_DIR).$(DYNLOAD_DIR)]_rms.exe
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_rmsdef.exe -
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_rsdmdef.exe -
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_sdvdef.exe -
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_sjcdef.exe -
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_ssdef.exe -
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_statedef.exe -
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_stenvdef.exe -
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_stsdef.exe -
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_syidef.exe -
+- ! [.$(OUT_DIR).$(DYNLOAD_DIR)]_sys.exe
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_uafdef.exe -
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_uaidef.exe
+! [.$(OUT_DIR).$(DYNLOAD_DIR)]_rdb.exe
+! [.$(OUT_DIR).$(DYNLOAD_DIR)]_rec.exe
 ! [.$(OUT_DIR).$(DYNLOAD_DIR)]_dtr.exe
 
 
@@ -1531,8 +1531,141 @@ DECIMAL_HEADERS = -
 ############################################################################
 # VMS specific modules
 
-[.$(OBJ_DIR).modules.vms.accdef]_accdef.obm : [.modules.vms.accdef]_accdef.c
+[.$(OBJ_DIR).modules.vms.accdef]_accdef.obm : [.modules.vms.accdef]_accdef.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).modules.vms.acldef]_acldef.obm : [.modules.vms.acldef]_acldef.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).modules.vms.acrdef]_acrdef.obm : [.modules.vms.acrdef]_acrdef.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).modules.vms.armdef]_armdef.obm : [.modules.vms.armdef]_armdef.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).modules.vms.brkdef]_brkdef.obm : [.modules.vms.brkdef]_brkdef.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).modules.vms.capdef]_capdef.obm : [.modules.vms.capdef]_capdef.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).modules.vms.chpdef]_chpdef.obm : [.modules.vms.chpdef]_chpdef.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).modules.vms.ciadef]_ciadef.obm : [.modules.vms.ciadef]_ciadef.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).modules.vms.clidef]_clidef.obm : [.modules.vms.clidef]_clidef.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).modules.vms.cmbdef]_cmbdef.obm : [.modules.vms.cmbdef]_cmbdef.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).modules.vms.cvtfnmdef]_cvtfnmdef.obm : [.modules.vms.cvtfnmdef]_cvtfnmdef.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).modules.vms.dcdef]_dcdef.obm : [.modules.vms.dcdef]_dcdef.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).modules.vms.dmtdef]_dmtdef.obm : [.modules.vms.dmtdef]_dmtdef.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).modules.vms.dpsdef]_dpsdef.obm : [.modules.vms.dpsdef]_dpsdef.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).modules.vms.dscdef]_dscdef.obm : [.modules.vms.dscdef]_dscdef.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).modules.vms.dvidef]_dvidef.obm : [.modules.vms.dvidef]_dvidef.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).modules.vms.dvsdef]_dvsdef.obm : [.modules.vms.dvsdef]_dvsdef.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).modules.vms.efndef]_efndef.obm : [.modules.vms.efndef]_efndef.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).modules.vms.eradef]_eradef.obm : [.modules.vms.eradef]_eradef.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).modules.vms.fabdef]_fabdef.obm : [.modules.vms.fabdef]_fabdef.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).modules.vms.fdldef]_fdldef.obm : [.modules.vms.fdldef]_fdldef.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).modules.vms.fpdef]_fpdef.obm : [.modules.vms.fpdef]_fpdef.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).modules.vms.fscndef]_fscndef.obm : [.modules.vms.fscndef]_fscndef.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).modules.vms.iccdef]_iccdef.obm : [.modules.vms.iccdef]_iccdef.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).modules.vms.iledef]_iledef.obm : [.modules.vms.iledef]_iledef.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).modules.vms.impdef]_impdef.obm : [.modules.vms.impdef]_impdef.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).modules.vms.initdef]_initdef.obm : [.modules.vms.initdef]_initdef.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).modules.vms.iodef]_iodef.obm : [.modules.vms.iodef]_iodef.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).modules.vms.issdef]_issdef.obm : [.modules.vms.issdef]_issdef.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).modules.vms.jbcmsgdef]_jbcmsgdef.obm : [.modules.vms.jbcmsgdef]_jbcmsgdef.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).modules.vms.jpidef]_jpidef.obm : [.modules.vms.jpidef]_jpidef.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).modules.vms.kgbdef]_kgbdef.obm : [.modules.vms.kgbdef]_kgbdef.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).modules.vms.lckdef]_lckdef.obm : [.modules.vms.lckdef]_lckdef.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).modules.vms.libclidef]_libclidef.obm : [.modules.vms.libclidef]_libclidef.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).modules.vms.libdtdef]_libdtdef.obm : [.modules.vms.libdtdef]_libdtdef.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).modules.vms.libfisdef]_libfisdef.obm : [.modules.vms.libfisdef]_libfisdef.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).modules.vms.lkidef]_lkidef.obm : [.modules.vms.lkidef]_lkidef.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).modules.vms.lnmdef]_lnmdef.obm : [.modules.vms.lnmdef]_lnmdef.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).modules.vms.maildef]_maildef.obm : [.modules.vms.maildef]_maildef.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).modules.vms.mntdef]_mntdef.obm : [.modules.vms.mntdef]_mntdef.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).modules.vms.nsadef]_nsadef.obm : [.modules.vms.nsadef]_nsadef.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).modules.vms.ossdef]_ossdef.obm : [.modules.vms.ossdef]_ossdef.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).modules.vms.pcbdef]_pcbdef.obm : [.modules.vms.pcbdef]_pcbdef.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).modules.vms.ppropdef]_ppropdef.obm : [.modules.vms.ppropdef]_ppropdef.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).modules.vms.pqldef]_pqldef.obm : [.modules.vms.pqldef]_pqldef.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).modules.vms.prcdef]_prcdef.obm : [.modules.vms.prcdef]_prcdef.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).modules.vms.prdef]_prdef.obm : [.modules.vms.prdef]_prdef.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).modules.vms.prvdef]_prvdef.obm : [.modules.vms.prvdef]_prvdef.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).modules.vms.prxdef]_prxdef.obm : [.modules.vms.prxdef]_prxdef.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).modules.vms.pscandef]_pscandef.obm : [.modules.vms.pscandef]_pscandef.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).modules.vms.psldef]_psldef.obm : [.modules.vms.psldef]_psldef.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).modules.vms.pxbdef]_pxbdef.obm : [.modules.vms.pxbdef]_pxbdef.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).modules.vms.quidef]_quidef.obm : [.modules.vms.quidef]_quidef.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).modules.vms.rabdef]_rabdef.obm : [.modules.vms.rabdef]_rabdef.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).modules.vms.regdef]_regdef.obm : [.modules.vms.regdef]_regdef.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).modules.vms.rmidef]_rmidef.obm : [.modules.vms.rmidef]_rmidef.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).modules.vms.rmsdef]_rmsdef.obm : [.modules.vms.rmsdef]_rmsdef.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).modules.vms.rsdmdef]_rsdmdef.obm : [.modules.vms.rsdmdef]_rsdmdef.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).modules.vms.sdvdef]_sdvdef.obm : [.modules.vms.sdvdef]_sdvdef.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).modules.vms.sjcdef]_sjcdef.obm : [.modules.vms.sjcdef]_sjcdef.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).modules.vms.ssdef]_ssdef.obm : [.modules.vms.ssdef]_ssdef.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).modules.vms.statedef]_statedef.obm : [.modules.vms.statedef]_statedef.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).modules.vms.stenvdef]_stenvdef.obm : [.modules.vms.stenvdef]_stenvdef.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).modules.vms.stsdef]_stsdef.obm : [.modules.vms.stsdef]_stsdef.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).modules.vms.syidef]_syidef.obm : [.modules.vms.syidef]_syidef.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).modules.vms.uafdef]_uafdef.obm : [.modules.vms.uafdef]_uafdef.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).modules.vms.uaidef]_uaidef.obm : [.modules.vms.uaidef]_uaidef.c $(PYTHON_HEADERS)
+
 [.$(OUT_DIR).$(DYNLOAD_DIR)]_accdef.exe : [.$(OBJ_DIR).modules.vms.accdef]_accdef.obm
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_acldef.exe : [.$(OBJ_DIR).modules.vms.acldef]_acldef.obm
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_acrdef.exe : [.$(OBJ_DIR).modules.vms.acrdef]_acrdef.obm
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_armdef.exe : [.$(OBJ_DIR).modules.vms.armdef]_armdef.obm
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_brkdef.exe : [.$(OBJ_DIR).modules.vms.brkdef]_brkdef.obm
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_capdef.exe : [.$(OBJ_DIR).modules.vms.capdef]_capdef.obm
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_chpdef.exe : [.$(OBJ_DIR).modules.vms.chpdef]_chpdef.obm
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_ciadef.exe : [.$(OBJ_DIR).modules.vms.ciadef]_ciadef.obm
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_clidef.exe : [.$(OBJ_DIR).modules.vms.clidef]_clidef.obm
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_cmbdef.exe : [.$(OBJ_DIR).modules.vms.cmbdef]_cmbdef.obm
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_cvtfnmdef.exe : [.$(OBJ_DIR).modules.vms.cvtfnmdef]_cvtfnmdef.obm
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_dcdef.exe : [.$(OBJ_DIR).modules.vms.dcdef]_dcdef.obm
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_dmtdef.exe : [.$(OBJ_DIR).modules.vms.dmtdef]_dmtdef.obm
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_dpsdef.exe : [.$(OBJ_DIR).modules.vms.dpsdef]_dpsdef.obm
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_dscdef.exe : [.$(OBJ_DIR).modules.vms.dscdef]_dscdef.obm
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_dvidef.exe : [.$(OBJ_DIR).modules.vms.dvidef]_dvidef.obm
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_dvsdef.exe : [.$(OBJ_DIR).modules.vms.dvsdef]_dvsdef.obm
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_efndef.exe : [.$(OBJ_DIR).modules.vms.efndef]_efndef.obm
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_eradef.exe : [.$(OBJ_DIR).modules.vms.eradef]_eradef.obm
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_fabdef.exe : [.$(OBJ_DIR).modules.vms.fabdef]_fabdef.obm
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_fdldef.exe : [.$(OBJ_DIR).modules.vms.fdldef]_fdldef.obm
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_fpdef.exe : [.$(OBJ_DIR).modules.vms.fpdef]_fpdef.obm
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_fscndef.exe : [.$(OBJ_DIR).modules.vms.fscndef]_fscndef.obm
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_iccdef.exe : [.$(OBJ_DIR).modules.vms.iccdef]_iccdef.obm
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_iledef.exe : [.$(OBJ_DIR).modules.vms.iledef]_iledef.obm
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_impdef.exe : [.$(OBJ_DIR).modules.vms.impdef]_impdef.obm
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_initdef.exe : [.$(OBJ_DIR).modules.vms.initdef]_initdef.obm
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_iodef.exe : [.$(OBJ_DIR).modules.vms.iodef]_iodef.obm
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_issdef.exe : [.$(OBJ_DIR).modules.vms.issdef]_issdef.obm
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_jbcmsgdef.exe : [.$(OBJ_DIR).modules.vms.jbcmsgdef]_jbcmsgdef.obm
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_jpidef.exe : [.$(OBJ_DIR).modules.vms.jpidef]_jpidef.obm
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_kgbdef.exe : [.$(OBJ_DIR).modules.vms.kgbdef]_kgbdef.obm
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_lckdef.exe : [.$(OBJ_DIR).modules.vms.lckdef]_lckdef.obm
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_libclidef.exe : [.$(OBJ_DIR).modules.vms.libclidef]_libclidef.obm
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_libdtdef.exe : [.$(OBJ_DIR).modules.vms.libdtdef]_libdtdef.obm
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_libfisdef.exe : [.$(OBJ_DIR).modules.vms.libfisdef]_libfisdef.obm
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_lkidef.exe : [.$(OBJ_DIR).modules.vms.lkidef]_lkidef.obm
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_lnmdef.exe : [.$(OBJ_DIR).modules.vms.lnmdef]_lnmdef.obm
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_maildef.exe : [.$(OBJ_DIR).modules.vms.maildef]_maildef.obm
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_mntdef.exe : [.$(OBJ_DIR).modules.vms.mntdef]_mntdef.obm
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_nsadef.exe : [.$(OBJ_DIR).modules.vms.nsadef]_nsadef.obm
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_ossdef.exe : [.$(OBJ_DIR).modules.vms.ossdef]_ossdef.obm
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_pcbdef.exe : [.$(OBJ_DIR).modules.vms.pcbdef]_pcbdef.obm
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_ppropdef.exe : [.$(OBJ_DIR).modules.vms.ppropdef]_ppropdef.obm
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_pqldef.exe : [.$(OBJ_DIR).modules.vms.pqldef]_pqldef.obm
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_prcdef.exe : [.$(OBJ_DIR).modules.vms.prcdef]_prcdef.obm
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_prdef.exe : [.$(OBJ_DIR).modules.vms.prdef]_prdef.obm
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_prvdef.exe : [.$(OBJ_DIR).modules.vms.prvdef]_prvdef.obm
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_prxdef.exe : [.$(OBJ_DIR).modules.vms.prxdef]_prxdef.obm
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_pscandef.exe : [.$(OBJ_DIR).modules.vms.pscandef]_pscandef.obm
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_psldef.exe : [.$(OBJ_DIR).modules.vms.psldef]_psldef.obm
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_pxbdef.exe : [.$(OBJ_DIR).modules.vms.pxbdef]_pxbdef.obm
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_quidef.exe : [.$(OBJ_DIR).modules.vms.quidef]_quidef.obm
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_rabdef.exe : [.$(OBJ_DIR).modules.vms.rabdef]_rabdef.obm
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_regdef.exe : [.$(OBJ_DIR).modules.vms.regdef]_regdef.obm
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_rmidef.exe : [.$(OBJ_DIR).modules.vms.rmidef]_rmidef.obm
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_rmsdef.exe : [.$(OBJ_DIR).modules.vms.rmsdef]_rmsdef.obm
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_rsdmdef.exe : [.$(OBJ_DIR).modules.vms.rsdmdef]_rsdmdef.obm
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_sdvdef.exe : [.$(OBJ_DIR).modules.vms.sdvdef]_sdvdef.obm
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_sjcdef.exe : [.$(OBJ_DIR).modules.vms.sjcdef]_sjcdef.obm
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_ssdef.exe : [.$(OBJ_DIR).modules.vms.ssdef]_ssdef.obm
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_statedef.exe : [.$(OBJ_DIR).modules.vms.statedef]_statedef.obm
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_stenvdef.exe : [.$(OBJ_DIR).modules.vms.stenvdef]_stenvdef.obm
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_stsdef.exe : [.$(OBJ_DIR).modules.vms.stsdef]_stsdef.obm
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_syidef.exe : [.$(OBJ_DIR).modules.vms.syidef]_syidef.obm
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_uafdef.exe : [.$(OBJ_DIR).modules.vms.uafdef]_uafdef.obm
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_uaidef.exe : [.$(OBJ_DIR).modules.vms.uaidef]_uaidef.obm
 
 ############################################################################
 # testembed EXE
