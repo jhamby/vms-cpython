@@ -5,7 +5,7 @@ PyDoc_STRVAR(doc__rmsdef,
 
 static struct PyModuleDef _rmsdef_module = {
     PyModuleDef_HEAD_INIT,
-    "rmsdef",
+    "_rmsdef",
     doc__rmsdef,
     -1,
     NULL,

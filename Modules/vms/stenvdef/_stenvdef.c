@@ -5,7 +5,7 @@ PyDoc_STRVAR(doc__stenvdef,
 
 static struct PyModuleDef _stenvdef_module = {
     PyModuleDef_HEAD_INIT,
-    "stenvdef",
+    "_stenvdef",
     doc__stenvdef,
     -1,
     NULL,

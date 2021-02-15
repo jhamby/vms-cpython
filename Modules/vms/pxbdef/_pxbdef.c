@@ -5,7 +5,7 @@ PyDoc_STRVAR(doc__pxbdef,
 
 static struct PyModuleDef _pxbdef_module = {
     PyModuleDef_HEAD_INIT,
-    "pxbdef",
+    "_pxbdef",
     doc__pxbdef,
     -1,
     NULL,

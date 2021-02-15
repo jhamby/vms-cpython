@@ -5,7 +5,7 @@ PyDoc_STRVAR(doc__pcbdef,
 
 static struct PyModuleDef _pcbdef_module = {
     PyModuleDef_HEAD_INIT,
-    "pcbdef",
+    "_pcbdef",
     doc__pcbdef,
     -1,
     NULL,

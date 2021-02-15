@@ -5,7 +5,7 @@ PyDoc_STRVAR(doc__iledef,
 
 static struct PyModuleDef _iledef_module = {
     PyModuleDef_HEAD_INIT,
-    "iledef",
+    "_iledef",
     doc__iledef,
     -1,
     NULL,

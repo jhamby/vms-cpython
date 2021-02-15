@@ -5,7 +5,7 @@ PyDoc_STRVAR(doc__eradef,
 
 static struct PyModuleDef _eradef_module = {
     PyModuleDef_HEAD_INIT,
-    "eradef",
+    "_eradef",
     doc__eradef,
     -1,
     NULL,

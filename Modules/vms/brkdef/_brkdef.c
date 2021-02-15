@@ -5,7 +5,7 @@ PyDoc_STRVAR(doc__brkdef,
 
 static struct PyModuleDef _brkdef_module = {
     PyModuleDef_HEAD_INIT,
-    "brkdef",
+    "_brkdef",
     doc__brkdef,
     -1,
     NULL,

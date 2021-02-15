@@ -5,7 +5,7 @@ PyDoc_STRVAR(doc__regdef,
 
 static struct PyModuleDef _regdef_module = {
     PyModuleDef_HEAD_INIT,
-    "regdef",
+    "_regdef",
     doc__regdef,
     -1,
     NULL,

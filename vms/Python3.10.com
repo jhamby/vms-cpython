@@ -21,22 +21,22 @@ $ vms_pat = prj_pat + ".vms]"
 $ dyn_pat = prj_pat + ".out.'CONFIG'.lib-dynload...]"
 $ @'com_pat'Python3^.10^.def.com
 $
-$ pipe delete/tree python3_10$root:[000000...]*.*;* | copy SYS$INPUT nl:
+$ pipe delete/tree python$root:[000000...]*.*;* | copy SYS$INPUT nl:
 $
-$ backup 'bld_pat'python3^.10.exe python3_10$root:[bin]
+$ backup 'bld_pat'python3^.10.exe python$root:[bin]
 $
-$ backup 'inc_pat'*.h python3_10$root:[include]
-$ backup 'cpy_pat'*.h python3_10$root:[include.cpython]
+$ backup 'inc_pat'*.h python$root:[include]
+$ backup 'cpy_pat'*.h python$root:[include.cpython]
 $
-$ backup 'lib_pat'*.* python3_10$root:[lib.python3^.10...]
-$ backup 'vms_py_pat'*.py python3_10$root:[lib.python3^.10.vms]
-$ backup 'rdb_py_pat'*.py python3_10$root:[lib.python3^.10]
-$ backup 'bld_pat'python3_10$shr.exe python3_10$root:[lib]
+$ backup 'lib_pat'*.* python$root:[lib.python3^.10...]
+$ backup 'vms_py_pat'*.py python$root:[lib.python3^.10.vms]
+$ backup 'rdb_py_pat'*.py python$root:[lib.python3^.10]
+$ backup 'bld_pat'python$shr.exe python$root:[lib]
 $
-$ backup 'vms_pat'python$define_root.com python3_10$root:[000000]
-$ backup 'vms_pat'python$pcsi_preconfigure.com python3_10$root:[000000]
-$ backup 'vms_pat'python$startup.com python3_10$root:[000000]
-$ backup 'vms_pat'python$shutdown.com python3_10$root:[000000]
+$ backup 'vms_pat'python$define_root.com python$root:[000000]
+$ backup 'vms_pat'python$pcsi_preconfigure.com python$root:[000000]
+$ backup 'vms_pat'python$startup.com python$root:[000000]
+$ backup 'vms_pat'python$shutdown.com python$root:[000000]
 $
-$ backup 'dyn_pat'*.* python3_10$root:[lib.python3^.10.lib-dynload...]*.*
-$ backup 'vms_pat'_sysconfigdata__OpenVMS_cpython-3a-ia64-openvms.py python3_10$root:[lib.python3^.10]
+$ backup 'dyn_pat'*.* python$root:[lib.python3^.10.lib-dynload...]*.*
+$ backup 'vms_pat'_sysconfigdata__OpenVMS_cpython-3a-ia64-openvms.py python$root:[lib.python3^.10]

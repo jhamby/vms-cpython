@@ -3,6 +3,9 @@
 
 #define PY_SSIZE_T_CLEAN
 
+#include "Python.h"
+#include "structmember.h"
+
 #define __NEW_STARLET
 #include <ssdef.h>
 #include <stsdef.h>
@@ -12,9 +15,6 @@
 #include <ctype.h>
 #include <string.h>
 #include <rms.h>
-
-#include "Python.h"
-#include "structmember.h"
 
 #define PYRMS_M_OPEN 1
 
@@ -1467,11 +1467,11 @@ PyMODINIT_FUNC PyInit__rms(void)
     PyDict_SetItemString(dict, "__doc__", str);
 
     if (RMS_error == NULL) {
-	if ((RMS_error =
-	     PyErr_NewException("vms.rms.error", PyExc_IOError,
-				dict)) == NULL) {
-	    return (NULL);
-	}
+        if ((RMS_error =
+                PyErr_NewException("vms.rms.error", PyExc_IOError,
+                    dict)) == NULL) {
+            return (NULL);
+        }
     }
 
     Py_XDECREF(dict);

@@ -5,7 +5,7 @@ PyDoc_STRVAR(doc__dvidef,
 
 static struct PyModuleDef _dvidef_module = {
     PyModuleDef_HEAD_INIT,
-    "dvidef",
+    "_dvidef",
     doc__dvidef,
     -1,
     NULL,

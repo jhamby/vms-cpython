@@ -466,7 +466,7 @@ if _os.name == "nt":
 elif _sys.platform == "cygwin":
     pythonapi = PyDLL("libpython%d.%d.dll" % _sys.version_info[:2])
 elif _IS_OPENVMS:
-    pythonapi = PyDLL("python3_10$shr")
+    pythonapi = PyDLL("python$shr")
 else:
     pythonapi = PyDLL(None)
 

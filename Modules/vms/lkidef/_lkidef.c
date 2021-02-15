@@ -5,7 +5,7 @@ PyDoc_STRVAR(doc__lkidef,
 
 static struct PyModuleDef _lkidef_module = {
     PyModuleDef_HEAD_INIT,
-    "lkidef",
+    "_lkidef",
     doc__lkidef,
     -1,
     NULL,

@@ -5,7 +5,7 @@ PyDoc_STRVAR(doc__maildef,
 
 static struct PyModuleDef _maildef_module = {
     PyModuleDef_HEAD_INIT,
-    "maildef",
+    "_maildef",
     doc__maildef,
     -1,
     NULL,

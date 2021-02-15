@@ -5,7 +5,7 @@ PyDoc_STRVAR(doc__libfisdef,
 
 static struct PyModuleDef _libfisdef_module = {
     PyModuleDef_HEAD_INIT,
-    "libfisdef",
+    "_libfisdef",
     doc__libfisdef,
     -1,
     NULL,

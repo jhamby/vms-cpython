@@ -5,7 +5,7 @@ PyDoc_STRVAR(doc__libclidef,
 
 static struct PyModuleDef _libclidef_module = {
     PyModuleDef_HEAD_INIT,
-    "libclidef",
+    "_libclidef",
     doc__libclidef,
     -1,
     NULL,

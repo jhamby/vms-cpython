@@ -5,7 +5,7 @@ PyDoc_STRVAR(doc__fscndef,
 
 static struct PyModuleDef _fscndef_module = {
     PyModuleDef_HEAD_INIT,
-    "fscndef",
+    "_fscndef",
     doc__fscndef,
     -1,
     NULL,

@@ -5,7 +5,7 @@ PyDoc_STRVAR(doc__jbcmsgdef,
 
 static struct PyModuleDef _jbcmsgdef_module = {
     PyModuleDef_HEAD_INIT,
-    "jbcmsgdef",
+    "_jbcmsgdef",
     doc__jbcmsgdef,
     -1,
     NULL,

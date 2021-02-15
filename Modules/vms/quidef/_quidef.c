@@ -5,7 +5,7 @@ PyDoc_STRVAR(doc__quidef,
 
 static struct PyModuleDef _quidef_module = {
     PyModuleDef_HEAD_INIT,
-    "quidef",
+    "_quidef",
     doc__quidef,
     -1,
     NULL,

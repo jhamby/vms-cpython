@@ -5,7 +5,7 @@ PyDoc_STRVAR(doc__cvtfnmdef,
 
 static struct PyModuleDef _cvtfnmdef_module = {
     PyModuleDef_HEAD_INIT,
-    "cvtfnmdef",
+    "_cvtfnmdef",
     doc__cvtfnmdef,
     -1,
     NULL,

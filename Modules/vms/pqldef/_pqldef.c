@@ -5,7 +5,7 @@ PyDoc_STRVAR(doc__pqldef,
 
 static struct PyModuleDef _pqldef_module = {
     PyModuleDef_HEAD_INIT,
-    "pqldef",
+    "_pqldef",
     doc__pqldef,
     -1,
     NULL,

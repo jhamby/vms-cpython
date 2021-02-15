@@ -5,7 +5,7 @@ PyDoc_STRVAR(doc__rabdef,
 
 static struct PyModuleDef _rabdef_module = {
     PyModuleDef_HEAD_INIT,
-    "rabdef",
+    "_rabdef",
     doc__rabdef,
     -1,
     NULL,

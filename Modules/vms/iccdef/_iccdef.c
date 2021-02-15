@@ -5,7 +5,7 @@ PyDoc_STRVAR(doc__iccdef,
 
 static struct PyModuleDef _iccdef_module = {
     PyModuleDef_HEAD_INIT,
-    "iccdef",
+    "_iccdef",
     doc__iccdef,
     -1,
     NULL,

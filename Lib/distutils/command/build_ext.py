@@ -728,7 +728,7 @@ class build_ext(Command):
                 # extensions, it is a reference to the original list
                 return ext.libraries + [pythonlib]
         elif _IS_OPENVMS:
-            pythonlib = "/python3_10$root/lib/python3_10$shr.exe"
+            pythonlib = "/python$root/lib/python$shr.exe"
             return ext.libraries + [pythonlib]
         else:
             # On Android only the main executable and LD_PRELOADs are considered

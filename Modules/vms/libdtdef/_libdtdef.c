@@ -5,7 +5,7 @@ PyDoc_STRVAR(doc__libdtdef,
 
 static struct PyModuleDef _libdtdef_module = {
     PyModuleDef_HEAD_INIT,
-    "libdtdef",
+    "_libdtdef",
     doc__libdtdef,
     -1,
     NULL,

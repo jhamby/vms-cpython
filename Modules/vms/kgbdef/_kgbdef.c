@@ -5,7 +5,7 @@ PyDoc_STRVAR(doc__kgbdef,
 
 static struct PyModuleDef _kgbdef_module = {
     PyModuleDef_HEAD_INIT,
-    "kgbdef",
+    "_kgbdef",
     doc__kgbdef,
     -1,
     NULL,

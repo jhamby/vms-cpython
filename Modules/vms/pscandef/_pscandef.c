@@ -5,7 +5,7 @@ PyDoc_STRVAR(doc__pscandef,
 
 static struct PyModuleDef _pscandef_module = {
     PyModuleDef_HEAD_INIT,
-    "pscandef",
+    "_pscandef",
     doc__pscandef,
     -1,
     NULL,

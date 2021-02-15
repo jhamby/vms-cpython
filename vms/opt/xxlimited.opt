@@ -1,4 +1,4 @@
 sys$library:pthread$rtl.exe/SHARE
-python$build_out:[000000]python3_10$shr.exe/SHARE
+python$build_out:[000000]python$shr.exe/SHARE
 CASE_SENSITIVE=YES
 SYMBOL_VECTOR=(PyInit_xxlimited=PROCEDURE)

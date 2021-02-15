@@ -5,7 +5,7 @@ PyDoc_STRVAR(doc__rmidef,
 
 static struct PyModuleDef _rmidef_module = {
     PyModuleDef_HEAD_INIT,
-    "rmidef",
+    "_rmidef",
     doc__rmidef,
     -1,
     NULL,

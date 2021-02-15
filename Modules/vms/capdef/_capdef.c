@@ -5,7 +5,7 @@ PyDoc_STRVAR(doc__capdef,
 
 static struct PyModuleDef _capdef_module = {
     PyModuleDef_HEAD_INIT,
-    "capdef",
+    "_capdef",
     doc__capdef,
     -1,
     NULL,

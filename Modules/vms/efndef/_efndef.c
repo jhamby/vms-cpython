@@ -5,7 +5,7 @@ PyDoc_STRVAR(doc__efndef,
 
 static struct PyModuleDef _efndef_module = {
     PyModuleDef_HEAD_INIT,
-    "efndef",
+    "_efndef",
     doc__efndef,
     -1,
     NULL,

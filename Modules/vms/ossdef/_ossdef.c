@@ -5,7 +5,7 @@ PyDoc_STRVAR(doc__ossdef,
 
 static struct PyModuleDef _ossdef_module = {
     PyModuleDef_HEAD_INIT,
-    "ossdef",
+    "_ossdef",
     doc__ossdef,
     -1,
     NULL,

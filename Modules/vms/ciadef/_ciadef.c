@@ -5,7 +5,7 @@ PyDoc_STRVAR(doc__ciadef,
 
 static struct PyModuleDef _ciadef_module = {
     PyModuleDef_HEAD_INIT,
-    "ciadef",
+    "_ciadef",
     doc__ciadef,
     -1,
     NULL,

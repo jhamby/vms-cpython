@@ -750,7 +750,7 @@ $(PYTHON_HEADERS)
 
 ############################################################################
 # Shared library
-[.$(OUT_DIR)]python3_10$shr.exe : [.$(OUT_DIR)]libpython3^.10.olb
+[.$(OUT_DIR)]python$shr.exe : [.$(OUT_DIR)]libpython3^.10.olb
     $(LINK)$(LINK_FLAGS)/SHARE=python$build_out:[000000]$(NOTDIR $(MMS$TARGET_NAME)).exe [.vms.opt]$(PYTHON$SHR_OPT).opt/OPT
 
 ############################################################################
@@ -769,7 +769,6 @@ LIBDYNLOAD_VMS = -
 [.$(OUT_DIR).$(DYNLOAD_DIR)]_cmbdef.exe -
 [.$(OUT_DIR).$(DYNLOAD_DIR)]_cvtfnmdef.exe -
 [.$(OUT_DIR).$(DYNLOAD_DIR)]_dcdef.exe -
-- ! [.$(OUT_DIR).$(DYNLOAD_DIR)]_decc.exe
 [.$(OUT_DIR).$(DYNLOAD_DIR)]_dmtdef.exe -
 [.$(OUT_DIR).$(DYNLOAD_DIR)]_dpsdef.exe -
 [.$(OUT_DIR).$(DYNLOAD_DIR)]_dscdef.exe -
@@ -782,7 +781,6 @@ LIBDYNLOAD_VMS = -
 [.$(OUT_DIR).$(DYNLOAD_DIR)]_fpdef.exe -
 [.$(OUT_DIR).$(DYNLOAD_DIR)]_fscndef.exe -
 [.$(OUT_DIR).$(DYNLOAD_DIR)]_iccdef.exe -
-- ! [.$(OUT_DIR).$(DYNLOAD_DIR)]_ile3.exe
 [.$(OUT_DIR).$(DYNLOAD_DIR)]_iledef.exe -
 [.$(OUT_DIR).$(DYNLOAD_DIR)]_impdef.exe -
 [.$(OUT_DIR).$(DYNLOAD_DIR)]_initdef.exe -
@@ -792,7 +790,6 @@ LIBDYNLOAD_VMS = -
 [.$(OUT_DIR).$(DYNLOAD_DIR)]_jpidef.exe -
 [.$(OUT_DIR).$(DYNLOAD_DIR)]_kgbdef.exe -
 [.$(OUT_DIR).$(DYNLOAD_DIR)]_lckdef.exe -
-- ! [.$(OUT_DIR).$(DYNLOAD_DIR)]_lib.exe
 [.$(OUT_DIR).$(DYNLOAD_DIR)]_libclidef.exe -
 [.$(OUT_DIR).$(DYNLOAD_DIR)]_libdtdef.exe -
 [.$(OUT_DIR).$(DYNLOAD_DIR)]_libfisdef.exe -
@@ -816,7 +813,6 @@ LIBDYNLOAD_VMS = -
 [.$(OUT_DIR).$(DYNLOAD_DIR)]_rabdef.exe -
 [.$(OUT_DIR).$(DYNLOAD_DIR)]_regdef.exe -
 [.$(OUT_DIR).$(DYNLOAD_DIR)]_rmidef.exe -
-- ! [.$(OUT_DIR).$(DYNLOAD_DIR)]_rms.exe
 [.$(OUT_DIR).$(DYNLOAD_DIR)]_rmsdef.exe -
 [.$(OUT_DIR).$(DYNLOAD_DIR)]_rsdmdef.exe -
 [.$(OUT_DIR).$(DYNLOAD_DIR)]_sdvdef.exe -
@@ -826,9 +822,15 @@ LIBDYNLOAD_VMS = -
 [.$(OUT_DIR).$(DYNLOAD_DIR)]_stenvdef.exe -
 [.$(OUT_DIR).$(DYNLOAD_DIR)]_stsdef.exe -
 [.$(OUT_DIR).$(DYNLOAD_DIR)]_syidef.exe -
-- ! [.$(OUT_DIR).$(DYNLOAD_DIR)]_sys.exe
 [.$(OUT_DIR).$(DYNLOAD_DIR)]_uafdef.exe -
-[.$(OUT_DIR).$(DYNLOAD_DIR)]_uaidef.exe
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_uaidef.exe -
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_rms.exe -
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_decc.exe -
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_lib.exe
+
+! [.$(OUT_DIR).$(DYNLOAD_DIR)]_ile3.exe
+! [.$(OUT_DIR).$(DYNLOAD_DIR)]_lib.exe
+! [.$(OUT_DIR).$(DYNLOAD_DIR)]_sys.exe
 ! [.$(OUT_DIR).$(DYNLOAD_DIR)]_rdb.exe
 ! [.$(OUT_DIR).$(DYNLOAD_DIR)]_rec.exe
 ! [.$(OUT_DIR).$(DYNLOAD_DIR)]_dtr.exe
@@ -1599,6 +1601,10 @@ DECIMAL_HEADERS = -
 [.$(OBJ_DIR).modules.vms.uafdef]_uafdef.obm : [.modules.vms.uafdef]_uafdef.c $(PYTHON_HEADERS)
 [.$(OBJ_DIR).modules.vms.uaidef]_uaidef.obm : [.modules.vms.uaidef]_uaidef.c $(PYTHON_HEADERS)
 
+[.$(OBJ_DIR).modules.vms.rms]_rms.obm : [.modules.vms.rms]_rms.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).modules.vms.decc]_decc.obm : [.modules.vms.decc]_decc.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).modules.vms.lib]_lib.obm : [.modules.vms.lib]_lib.c $(PYTHON_HEADERS)
+
 [.$(OUT_DIR).$(DYNLOAD_DIR)]_accdef.exe : [.$(OBJ_DIR).modules.vms.accdef]_accdef.obm
 [.$(OUT_DIR).$(DYNLOAD_DIR)]_acldef.exe : [.$(OBJ_DIR).modules.vms.acldef]_acldef.obm
 [.$(OUT_DIR).$(DYNLOAD_DIR)]_acrdef.exe : [.$(OBJ_DIR).modules.vms.acrdef]_acrdef.obm
@@ -1667,10 +1673,14 @@ DECIMAL_HEADERS = -
 [.$(OUT_DIR).$(DYNLOAD_DIR)]_uafdef.exe : [.$(OBJ_DIR).modules.vms.uafdef]_uafdef.obm
 [.$(OUT_DIR).$(DYNLOAD_DIR)]_uaidef.exe : [.$(OBJ_DIR).modules.vms.uaidef]_uaidef.obm
 
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_rms.exe : [.$(OBJ_DIR).modules.vms.rms]_rms.obm
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_decc.exe : [.$(OBJ_DIR).modules.vms.decc]_decc.obm
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_lib.exe : [.$(OBJ_DIR).modules.vms.lib]_lib.obm
+
 ############################################################################
 # testembed EXE
 [.$(OBJ_DIR).Programs]_testembed.obc : [.Programs]_testembed.c $(PYTHON_HEADERS)
-[.$(OUT_DIR)]_testembed.exe : [.$(OBJ_DIR).Programs]_testembed.obc,[.$(OUT_DIR)]python3_10$shr.exe
+[.$(OUT_DIR)]_testembed.exe : [.$(OBJ_DIR).Programs]_testembed.obc,[.$(OUT_DIR)]python$shr.exe
    @ pipe create/dir $(DIR $(MMS$TARGET)) | copy SYS$INPUT nl:
     $(LINK)$(LINK_FLAGS)/EXECUTABLE=python$build_out:[000000]$(NOTDIR $(MMS$TARGET_NAME)).exe $(MMS$SOURCE),[.vms.opt]$(NOTDIR $(MMS$TARGET_NAME)).opt/OPT
 
@@ -1679,6 +1689,6 @@ DECIMAL_HEADERS = -
 [.$(OBJ_DIR).vms]vms_crtl_init.obc : [.vms]vms_crtl_init.c
 [.$(OBJ_DIR).Programs]python.obc : [.Programs]python.c $(PYTHON_HEADERS)
 
-[.$(OUT_DIR)]python3^.10.exe : [.$(OBJ_DIR).Programs]python.obc,[.$(OBJ_DIR).vms]vms_crtl_init.obc,[.$(OUT_DIR)]python3_10$shr.exe
+[.$(OUT_DIR)]python3^.10.exe : [.$(OBJ_DIR).Programs]python.obc,[.$(OBJ_DIR).vms]vms_crtl_init.obc,[.$(OUT_DIR)]python$shr.exe
    @ pipe create/dir $(DIR $(MMS$TARGET)) | copy SYS$INPUT nl:
     $(LINK)$(LINK_FLAGS)/THREADS/EXECUTABLE=python$build_out:[000000]$(NOTDIR $(MMS$TARGET_NAME)).exe [.$(OBJ_DIR).vms]vms_crtl_init.obc,[.$(OBJ_DIR).Programs]python.obc,[.vms.opt]$(NOTDIR $(MMS$TARGET_NAME)).opt/OPT

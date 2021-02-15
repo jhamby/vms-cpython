@@ -5,7 +5,7 @@ PyDoc_STRVAR(doc__jpidef,
 
 static struct PyModuleDef _jpidef_module = {
     PyModuleDef_HEAD_INIT,
-    "jpidef",
+    "_jpidef",
     doc__jpidef,
     -1,
     NULL,

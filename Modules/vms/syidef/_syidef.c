@@ -5,7 +5,7 @@ PyDoc_STRVAR(doc__syidef,
 
 static struct PyModuleDef _syidef_module = {
     PyModuleDef_HEAD_INIT,
-    "syidef",
+    "_syidef",
     doc__syidef,
     -1,
     NULL,

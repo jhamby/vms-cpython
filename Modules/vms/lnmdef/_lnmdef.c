@@ -5,7 +5,7 @@ PyDoc_STRVAR(doc__lnmdef,
 
 static struct PyModuleDef _lnmdef_module = {
     PyModuleDef_HEAD_INIT,
-    "lnmdef",
+    "_lnmdef",
     doc__lnmdef,
     -1,
     NULL,

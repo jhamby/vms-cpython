@@ -5,7 +5,7 @@ PyDoc_STRVAR(doc__acldef,
 
 static struct PyModuleDef _acldef_module = {
     PyModuleDef_HEAD_INIT,
-    "acldef",
+    "_acldef",
     doc__acldef,
     -1,
     NULL,

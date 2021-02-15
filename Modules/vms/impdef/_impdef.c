@@ -5,7 +5,7 @@ PyDoc_STRVAR(doc__impdef,
 
 static struct PyModuleDef _impdef_module = {
     PyModuleDef_HEAD_INIT,
-    "impdef",
+    "_impdef",
     doc__impdef,
     -1,
     NULL,

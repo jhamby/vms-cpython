@@ -5,7 +5,7 @@ PyDoc_STRVAR(doc__uaidef,
 
 static struct PyModuleDef _uaidef_module = {
     PyModuleDef_HEAD_INIT,
-    "uaidef",
+    "_uaidef",
     doc__uaidef,
     -1,
     NULL,
