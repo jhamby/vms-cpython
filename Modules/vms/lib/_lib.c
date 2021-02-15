@@ -27,74 +27,151 @@
 
 
 // unsigned int _date_time(char **dt)
-// {
-//     char val[32];
-//     struct dsc$descriptor_s val_dsc;
-//     unsigned int status;
+static PyObject*
+LIB_date_time(
+    PyObject * self,
+    PyObject * args)
+{
+    char buffer[32];
+    struct dsc$descriptor_s val_dsc;
 
-//     assert(dt);
+    val_dsc.dsc$w_length = sizeof(buffer) - 1;
+    val_dsc.dsc$b_class = DSC$K_CLASS_S;
+    val_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
+    val_dsc.dsc$a_pointer = buffer;
 
-//     val_dsc.dsc$w_length = sizeof(val) - 1;
-//     val_dsc.dsc$b_class = DSC$K_CLASS_S;
-//     val_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-//     val_dsc.dsc$a_pointer = val;
+    int status = 0;
 
-//     status = lib$date_time(&val_dsc);
+    Py_BEGIN_ALLOW_THREADS
 
-//     if (OKAY(status)) {
-//         val[23] = '\0';
-//         *dt = strdup(val);
-//         assert(*dt);
-//     } else {
-//         *dt = strdup(nil);
-//     	assert(*dt);
-//     }
+    status = lib$date_time(&val_dsc);
 
-//     return (status);
-// }
+    Py_END_ALLOW_THREADS
+
+    if (!$VMS_STATUS_SUCCESS(status)) {
+        buffer[0] = 0;
+    } else {
+        buffer[23] = 0;
+    }
+
+    PyObject *pResultList = PyList_New(2);
+    if (!pResultList) {
+        Py_RETURN_NONE;
+    }
+    if (PyList_SetItem(pResultList, 0, PyLong_FromLong(status))) {
+        Py_DECREF(pResultList);
+        Py_RETURN_NONE;
+    }
+    if (PyList_SetItem(pResultList, 1, PyUnicode_FromString(buffer))) {
+        Py_DECREF(pResultList);
+        Py_RETURN_NONE;
+    }
+    return pResultList;
+}
 
 
 // unsigned int _free_ef(unsigned int efn)
-// {
-//     return (lib$free_ef(&efn));
-// }
+static PyObject*
+LIB_free_ef(
+    PyObject * self,
+    PyObject * args)
+{
+    int     efn = 0, *pefn = NULL;
+    ConvertArgToLong(args, efn, "free_ef");
 
+    int status = 0;
+
+    Py_BEGIN_ALLOW_THREADS
+
+    status = lib$free_ef(&efn);
+
+    Py_END_ALLOW_THREADS
+
+    return PyLong_FromLong(status);
+}
 
 // unsigned int _get_ef(unsigned int *efn)
-// {
-//     assert(efn);
-//     return (lib$get_ef(efn));
-// }
+static PyObject*
+LIB_get_ef(
+    PyObject * self,
+    PyObject * args)
+{
+    long efn = 0;
+    int status = 0;
 
+    Py_BEGIN_ALLOW_THREADS
+
+    status = lib$get_ef(&efn);
+
+    Py_END_ALLOW_THREADS
+    PyObject *pResultList = PyList_New(2);
+    if (!pResultList) {
+        Py_RETURN_NONE;
+    }
+    if (PyList_SetItem(pResultList, 0, PyLong_FromLong(status))) {
+        Py_DECREF(pResultList);
+        Py_RETURN_NONE;
+    }
+    if (PyList_SetItem(pResultList, 1, PyLong_FromLong(efn))) {
+        Py_DECREF(pResultList);
+        Py_RETURN_NONE;
+    }
+    return pResultList;
+}
 
 // unsigned int _get_hostname(char **hostname, unsigned int flags)
-// {
-//     char val[256];
-//     struct dsc$descriptor_s val_dsc;
-//     unsigned int status;
-//     unsigned short len;
+static PyObject*
+LIB_get_hostname(
+    PyObject *self,
+    PyObject *const *args,
+    Py_ssize_t nargs)
+{
 
-//     assert(hostname);
+    if (!_PyArg_CheckPositional("get_hostname", nargs, 0, 1)) {
+        Py_RETURN_NONE;
+    }
 
-//     val_dsc.dsc$w_length = sizeof(val) - 1;
-//     val_dsc.dsc$b_class = DSC$K_CLASS_S;
-//     val_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-//     val_dsc.dsc$a_pointer = val;
+    unsigned long flags = 0, *pflags = NULL;
+    if (nargs > 0 && args[0] != Py_None) {
+        ConvertArgToLong(args[0], flags, "get_hostname");
+    }
 
-//     status = lib$get_hostname(&val_dsc, &len, flags);
+    char buffer[256];
+    struct dsc$descriptor_s val_dsc;
+    val_dsc.dsc$w_length = sizeof(buffer) - 1;
+    val_dsc.dsc$b_class = DSC$K_CLASS_S;
+    val_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
+    val_dsc.dsc$a_pointer = buffer;
 
-//     if (OKAY(status)) {
-//         val[len] = '\0';
-//         *hostname = strdup(val);
-//         assert(*hostname);
-//     } else {
-//         *hostname = strdup(nil);
-// 	    assert(*hostname);
-//     }
+    int status = 0;
+    int result_len = 0;
 
-//     return (status);
-// }
+    Py_BEGIN_ALLOW_THREADS
 
+    status = lib$get_hostname(&val_dsc, &result_len, flags);
+
+    Py_END_ALLOW_THREADS
+
+    if (!$VMS_STATUS_SUCCESS(status)) {
+        result_len = 0;
+    }
+
+    buffer[result_len] = 0;
+
+    PyObject *pResultList = PyList_New(2);
+    if (!pResultList) {
+        Py_RETURN_NONE;
+    }
+    if (PyList_SetItem(pResultList, 0, PyLong_FromLong(status))) {
+        Py_DECREF(pResultList);
+        Py_RETURN_NONE;
+    }
+    if (PyList_SetItem(pResultList, 1, PyUnicode_FromString(buffer))) {
+        Py_DECREF(pResultList);
+        Py_RETURN_NONE;
+    }
+    return pResultList;
+}
 
 // unsigned int _getjpi(int item, unsigned int *pid, char *prn, char **ret)
 static PyObject*
@@ -668,6 +745,14 @@ LIB_delete_symbol(
 */
 
 static PyMethodDef _module_methods[] = {
+    {"date_time", (PyCFunction) LIB_date_time, METH_NOARGS,
+        PyDoc_STR("date_time()->[status: number, datetime: str]   Returns current date and time")},
+    {"free_ef", (PyCFunction) LIB_free_ef, METH_O,
+        PyDoc_STR("free_ef(ef: number)->status: number   Frees event flag")},
+    {"get_ef", (PyCFunction) LIB_get_ef, METH_NOARGS,
+        PyDoc_STR("get_ef()->[status: number, ef: number]   Returns event flag")},
+    {"get_hostname", (PyCFunction) LIB_get_hostname, METH_FASTCALL,
+        PyDoc_STR("get_hostname(?flags: number)->[status: number, result: str]   Returns hostname")},
     {"getjpi", (PyCFunction) LIB_getjpi, METH_FASTCALL,
         PyDoc_STR("getjpi(item: number, ?pid: number, ?name: str)->[status: number, value: str, ?pid: number]   Gets system wide information")},
     {"getsyi", (PyCFunction) LIB_getsyi, METH_FASTCALL,
@@ -678,7 +763,7 @@ static PyMethodDef _module_methods[] = {
         PyDoc_STR("do_command(cmd: str)->status: number   Do a command and exit")},
     {"put_common", (PyCFunction) LIB_put_common, METH_O,
         PyDoc_STR("put_common(value: str)->status: number   Sets common string")},
-    {"get_common", (PyCFunction) LIB_get_common, METH_O,
+    {"get_common", (PyCFunction) LIB_get_common, METH_NOARGS,
         PyDoc_STR("get_common()->[status: number, common: str]   Returns common string")},
     {"create_dir", (PyCFunction) LIB_create_dir, METH_FASTCALL,
         PyDoc_STR("create_dir(spec: str, ?own_uic: number, ?prot_en: number, ?prot_v: number)->status: number   Create directory")},

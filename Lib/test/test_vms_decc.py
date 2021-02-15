@@ -54,8 +54,8 @@ class BaseTestCase(unittest.TestCase):
     def test_to_vms(self):
         """ converts unix path to vms path """
         self.assertEqual( \
-            list(map(lambda x: x.lower(), DECC.to_vms('/python$root/bin/python3.exe', 0, 0))), \
-            list(map(lambda x: x.lower(), DECC.to_vms('/python$root/bin/python3.*', 1, 0))))
+            list(map(lambda x: x.lower(), DECC.to_vms('/python$root/lib/python$shr.exe', 0, 0))), \
+            list(map(lambda x: x.lower(), DECC.to_vms('/python$root/lib/python$shr.*', 1, 0))))
 
     def test_unixtime(self):
         """ converts vms time to unix time (using time zone) """
