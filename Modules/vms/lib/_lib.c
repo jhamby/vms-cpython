@@ -1,6 +1,8 @@
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
 
+#define __NEW_STARLET 1
+
 #include <descrip.h>
 #include <lib$routines.h>
 #include <ssdef.h>
@@ -76,7 +78,7 @@ LIB_free_ef(
     PyObject * self,
     PyObject * args)
 {
-    int     efn = 0, *pefn = NULL;
+    unsigned int efn = 0, *pefn = NULL;
     ConvertArgToLong(args, efn, "free_ef");
 
     int status = 0;
@@ -96,7 +98,7 @@ LIB_get_ef(
     PyObject * self,
     PyObject * args)
 {
-    long efn = 0;
+    unsigned int efn = 0;
     int status = 0;
 
     Py_BEGIN_ALLOW_THREADS
@@ -185,7 +187,7 @@ LIB_getjpi(
         Py_RETURN_NONE;
     }
 
-    unsigned long item = 0, *pitem = NULL;
+    int item = 0, *pitem = NULL;
     ConvertArgToLong(args[0], item, "getsyi");
 
     unsigned long pid = 0, *ppid = NULL;
@@ -269,7 +271,7 @@ LIB_getsyi(
         Py_RETURN_NONE;
     }
 
-    unsigned long item = 0, *pitem = NULL;
+    int item = 0, *pitem = NULL;
     ConvertArgToLong(args[0], item, "getsyi");
 
     char *node = NULL;

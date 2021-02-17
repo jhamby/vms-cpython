@@ -826,10 +826,8 @@ LIBDYNLOAD_VMS = -
 [.$(OUT_DIR).$(DYNLOAD_DIR)]_uaidef.exe -
 [.$(OUT_DIR).$(DYNLOAD_DIR)]_rms.exe -
 [.$(OUT_DIR).$(DYNLOAD_DIR)]_decc.exe -
-[.$(OUT_DIR).$(DYNLOAD_DIR)]_lib.exe
-
-! [.$(OUT_DIR).$(DYNLOAD_DIR)]_ile3.exe
-! [.$(OUT_DIR).$(DYNLOAD_DIR)]_lib.exe
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_lib.exe -
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_ile3.exe
 ! [.$(OUT_DIR).$(DYNLOAD_DIR)]_sys.exe
 ! [.$(OUT_DIR).$(DYNLOAD_DIR)]_rdb.exe
 ! [.$(OUT_DIR).$(DYNLOAD_DIR)]_rec.exe
@@ -1604,6 +1602,7 @@ DECIMAL_HEADERS = -
 [.$(OBJ_DIR).modules.vms.rms]_rms.obm : [.modules.vms.rms]_rms.c $(PYTHON_HEADERS)
 [.$(OBJ_DIR).modules.vms.decc]_decc.obm : [.modules.vms.decc]_decc.c $(PYTHON_HEADERS)
 [.$(OBJ_DIR).modules.vms.lib]_lib.obm : [.modules.vms.lib]_lib.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).modules.vms.ile3]_ile3.obm : [.modules.vms.ile3]_ile3.c $(PYTHON_HEADERS)
 
 [.$(OUT_DIR).$(DYNLOAD_DIR)]_accdef.exe : [.$(OBJ_DIR).modules.vms.accdef]_accdef.obm
 [.$(OUT_DIR).$(DYNLOAD_DIR)]_acldef.exe : [.$(OBJ_DIR).modules.vms.acldef]_acldef.obm
@@ -1676,6 +1675,7 @@ DECIMAL_HEADERS = -
 [.$(OUT_DIR).$(DYNLOAD_DIR)]_rms.exe : [.$(OBJ_DIR).modules.vms.rms]_rms.obm
 [.$(OUT_DIR).$(DYNLOAD_DIR)]_decc.exe : [.$(OBJ_DIR).modules.vms.decc]_decc.obm
 [.$(OUT_DIR).$(DYNLOAD_DIR)]_lib.exe : [.$(OBJ_DIR).modules.vms.lib]_lib.obm
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_ile3.exe : [.$(OBJ_DIR).modules.vms.ile3]_ile3.obm
 
 ############################################################################
 # testembed EXE

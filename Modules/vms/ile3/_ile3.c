@@ -1,0 +1,451 @@
+#define PY_SSIZE_T_CLEAN
+#include "Python.h"
+#include "structmember.h"
+
+#define __NEW_STARLET 1
+
+#include <descrip.h>
+#include <starlet.h>
+#include <ssdef.h>
+#include <iledef.h>
+
+#ifndef MIN
+#define MIN(a,b) ((a)<(b)?(a):(b))
+#endif
+
+typedef struct {
+    PyObject_HEAD
+    int     allocated;
+    int     size;
+    int     pos;
+    ILE3   *list;
+    int    *types;
+} ILE3Object;
+
+static void ILE3_dealloc(ILE3Object * self)
+{
+    if (self->types != NULL) {
+        PyMem_FREE(self->types);
+        self->types = NULL;
+    }
+    if (self->list != NULL) {
+        ILE3 *ptr = self->list;
+        while(self->size) {
+            if (ptr->ile3$ps_bufaddr) {
+                PyMem_FREE(ptr->ile3$ps_bufaddr);
+            }
+            if (ptr->ile3$ps_retlen_addr) {
+                PyMem_FREE(ptr->ile3$ps_retlen_addr);
+            }
+            ++ptr;
+            --self->size;
+        }
+        PyMem_FREE(self->list);
+        self->list = NULL;
+    }
+    PyObject_Del(self);
+}
+
+static void init_item(ILE3 *item) {
+    item->ile3$w_length = 0;
+    item->ile3$w_code = 0;
+    item->ile3$ps_bufaddr = NULL;
+    item->ile3$ps_retlen_addr = NULL;
+}
+
+static int size_from_type(int type) {
+    switch (type) {
+        case DSC$K_DTYPE_Z:
+            return 0;           /* unspecified */
+        case DSC$K_DTYPE_BU:
+            return 1;           /* byte (unsigned);  8-bit unsigned quantity */
+        case DSC$K_DTYPE_WU:
+            return 2;           /* word (unsigned);  16-bit unsigned quantity */
+        case DSC$K_DTYPE_LU:
+            return 4;           /* longword (unsigned);  32-bit unsigned quantity */
+        case DSC$K_DTYPE_QU:
+            return 8;           /* quadword (unsigned);  64-bit unsigned quantity */
+        case DSC$K_DTYPE_OU:
+            return 16;          /* octaword (unsigned);  128-bit unsigned quantity */
+        case DSC$K_DTYPE_B:
+            return 1;           /* byte integer (signed);  8-bit signed 2's-complement integer */
+        case DSC$K_DTYPE_W:
+            return 2;           /* word integer (signed);  16-bit signed 2's-complement integer */
+        case DSC$K_DTYPE_L:
+            return 4;           /* longword integer (signed);  32-bit signed 2's-complement integer */
+        case DSC$K_DTYPE_Q:
+            return 8;           /* quadword integer (signed);  64-bit signed 2's-complement integer */
+        case DSC$K_DTYPE_O:
+            return 16;          /* octaword integer (signed);  128-bit signed 2's-complement integer */
+        case DSC$K_DTYPE_F:
+            return 4;           /* F_floating;  32-bit single-precision floating point */
+        case DSC$K_DTYPE_D:
+            return 8;           /* D_floating;  64-bit double-precision floating point */
+        case DSC$K_DTYPE_G:
+            return 8;           /* G_floating;  64-bit double-precision floating point */
+        case DSC$K_DTYPE_H:
+            return 16;          /* H_floating;  128-bit quadruple-precision floating point */
+        case DSC$K_DTYPE_FC:
+            return 4*2;         /* F_floating complex */
+        case DSC$K_DTYPE_DC:
+            return 8*2;         /* D_floating complex */
+        case DSC$K_DTYPE_GC:
+            return 8*2;         /* G_floating complex */
+        case DSC$K_DTYPE_HC:
+            return 16*2;        /* H_floating complex */
+        case DSC$K_DTYPE_CIT:
+            return 0;           /* COBOL Intermediate Temporary */
+        default:
+            return 0;
+    }
+}
+
+static int sign_from_type(int type) {
+    switch (type) {
+        case DSC$K_DTYPE_B:
+        case DSC$K_DTYPE_W:
+        case DSC$K_DTYPE_L:
+        case DSC$K_DTYPE_Q:
+        case DSC$K_DTYPE_O:
+            return 1;
+        default:
+            return 0;
+    }
+}
+
+static PyObject *
+ILE3_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+    ILE3Object *self;
+    self = (ILE3Object *) type->tp_alloc(type, 0);
+    if (self != NULL) {
+        self->allocated = 1;
+        self->size = 0;
+        self->pos = -1;
+        self->list = PyMem_Calloc(1, sizeof(ILE3));
+        if (self->list == NULL) {
+            Py_DECREF(self);
+            return NULL;
+        }
+        self->types = PyMem_Calloc(1, sizeof(int));
+        if (self->types == NULL) {
+            PyMem_FREE(self->list);
+            self->list = NULL;
+            Py_DECREF(self);
+            return NULL;
+        }
+        init_item(self->list);
+    }
+    return (PyObject *) self;
+}
+
+static PyObject *ILE3_iter(ILE3Object *self)
+{
+    Py_INCREF(self);
+    self->pos = 0;
+    return (PyObject *)self;
+}
+
+static PyObject *ILE3_getat_c(ILE3Object *self, long pos) {
+    PyObject *pValue = NULL;
+    PyObject *pResult = NULL;
+    if (pos >= 0 && pos < self->size) {
+        ILE3 *item = self->list + pos;
+        long type = *(self->types + pos);
+        long size = 0;
+        switch (type) {
+            case DSC$K_DTYPE_T:
+                size = *(item->ile3$ps_retlen_addr);
+                pValue = PyUnicode_FromStringAndSize((char*)item->ile3$ps_bufaddr, size);
+                break;
+            case DSC$K_DTYPE_VT:
+                size = *(unsigned char*)item->ile3$ps_bufaddr;
+                pValue = PyUnicode_FromStringAndSize(((char*)item->ile3$ps_bufaddr)+1, size);
+                break;
+            default:
+                size = size_from_type(type);
+                if (size == 0) {
+                    PyErr_Format(PyExc_ValueError, "Unknown type %i", type);
+                    goto error_exit;
+                }
+                pValue = _PyLong_FromByteArray(
+                    (unsigned char*)item->ile3$ps_bufaddr,
+                    size,
+                    1,
+                    sign_from_type(type));
+        }
+        if (pValue == NULL) {
+            PyErr_SetString(PyExc_RuntimeError, "Cannot build value");
+            goto error_exit;
+        }
+        PyObject *pResult = PyTuple_New(3);
+        if (pResult == NULL) {
+            PyErr_SetString(PyExc_RuntimeError, "Cannot create result");
+            goto error_exit;
+        }
+        if (PyTuple_SetItem(pResult, 0, PyLong_FromLong(item->ile3$w_code))) {
+            PyErr_SetString(PyExc_RuntimeError, "Cannot set item 0");
+            goto error_exit;
+        }
+        if (PyTuple_SetItem(pResult, 1, PyLong_FromLong(type))) {
+            PyErr_SetString(PyExc_RuntimeError, "Cannot set item 1");
+            goto error_exit;
+        }
+        if (PyTuple_SetItem(pResult, 2, pValue)) {
+            PyErr_SetString(PyExc_RuntimeError, "Cannot set item 2");
+            goto error_exit;
+        }
+        return pResult;
+    } else {
+        PyErr_Format(PyExc_IndexError, "Index %i is out of range [0, %i]", pos, self->size - 1);
+    }
+error_exit:
+    if (pResult) {
+        Py_DECREF(pResult);
+    }
+    if (pValue) {
+        Py_DECREF(pValue);
+    }
+    return NULL;
+}
+
+static PyObject *ILE3_getat(ILE3Object *self, PyObject *args) {
+    if (!PyLong_Check(args)) {
+        _PyArg_BadArgument("getat", "args", "long", args);
+        return NULL;
+    }
+    long pos = PyLong_AsLong(args);
+    return ILE3_getat_c(self, pos);
+}
+
+static PyObject *ILE3_iternext(ILE3Object *self)
+{
+    PyObject *pResult = ILE3_getat_c(self, self->pos);
+    if (pResult != NULL) {
+        ++self->pos;
+        return pResult;
+    }
+    self->pos = -1;
+    return NULL;
+}
+
+static int ILE3_increment(ILE3Object *self) {
+    ++self->size;
+    if (self->size >= self->allocated) {
+        self->allocated *= 2;
+        self->list = PyMem_REALLOC(self->list, self->allocated * sizeof(ILE3));
+        self->types = PyMem_REALLOC(self->types, self->allocated * sizeof(int));
+    }
+    if (self->list && self->types) {
+        init_item(self->list + self->size);
+        return 0;
+    }
+    PyErr_SetNone(PyExc_MemoryError);
+    return -1;
+}
+
+static int ILE3_decrement(ILE3Object *self) {
+    if (self->size > 0) {
+        --self->size;
+        ILE3 *ptr = self->list + self->size;
+        if (ptr->ile3$ps_bufaddr) {
+            PyMem_FREE(ptr->ile3$ps_bufaddr);
+            ptr->ile3$ps_bufaddr = NULL;
+        }
+        if (ptr->ile3$ps_retlen_addr) {
+            PyMem_FREE(ptr->ile3$ps_retlen_addr);
+            ptr->ile3$ps_retlen_addr = NULL;
+        }
+        return 0;
+    }
+    return -1;
+}
+
+// append(code, type, ?value)
+static PyObject*
+ILE3_append(
+    ILE3Object *self,
+    PyObject *const *args,
+    Py_ssize_t nargs)
+{
+    if (!_PyArg_CheckPositional("append", nargs, 2, 3)) {
+        return NULL;
+    }
+
+    if (!PyLong_Check(args[0])) {
+        _PyArg_BadArgument("append", "args[0]", "long", args[0]);
+        return NULL;
+    }
+
+    if (ILE3_increment(self)) {
+        return NULL;
+    }
+
+    ILE3 *item = self->list + (self->size - 1);
+
+    item->ile3$w_code = PyLong_AsLong(args[0]);
+    item->ile3$ps_retlen_addr = PyMem_MALLOC(sizeof(short));
+    if (item->ile3$ps_retlen_addr == NULL) {
+        ILE3_decrement(self);
+        PyErr_SetNone(PyExc_MemoryError);
+        return NULL;
+    }
+
+    long type = DSC$K_DTYPE_Z;
+    if (!PyLong_Check(args[1])) {
+        _PyArg_BadArgument("append", "args[1]", "long", args[1]);
+        ILE3_decrement(self);
+        return NULL;
+    }
+    type = PyLong_AsLong(args[1]);
+
+    Py_ssize_t size = 0;
+    char *pvalue = NULL;
+    long long value = 0;
+
+    if (type == DSC$K_DTYPE_T || type == DSC$K_DTYPE_VT) {
+        // try to append text
+        if (nargs > 2) {
+            if (PyUnicode_CheckExact(args[2])) {
+                pvalue = (char*)PyUnicode_AsUTF8AndSize(args[2], &size);
+            } else if (PyBytes_CheckExact(args[2])){
+                PyBytes_AsStringAndSize(args[2], &pvalue, &size);
+            } else if (PyLong_Check(args[2])) {
+                size = PyLong_AsSsize_t(args[2]);
+            }
+        }
+        if (size <= 0 || size > 65535) {
+            PyErr_Format(PyExc_ValueError, "String size is %i, must be in range [1, 65535] ", size);
+            ILE3_decrement(self);
+            return NULL;
+        }
+        if (type == DSC$K_DTYPE_VT && size > 255) {
+            PyErr_Format(PyExc_ValueError, "String size is %i, must be in range [1, 255] ", size);
+            ILE3_decrement(self);
+            return NULL;
+        }
+    } else {
+        // try to append number
+        size = size_from_type(type);
+        if (size == 0) {
+            PyErr_Format(PyExc_ValueError, "Unknown type %i", type);
+            ILE3_decrement(self);
+            return NULL;
+        }
+        if (nargs > 2) {
+            if (PyLong_Check(args[2])) {
+                pvalue = alloca(size);
+                if (_PyLong_AsByteArray(
+                        (PyLongObject*)args[2],
+                        (unsigned char*)pvalue,
+                        size,
+                        1,
+                        sign_from_type(type)))
+                {
+                    ILE3_decrement(self);
+                    return NULL;
+                }
+            } else {
+                _PyArg_BadArgument("append", "args[2]", "long", args[2]);
+                ILE3_decrement(self);
+                return NULL;
+            }
+        }
+    }
+
+    *item->ile3$ps_retlen_addr = size;
+    item->ile3$w_length = size;
+    item->ile3$ps_bufaddr = PyMem_Malloc(size + 1);
+    if (item->ile3$ps_bufaddr == NULL) {
+        PyErr_SetNone(PyExc_MemoryError);
+        ILE3_decrement(self);
+        return NULL;
+    }
+
+    if (type == DSC$K_DTYPE_T) {
+        if (pvalue) {
+            memcpy(item->ile3$ps_bufaddr, pvalue, size);
+        } else {
+            memset(item->ile3$ps_bufaddr, ' ', size);
+        }
+        ((char*)item->ile3$ps_bufaddr)[size] = 0;
+    } else if (type == DSC$K_DTYPE_VT) {
+        *(unsigned char*)item->ile3$ps_bufaddr = (unsigned char)size;
+        if (pvalue) {
+            memcpy(((char*)item->ile3$ps_bufaddr) + 1, pvalue, size);
+        } else {
+            memset(((char*)item->ile3$ps_bufaddr) + 1, ' ', size);
+        }
+    } else {
+        if (pvalue) {
+            memcpy(item->ile3$ps_bufaddr, pvalue, size);
+        } else {
+            memset(item->ile3$ps_bufaddr, 0, size);
+        }
+    }
+    *(self->types + (self->size - 1)) = type;
+    Py_RETURN_NONE;
+}
+
+/********************************************************************
+  Type
+*/
+
+static PyMethodDef ILE3_methods[] = {
+    // void _addstr(void *addr, int code, char *val, unsigned short len)
+    {"append", (PyCFunction) ILE3_append, METH_FASTCALL,
+        PyDoc_STR("append(code: number, type: number, ?value: (str | number) | len: number)->None   Add item")},
+    {"getat", (PyCFunction) ILE3_getat, METH_O,
+        PyDoc_STR("getat(i: number)->(code: number, type: number, value: number | str)   Get value at the index")},
+    {NULL, NULL}
+};
+
+static PyMemberDef ILE3_members[] = {
+    {"size", T_INT, offsetof(ILE3Object, size), READONLY,
+     "size"},
+    {NULL}
+};
+
+PyTypeObject ILE3_Type = {
+    PyObject_HEAD_INIT(NULL)
+    "_ile3.ile3list",
+    .tp_basicsize = sizeof(ILE3Object),
+    .tp_dealloc = (destructor) ILE3_dealloc,
+    .tp_getattro = PyObject_GenericGetAttr,
+    .tp_flags = Py_TPFLAGS_DEFAULT,
+    .tp_new = ILE3_new,
+    .tp_methods = ILE3_methods,
+    .tp_members = ILE3_members,
+    .tp_iter = (getiterfunc)ILE3_iter,
+    .tp_iternext = (iternextfunc)ILE3_iternext,
+};
+
+
+/********************************************************************
+  Module
+*/
+
+static struct PyModuleDef _module_definition = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = "_ile3",
+    .m_doc = "OpenVMS ILE3 implementation.",
+    .m_size = -1,
+};
+
+PyMODINIT_FUNC PyInit__ile3(void)
+{
+    if (PyType_Ready(&ILE3_Type) < 0) {
+        return NULL;
+    }
+    PyObject *m = PyModule_Create(&_module_definition);
+    if (m == NULL) {
+        return NULL;
+    }
+    Py_INCREF(&ILE3_Type);
+    if (PyModule_AddObject(m, "ile3list", (PyObject *) &ILE3_Type) < 0) {
+        Py_DECREF(&ILE3_Type);
+        Py_DECREF(m);
+        return NULL;
+    }
+    return m;
+}

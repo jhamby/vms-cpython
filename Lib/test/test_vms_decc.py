@@ -28,8 +28,8 @@ class BaseTestCase(unittest.TestCase):
     def test_from_vms(self):
         """ converts vms path to available unix paths """
         self.assertEqual( \
-            list(map(lambda x: x.lower(), DECC.from_vms("python$root:[bin]python3.exe", 0))), \
-            list(map(lambda x: x.lower(), DECC.from_vms("python$root:[bin]python3.*", 1))))
+            list(map(lambda x: x.lower(), DECC.from_vms("python$root:[lib]python$shr.exe", 0))), \
+            list(map(lambda x: x.lower(), DECC.from_vms("python$root:[lib]python$shr.*", 1))))
 
     def test_getenv(self):
         """ try to get PYTHONHOME """
@@ -45,7 +45,7 @@ class BaseTestCase(unittest.TestCase):
 
     def test_sysconf(self):
         """ try to get PAGESIZE """
-        pagesize_decc = DECC.sysconf(DECC._SC_PAGESIZE)
+        pagesize_decc = DECC.sysconf(DECC.DECC_SC_PAGESIZE)
         status, pagesize_sys, _ = LIB.getsyi(SYIDEF.SYI__PAGE_SIZE, None)
         self.assertEqual(1, status)
         pagesize_sys = int(pagesize_sys)
