@@ -138,10 +138,10 @@ class BaseTestCase(unittest.TestCase):
         il.append(LNM.LNM__STRING, DSC.DSC_K_DTYPE_T, 255)
         il.append(LNM.LNM__TABLE, DSC.DSC_K_DTYPE_T, 32)
         status = SYS.trnlnm(log_name, log_table, il)
-        _,_,attributes = il.getat(1)
-        _,_,value_length = il.getat(2)
-        _,_,value_str = il.getat(3)
-        _,_,table_str = il.getat(4)
+        attributes = il[1]
+        value_length = il[2]
+        value_str = il[3]
+        table_str = il[4]
         self.assertEqual(status, SS.SS__NORMAL)
         self.assertTrue(attributes & LNM.LNM_M_EXISTS)
         self.assertEqual(value_length, len(log_value))
@@ -182,7 +182,7 @@ class BaseTestCase(unittest.TestCase):
         il.append(DVI.DVI__DEVCHAR, DSC.DSC_K_DTYPE_LU, 0)
 
         status = SYS.getdvi(dev_name, il)
-        _,_,characteristics = il.getat(0)
+        characteristics = il[0]
 
         self.assertEqual(status, SS.SS__NORMAL)
         DEV_M_DIR = 0x8     # has directories
@@ -195,7 +195,7 @@ class BaseTestCase(unittest.TestCase):
         il = ILE3.ile3list()
         il.append(JPI.JPI__PPGCNT, DSC.DSC_K_DTYPE_LU)
         status, pid = SYS.getjpi(il, 0)
-        _,_,ppgcnt = il.getat(0)
+        ppgcnt = il[0]
 
         self.assertEqual(status, SS.SS__NORMAL)
         self.assertGreater(pid, 0)
@@ -209,7 +209,7 @@ class BaseTestCase(unittest.TestCase):
         status, lkid = SYS.getlki(il)
         while status == SS.SS__NORMAL:
             locks = locks + 1
-            _,_,lockid = il.getat(0)
+            lockid = il[0]
             self.assertEqual(lockid & 0xffff, lkid & 0xffff)
             status, lkid = SYS.getlki(il, lkid)
         self.assertEqual(status, SS.SS__NOMORELOCK)
@@ -230,7 +230,7 @@ class BaseTestCase(unittest.TestCase):
         il.append(QUI.QUI__QUEUE_NAME, DSC.DSC_K_DTYPE_T, 32)
         context = -1
         status, context = SYS.getqui(QUI.QUI__DISPLAY_QUEUE, context, il)
-        _,_,qui_name = il.getat(1)
+        qui_name = il[1]
 
         self.assertIn(status, (JBC.JBC__NOMOREQUE, SS.SS__NORMAL))
         self.assertNotEqual(qui_name, '')
@@ -243,7 +243,7 @@ class BaseTestCase(unittest.TestCase):
         il = ILE3.ile3list()
         il.append(RMI.RMI__CPUIDLE, DSC.DSC_K_DTYPE_QU)
         status = SYS.getrmi(il)
-        _,_,cpu_idle = il.getat(0)
+        cpu_idle = il[0]
 
         self.assertEqual(status, SS.SS__NORMAL)
         self.assertGreater(cpu_idle, 0)
@@ -253,10 +253,9 @@ class BaseTestCase(unittest.TestCase):
         il = ILE3.ile3list()
         il.append(SYI.SYI__ARCH_NAME, DSC.DSC_K_DTYPE_T, 16)
         il.append(SYI.SYI__ARCH_TYPE, DSC.DSC_K_DTYPE_LU)
-        csid = -1
         status, csid = SYS.getsyi(il)
-        _,_,arch_name = il.getat(0)
-        _,_,arch_type = il.getat(1)
+        arch_name = il[0]
+        arch_type = il[1]
 
         self.assertEqual(status, SS.SS__NORMAL)
         self.assertNotEqual(arch_name, '')
@@ -279,8 +278,8 @@ class BaseTestCase(unittest.TestCase):
         il.append(JPI.JPI__ACCOUNT, DSC.DSC_K_DTYPE_T, 8)
         il.append(JPI.JPI__USERNAME, DSC.DSC_K_DTYPE_T, 12)
         status, pid = SYS.getjpi(il, 0)
-        _,_,jpi_account = il.getat(0)
-        _,_,jpi_username = il.getat(1)
+        jpi_account = il[0]
+        jpi_username = il[1]
 
         self.assertEqual(status, SS.SS__NORMAL)
         self.assertNotEqual(jpi_account, '')
@@ -292,9 +291,9 @@ class BaseTestCase(unittest.TestCase):
         il.append(UAI.UAI__DEFDIR, DSC.DSC_K_DTYPE_VT, 64)
         il.append(UAI.UAI__UIC, DSC.DSC_K_DTYPE_LU)
         status = SYS.getuai(jpi_username, il)
-        _,_,uai_account = il.getat(0)
-        _,_,uai_defdir = il.getat(1)
-        _,_,uai_uic = il.getat(2)
+        uai_account = il[0]
+        uai_defdir = il[1]
+        uai_uic = il[2]
 
         self.assertEqual(status, SS.SS__NORMAL)
         self.assertEqual(jpi_account.strip(), uai_account.strip())

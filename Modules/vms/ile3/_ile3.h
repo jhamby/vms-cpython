@@ -5,11 +5,11 @@
 
 typedef struct {
     PyObject_HEAD
-    int     allocated;
-    int     size;
-    int     pos;
-    ILE3   *list;
-    int    *types;
+    unsigned int allocated;
+    unsigned int size;
+    int          pos;
+    ILE3        *list;
+    int         *types;
 } ILE3Object;
 
 #define ILE3_MODULE_NAME "_ile3"

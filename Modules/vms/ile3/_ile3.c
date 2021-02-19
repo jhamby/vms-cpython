@@ -138,65 +138,45 @@ static PyObject *ILE3_iter(ILE3Object *self)
     return (PyObject *)self;
 }
 
-static PyObject *ILE3_getat_c(ILE3Object *self, long pos) {
-    PyObject *pValue = NULL;
-    PyObject *pResult = NULL;
-    if (pos >= 0 && pos < self->size) {
+static PyObject *
+_value_from_item(
+    ILE3 *item,
+    long type)
+{
+    long size = 0;
+    if (type == DSC$K_DTYPE_T) {
+        size = *(item->ile3$ps_retlen_addr);
+        return PyUnicode_FromStringAndSize((char*)item->ile3$ps_bufaddr, size);
+    } else if (type == DSC$K_DTYPE_VT) {
+        size = *(unsigned char*)item->ile3$ps_bufaddr;
+        return PyUnicode_FromStringAndSize(((char*)item->ile3$ps_bufaddr)+1, size);
+    }
+    size = size_from_type(type);
+    if (size == 0) {
+        PyErr_Format(PyExc_ValueError, "Unknown type %i", type);
+        return NULL;
+    }
+    return _PyLong_FromByteArray(
+        (unsigned char*)item->ile3$ps_bufaddr,
+        size,
+        1,
+        sign_from_type(type));
+}
+
+static PyObject *
+ILE3_getat_c(
+    ILE3Object *self,
+    long pos)
+{
+    if ((unsigned int)pos < self->size) {
         ILE3 *item = self->list + pos;
         long type = *(self->types + pos);
-        long size = 0;
-        switch (type) {
-            case DSC$K_DTYPE_T:
-                size = *(item->ile3$ps_retlen_addr);
-                pValue = PyUnicode_FromStringAndSize((char*)item->ile3$ps_bufaddr, size);
-                break;
-            case DSC$K_DTYPE_VT:
-                size = *(unsigned char*)item->ile3$ps_bufaddr;
-                pValue = PyUnicode_FromStringAndSize(((char*)item->ile3$ps_bufaddr)+1, size);
-                break;
-            default:
-                size = size_from_type(type);
-                if (size == 0) {
-                    PyErr_Format(PyExc_ValueError, "Unknown type %i", type);
-                    goto error_exit;
-                }
-                pValue = _PyLong_FromByteArray(
-                    (unsigned char*)item->ile3$ps_bufaddr,
-                    size,
-                    1,
-                    sign_from_type(type));
+        PyObject *pValue = _value_from_item(item, type);
+        if (pValue) {
+            return Py_BuildValue("(H,i,O)", item->ile3$w_code, type, pValue);
         }
-        if (pValue == NULL) {
-            PyErr_SetString(PyExc_RuntimeError, "Cannot build value");
-            goto error_exit;
-        }
-        PyObject *pResult = PyTuple_New(3);
-        if (pResult == NULL) {
-            PyErr_SetString(PyExc_RuntimeError, "Cannot create result");
-            goto error_exit;
-        }
-        if (PyTuple_SetItem(pResult, 0, PyLong_FromLong(item->ile3$w_code))) {
-            PyErr_SetString(PyExc_RuntimeError, "Cannot set item 0");
-            goto error_exit;
-        }
-        if (PyTuple_SetItem(pResult, 1, PyLong_FromLong(type))) {
-            PyErr_SetString(PyExc_RuntimeError, "Cannot set item 1");
-            goto error_exit;
-        }
-        if (PyTuple_SetItem(pResult, 2, pValue)) {
-            PyErr_SetString(PyExc_RuntimeError, "Cannot set item 2");
-            goto error_exit;
-        }
-        return pResult;
     } else {
-        PyErr_Format(PyExc_IndexError, "Index %i is out of range [0, %i]", pos, self->size - 1);
-    }
-error_exit:
-    if (pResult) {
-        Py_DECREF(pResult);
-    }
-    if (pValue) {
-        Py_DECREF(pValue);
+        PyErr_SetNone(PyExc_IndexError);
     }
     return NULL;
 }
@@ -216,44 +196,16 @@ static PyObject *ILE3_getat_bytes(ILE3Object *self, PyObject *args) {
         return NULL;
     }
     long pos = PyLong_AsLong(args);
-    PyObject *pValue = NULL;
-    PyObject *pResult = NULL;
-    if (pos >= 0 && pos < self->size) {
+    if ((unsigned int)pos < self->size) {
         ILE3 *item = self->list + pos;
         long type = *(self->types + pos);
         long size = *(item->ile3$ps_retlen_addr);
-        pValue = PyBytes_FromStringAndSize((char*)item->ile3$ps_bufaddr, size);
-        if (pValue == NULL) {
-            PyErr_SetString(PyExc_RuntimeError, "Cannot build value");
-            goto error_exit;
+        PyObject *pValue = PyBytes_FromStringAndSize((char*)item->ile3$ps_bufaddr, size);
+        if (pValue) {
+            return Py_BuildValue("(H,i,O)", item->ile3$w_code, type, pValue);
         }
-        PyObject *pResult = PyTuple_New(3);
-        if (pResult == NULL) {
-            PyErr_SetString(PyExc_RuntimeError, "Cannot create result");
-            goto error_exit;
-        }
-        if (PyTuple_SetItem(pResult, 0, PyLong_FromLong(item->ile3$w_code))) {
-            PyErr_SetString(PyExc_RuntimeError, "Cannot set item 0");
-            goto error_exit;
-        }
-        if (PyTuple_SetItem(pResult, 1, PyLong_FromLong(type))) {
-            PyErr_SetString(PyExc_RuntimeError, "Cannot set item 1");
-            goto error_exit;
-        }
-        if (PyTuple_SetItem(pResult, 2, pValue)) {
-            PyErr_SetString(PyExc_RuntimeError, "Cannot set item 2");
-            goto error_exit;
-        }
-        return pResult;
     } else {
-        PyErr_Format(PyExc_IndexError, "Index %i is out of range [0, %i]", pos, self->size - 1);
-    }
-error_exit:
-    if (pResult) {
-        Py_DECREF(pResult);
-    }
-    if (pValue) {
-        Py_DECREF(pValue);
+        PyErr_SetNone(PyExc_IndexError);
     }
     return NULL;
 }
@@ -430,9 +382,55 @@ ILE3_append(
     Py_RETURN_NONE;
 }
 
+static PyObject *
+ILE3_item(
+    ILE3Object *self,
+    Py_ssize_t i)
+{
+    if ((size_t)i < self->size) {
+        ILE3 *item = self->list + i;
+        long type = *(self->types + i);
+        return _value_from_item(item, type);
+    }
+    PyErr_SetNone(PyExc_IndexError);
+    return NULL;
+}
+
+// static PyObject *
+// ILE3_subscript(
+//     ILE3Object *self,
+//     PyObject *index)
+// {
+//     if (PyIndex_Check(index)) {
+//         Py_ssize_t i;
+//         i = PyNumber_AsSsize_t(index, PyExc_IndexError);
+//         if (i == -1 && PyErr_Occurred())
+//             return NULL;
+//         if (i < 0)
+//             i += self->size;
+//         return ILE3_item(self, i);
+//     }
+//     PyErr_Format(PyExc_TypeError,
+//                     "list indices must be integers, not %.200s",
+//                     Py_TYPE(index)->tp_name);
+//     return NULL;
+// }
+
+static Py_ssize_t
+ILE3_length(ILE3Object *a)
+{
+    return a->size;
+}
+
+
 /********************************************************************
   Type
 */
+
+static PySequenceMethods ILE3_as_sequence = {
+    .sq_length = (lenfunc)ILE3_length,
+    .sq_item = (ssizeargfunc)ILE3_item,
+};
 
 static PyMethodDef ILE3_methods[] = {
     // void _addstr(void *addr, int code, char *val, unsigned short len)
@@ -442,6 +440,8 @@ static PyMethodDef ILE3_methods[] = {
         PyDoc_STR("getat(i: number)->(code: number, type: number, value: number | str)   Get value at the index")},
     {"getat_bytes", (PyCFunction) ILE3_getat_bytes, METH_O,
         PyDoc_STR("getat_bytes(i: number)->(code: number, type: number, value: bytes)   Get value as bytes at the index")},
+    // {"__getitem__", (PyCFunction)ILE3_subscript, METH_O | METH_COEXIST,
+    //     PyDoc_STR("x[y] Gets value only")},
     {NULL, NULL}
 };
 
@@ -456,6 +456,7 @@ PyTypeObject ILE3_Type = {
     ILE3_MODULE_NAME "." ILE3_TYPE_NAME,
     .tp_basicsize = sizeof(ILE3Object),
     .tp_dealloc = (destructor) ILE3_dealloc,
+    .tp_as_sequence = &ILE3_as_sequence,
     .tp_getattro = PyObject_GenericGetAttr,
     .tp_flags = Py_TPFLAGS_DEFAULT,
     .tp_new = ILE3_new,
