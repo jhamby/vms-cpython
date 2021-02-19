@@ -2919,7 +2919,7 @@ unicode_fromformat_arg(_PyUnicodeWriter *writer,
                 len = sprintf(buffer, "%llu", va_arg(*vargs, unsigned long long));
             }
             else if (size_tflag) {
-                len = sprintf(buffer, "%zu", va_arg(*vargs, size_t));
+                len = sprintf(buffer, "%"PY_FORMAT_SIZE_T"u", va_arg(*vargs, size_t));
             }
             else {
                 len = sprintf(buffer, "%u", va_arg(*vargs, unsigned int));
@@ -2936,7 +2936,7 @@ unicode_fromformat_arg(_PyUnicodeWriter *writer,
                 len = sprintf(buffer, "%lli", va_arg(*vargs, long long));
             }
             else if (size_tflag) {
-                len = sprintf(buffer, "%zi", va_arg(*vargs, Py_ssize_t));
+                len = sprintf(buffer, "%"PY_FORMAT_SIZE_T"i", va_arg(*vargs, Py_ssize_t));
             }
             else {
                 len = sprintf(buffer, "%i", va_arg(*vargs, int));

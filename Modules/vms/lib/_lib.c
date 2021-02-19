@@ -128,7 +128,6 @@ LIB_get_hostname(
     PyObject *const *args,
     Py_ssize_t nargs)
 {
-
     if (!_PyArg_CheckPositional("get_hostname", nargs, 0, 1)) {
         Py_RETURN_NONE;
     }

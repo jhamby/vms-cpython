@@ -1407,7 +1407,7 @@
 #undef PY_COERCE_C_LOCALE
 
 /* Define to printf format modifier for Py_ssize_t */
-#define PY_FORMAT_SIZE_T "l"
+#define PY_FORMAT_SIZE_T ""
 
 /* Default cipher suites list for ssl module. 1: Python's preferred selection,
    2: leave OpenSSL defaults untouched, 0: custom string */

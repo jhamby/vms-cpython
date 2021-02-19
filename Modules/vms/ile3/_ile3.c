@@ -7,20 +7,12 @@
 #include <descrip.h>
 #include <starlet.h>
 #include <ssdef.h>
-#include <iledef.h>
 
 #ifndef MIN
 #define MIN(a,b) ((a)<(b)?(a):(b))
 #endif
 
-typedef struct {
-    PyObject_HEAD
-    int     allocated;
-    int     size;
-    int     pos;
-    ILE3   *list;
-    int    *types;
-} ILE3Object;
+#include "_ile3.h"
 
 static void ILE3_dealloc(ILE3Object * self)
 {
@@ -218,12 +210,63 @@ static PyObject *ILE3_getat(ILE3Object *self, PyObject *args) {
     return ILE3_getat_c(self, pos);
 }
 
+static PyObject *ILE3_getat_bytes(ILE3Object *self, PyObject *args) {
+    if (!PyLong_Check(args)) {
+        _PyArg_BadArgument("getat", "args", "long", args);
+        return NULL;
+    }
+    long pos = PyLong_AsLong(args);
+    PyObject *pValue = NULL;
+    PyObject *pResult = NULL;
+    if (pos >= 0 && pos < self->size) {
+        ILE3 *item = self->list + pos;
+        long type = *(self->types + pos);
+        long size = *(item->ile3$ps_retlen_addr);
+        pValue = PyBytes_FromStringAndSize((char*)item->ile3$ps_bufaddr, size);
+        if (pValue == NULL) {
+            PyErr_SetString(PyExc_RuntimeError, "Cannot build value");
+            goto error_exit;
+        }
+        PyObject *pResult = PyTuple_New(3);
+        if (pResult == NULL) {
+            PyErr_SetString(PyExc_RuntimeError, "Cannot create result");
+            goto error_exit;
+        }
+        if (PyTuple_SetItem(pResult, 0, PyLong_FromLong(item->ile3$w_code))) {
+            PyErr_SetString(PyExc_RuntimeError, "Cannot set item 0");
+            goto error_exit;
+        }
+        if (PyTuple_SetItem(pResult, 1, PyLong_FromLong(type))) {
+            PyErr_SetString(PyExc_RuntimeError, "Cannot set item 1");
+            goto error_exit;
+        }
+        if (PyTuple_SetItem(pResult, 2, pValue)) {
+            PyErr_SetString(PyExc_RuntimeError, "Cannot set item 2");
+            goto error_exit;
+        }
+        return pResult;
+    } else {
+        PyErr_Format(PyExc_IndexError, "Index %i is out of range [0, %i]", pos, self->size - 1);
+    }
+error_exit:
+    if (pResult) {
+        Py_DECREF(pResult);
+    }
+    if (pValue) {
+        Py_DECREF(pValue);
+    }
+    return NULL;
+}
+
 static PyObject *ILE3_iternext(ILE3Object *self)
 {
     PyObject *pResult = ILE3_getat_c(self, self->pos);
     if (pResult != NULL) {
         ++self->pos;
         return pResult;
+    }
+    if (PyErr_Occurred() && PyErr_ExceptionMatches(PyExc_IndexError)) {
+        PyErr_Clear();
     }
     self->pos = -1;
     return NULL;
@@ -397,6 +440,8 @@ static PyMethodDef ILE3_methods[] = {
         PyDoc_STR("append(code: number, type: number, ?value: (str | number) | len: number)->None   Add item")},
     {"getat", (PyCFunction) ILE3_getat, METH_O,
         PyDoc_STR("getat(i: number)->(code: number, type: number, value: number | str)   Get value at the index")},
+    {"getat_bytes", (PyCFunction) ILE3_getat_bytes, METH_O,
+        PyDoc_STR("getat_bytes(i: number)->(code: number, type: number, value: bytes)   Get value as bytes at the index")},
     {NULL, NULL}
 };
 
@@ -408,7 +453,7 @@ static PyMemberDef ILE3_members[] = {
 
 PyTypeObject ILE3_Type = {
     PyObject_HEAD_INIT(NULL)
-    "_ile3.ile3list",
+    ILE3_MODULE_NAME "." ILE3_TYPE_NAME,
     .tp_basicsize = sizeof(ILE3Object),
     .tp_dealloc = (destructor) ILE3_dealloc,
     .tp_getattro = PyObject_GenericGetAttr,
@@ -420,14 +465,13 @@ PyTypeObject ILE3_Type = {
     .tp_iternext = (iternextfunc)ILE3_iternext,
 };
 
-
 /********************************************************************
   Module
 */
 
 static struct PyModuleDef _module_definition = {
     PyModuleDef_HEAD_INIT,
-    .m_name = "_ile3",
+    .m_name = ILE3_MODULE_NAME,
     .m_doc = "OpenVMS ILE3 implementation.",
     .m_size = -1,
 };
@@ -442,7 +486,7 @@ PyMODINIT_FUNC PyInit__ile3(void)
         return NULL;
     }
     Py_INCREF(&ILE3_Type);
-    if (PyModule_AddObject(m, "ile3list", (PyObject *) &ILE3_Type) < 0) {
+    if (PyModule_AddObject(m, ILE3_TYPE_NAME, (PyObject *) &ILE3_Type) < 0) {
         Py_DECREF(&ILE3_Type);
         Py_DECREF(m);
         return NULL;

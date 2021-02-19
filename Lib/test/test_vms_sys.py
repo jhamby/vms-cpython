@@ -126,69 +126,64 @@ class BaseTestCase(unittest.TestCase):
         log_name = 'PythonTestCRELNM'
         log_value = 'Value of PythonTestCRELNM'
         log_table = 'LNM$PROCESS_TABLE'
-        il = ILE3.new()
-        ILE3.addstrn(il, LNM.LNM__STRING, log_value, len(log_value))
-        status = SYS.crelnm(0, log_table, log_name, PSL.PSL_C_USER, il)
-        ILE3.delete(il)
+        il = ILE3.ile3list()
+        il.append(LNM.LNM__STRING, DSC.DSC_K_DTYPE_T, log_value)
+        status = SYS.crelnm(log_name, log_table, il)
         self.assertIn(status, (SS.SS__NORMAL, SS.SS__SUPERSEDE))
 
-        il = ILE3.new()
-        ILE3.addint(il, LNM.LNM__INDEX, DSC.DSC_K_DTYPE_LU, 0)
-        ILE3.addint(il, LNM.LNM__ATTRIBUTES, DSC.DSC_K_DTYPE_LU, 0)
-        ILE3.addint(il, LNM.LNM__LENGTH, DSC.DSC_K_DTYPE_LU, 0)
-        ILE3.addstr(il, LNM.LNM__STRING, None, 255)
-        ILE3.addstr(il, LNM.LNM__TABLE, None, 32)
-        status = SYS.trnlnm(LNM.LNM_M_CASE_BLIND, None, log_name, PSL.PSL_C_USER, il)
-        attributes = ILE3.getint(il, 1)
-        value_length = ILE3.getint(il, 2)
-        value_str = ILE3.getstr(il, 3, 0)
-        table_str = ILE3.getstr(il, 4, 0)
-        ILE3.delete(il)
+        il = ILE3.ile3list()
+        il.append(LNM.LNM__INDEX, DSC.DSC_K_DTYPE_LU)
+        il.append(LNM.LNM__ATTRIBUTES, DSC.DSC_K_DTYPE_LU)
+        il.append(LNM.LNM__LENGTH, DSC.DSC_K_DTYPE_LU)
+        il.append(LNM.LNM__STRING, DSC.DSC_K_DTYPE_T, 255)
+        il.append(LNM.LNM__TABLE, DSC.DSC_K_DTYPE_T, 32)
+        status = SYS.trnlnm(log_name, log_table, il)
+        _,_,attributes = il.getat(1)
+        _,_,value_length = il.getat(2)
+        _,_,value_str = il.getat(3)
+        _,_,table_str = il.getat(4)
         self.assertEqual(status, SS.SS__NORMAL)
         self.assertTrue(attributes & LNM.LNM_M_EXISTS)
         self.assertEqual(value_length, len(log_value))
         self.assertEqual(value_str, log_value)
         self.assertEqual(table_str, log_table)
 
-        status = SYS.dellnm(log_table, log_name, PSL.PSL_C_USER)
+        status = SYS.dellnm(log_name, log_table)
         self.assertEqual(status, SS.SS__NORMAL)
 
     def test_device_scan(self):
         """ test device_scan """
-        il = ILE3.new()
-        ILE3.addint(il, DVS.DVS__DEVCLASS, DSC.DSC_K_DTYPE_LU, DC.DC__DISK)
+        il = ILE3.ile3list()
+        il.append(DVS.DVS__DEVCLASS, DSC.DSC_K_DTYPE_LU, DC.DC__DISK)
 
         devices = []
-        status, dev_name, context = SYS.device_scan('*', il, 0)
+        status, dev_name, context = SYS.device_scan('*', il)
         while status == SS.SS__NORMAL:
             devices.append(dev_name)
             status, dev_name, context = SYS.device_scan('*', il, context)
 
-        ILE3.delete(il)
         self.assertGreater(len(devices), 0)
         self.assertEqual(status, SS.SS__NOMOREDEV)
 
     def test_uicstr(self):
         """ test uicstr """
-        status, ret_str = SYS.uicstr(123, 0)
+        status, ret_str = SYS.uicstr(123)
         self.assertEqual(status, SS.SS__NORMAL)
         self.assertEqual(ret_str, '[0,173]')
 
     def test_getdvi(self):
         """ test getdvi """
-        il = ILE3.new()
-        ILE3.addint(il, DVS.DVS__DEVCLASS, DSC.DSC_K_DTYPE_LU, DC.DC__DISK)
+        il = ILE3.ile3list()
+        il.append(DVS.DVS__DEVCLASS, DSC.DSC_K_DTYPE_LU, DC.DC__DISK)
         status, dev_name, _ = SYS.device_scan('*', il, 0)
-        ILE3.delete(il)
         self.assertIn(status, (SS.SS__NORMAL, SS.SS__NOMOREDEV))
 
-        il = ILE3.new()
-        ILE3.addint(il, DVI.DVI__DEVCHAR, DSC.DSC_K_DTYPE_LU, 0)
+        il = ILE3.ile3list()
+        il.append(DVI.DVI__DEVCHAR, DSC.DSC_K_DTYPE_LU, 0)
 
         status = SYS.getdvi(dev_name, il)
-        characteristics = ILE3.getint(il, 0)
+        _,_,characteristics = il.getat(0)
 
-        ILE3.delete(il)
         self.assertEqual(status, SS.SS__NORMAL)
         DEV_M_DIR = 0x8     # has directories
         self.assertTrue(characteristics & DEV_M_DIR)
@@ -197,11 +192,11 @@ class BaseTestCase(unittest.TestCase):
 
     def test_getjpi(self):
         """ test getjpi """
-        il = ILE3.new()
-        ILE3.addint(il, JPI.JPI__PPGCNT, DSC.DSC_K_DTYPE_LU, 0)
-        status, pid = SYS.getjpi(0, None, il)
-        ppgcnt = ILE3.getint(il, 0)
-        ILE3.delete(il)
+        il = ILE3.ile3list()
+        il.append(JPI.JPI__PPGCNT, DSC.DSC_K_DTYPE_LU)
+        status, pid = SYS.getjpi(il, 0)
+        _,_,ppgcnt = il.getat(0)
+
         self.assertEqual(status, SS.SS__NORMAL)
         self.assertGreater(pid, 0)
         self.assertGreater(ppgcnt, 0)
@@ -209,17 +204,14 @@ class BaseTestCase(unittest.TestCase):
     def test_getlki(self):
         """ test getlki """
         locks = 0
-        lkiaddr = 0
-        il = ILE3.new()
-        ILE3.addint(il, LKI.LKI__LOCKID, DSC.DSC_K_DTYPE_LU, 0)
-        while True:
-            status, lkiaddr = SYS.getlki(lkiaddr, il)
-            if status != SS.SS__NORMAL:
-                break
-            lockid = ILE3.getint(il, 0)
-            self.assertEqual(lockid & 0xffff, lkiaddr & 0xffff)
+        il = ILE3.ile3list()
+        il.append(LKI.LKI__LOCKID, DSC.DSC_K_DTYPE_LU)
+        status, lkid = SYS.getlki(il)
+        while status == SS.SS__NORMAL:
             locks = locks + 1
-        ILE3.delete(il)
+            _,_,lockid = il.getat(0)
+            self.assertEqual(lockid & 0xffff, lkid & 0xffff)
+            status, lkid = SYS.getlki(il, lkid)
         self.assertEqual(status, SS.SS__NOMORELOCK)
 
     def test_getmsg(self):
@@ -233,39 +225,39 @@ class BaseTestCase(unittest.TestCase):
 
     def test_getqui(self):
         """ test getqui """
-        il = ILE3.new()
-        ILE3.addstr(il, QUI.QUI__SEARCH_NAME, '*', 32)
-        ILE3.addstr(il, QUI.QUI__QUEUE_NAME, None, 32)
+        il = ILE3.ile3list()
+        il.append(QUI.QUI__SEARCH_NAME, DSC.DSC_K_DTYPE_T, '*')
+        il.append(QUI.QUI__QUEUE_NAME, DSC.DSC_K_DTYPE_T, 32)
         context = -1
         status, context = SYS.getqui(QUI.QUI__DISPLAY_QUEUE, context, il)
-        qui_name = ILE3.getstr(il, 1, 0)
-        ILE3.delete(il)
+        _,_,qui_name = il.getat(1)
+
         self.assertIn(status, (JBC.JBC__NOMOREQUE, SS.SS__NORMAL))
         self.assertNotEqual(qui_name, '')
         if status == SS.SS__NORMAL:
-            status, context = SYS.getqui(QUI.QUI__CANCEL_OPERATION, context, None)
+            status, context = SYS.getqui(QUI.QUI__CANCEL_OPERATION, context)
             self.assertEqual(status, SS.SS__NORMAL)
 
     def test_getrmi(self):
         """ test getrmi """
-        il = ILE3.new()
-        ILE3.addint(il, RMI.RMI__CPUIDLE, DSC.DSC_K_DTYPE_QU, 0)
+        il = ILE3.ile3list()
+        il.append(RMI.RMI__CPUIDLE, DSC.DSC_K_DTYPE_QU)
         status = SYS.getrmi(il)
-        cpu_idle = ILE3.getint(il, 0)
-        ILE3.delete(il)
+        _,_,cpu_idle = il.getat(0)
+
         self.assertEqual(status, SS.SS__NORMAL)
         self.assertGreater(cpu_idle, 0)
 
     def test_getsyi(self):
         """ test getsyi """
-        il = ILE3.new()
-        ILE3.addstr(il, SYI.SYI__ARCH_NAME, None, 16)
-        ILE3.addint(il, SYI.SYI__ARCH_TYPE, DSC.DSC_K_DTYPE_LU, 0)
+        il = ILE3.ile3list()
+        il.append(SYI.SYI__ARCH_NAME, DSC.DSC_K_DTYPE_T, 16)
+        il.append(SYI.SYI__ARCH_TYPE, DSC.DSC_K_DTYPE_LU)
         csid = -1
-        status, csid = SYS.getsyi(csid, None, il)
-        arch_name = ILE3.getstr(il, 0, 0)
-        arch_type = ILE3.getint(il, 1)
-        ILE3.delete(il)
+        status, csid = SYS.getsyi(il)
+        _,_,arch_name = il.getat(0)
+        _,_,arch_type = il.getat(1)
+
         self.assertEqual(status, SS.SS__NORMAL)
         self.assertNotEqual(arch_name, '')
         self.assertIn(arch_type, (1,2,3))
@@ -283,27 +275,27 @@ class BaseTestCase(unittest.TestCase):
     def test_getuai(self):
         """ test getuai """
         # setuai requires BYPASS or SYSPRV
-        il = ILE3.new()
-        ILE3.addstr(il, JPI.JPI__ACCOUNT, None, 8)
-        ILE3.addstr(il, JPI.JPI__USERNAME, None, 12)
-        status, pid = SYS.getjpi(0, None, il)
-        jpi_account = ILE3.getstr(il, 0, 0)
-        jpi_username = ILE3.getstr(il, 1, 0)
-        ILE3.delete(il)
+        il = ILE3.ile3list()
+        il.append(JPI.JPI__ACCOUNT, DSC.DSC_K_DTYPE_T, 8)
+        il.append(JPI.JPI__USERNAME, DSC.DSC_K_DTYPE_T, 12)
+        status, pid = SYS.getjpi(il, 0)
+        _,_,jpi_account = il.getat(0)
+        _,_,jpi_username = il.getat(1)
+
         self.assertEqual(status, SS.SS__NORMAL)
         self.assertNotEqual(jpi_account, '')
         self.assertNotEqual(jpi_username, '')
         self.assertNotEqual(pid, 0)
 
-        il = ILE3.new()
-        ILE3.addstr(il, UAI.UAI__ACCOUNT, None, 32)
-        ILE3.addstr(il, UAI.UAI__DEFDIR, None, 64)
-        ILE3.addint(il, UAI.UAI__UIC, DSC.DSC_K_DTYPE_LU, 0)
+        il = ILE3.ile3list()
+        il.append(UAI.UAI__ACCOUNT, DSC.DSC_K_DTYPE_T, 32)
+        il.append(UAI.UAI__DEFDIR, DSC.DSC_K_DTYPE_VT, 64)
+        il.append(UAI.UAI__UIC, DSC.DSC_K_DTYPE_LU)
         status = SYS.getuai(jpi_username, il)
-        uai_account = ILE3.getstr(il, 0, 0)
-        uai_defdir = ILE3.getstr(il, 1, 1)
-        uai_uic = ILE3.getint(il, 2)
-        ILE3.delete(il)
+        _,_,uai_account = il.getat(0)
+        _,_,uai_defdir = il.getat(1)
+        _,_,uai_uic = il.getat(2)
+
         self.assertEqual(status, SS.SS__NORMAL)
         self.assertEqual(jpi_account.strip(), uai_account.strip())
         self.assertNotEqual(uai_defdir, '')
@@ -312,7 +304,7 @@ class BaseTestCase(unittest.TestCase):
     def test_hiber(self):
         """ test hiber and schdwk """
         hiber_time = 10000000   # in 100 nanoseconds
-        status, _ = SYS.schdwk(0, None, -hiber_time)
+        status, _ = SYS.schdwk(-hiber_time)
         self.assertEqual(status, SS.SS__NORMAL)
         # status, time1 = SYS.gettim()
         status = SYS.hiber()
