@@ -18,6 +18,9 @@ static struct PyModuleDef _lckdef_module = {
 PyMODINIT_FUNC
 PyInit__lckdef(void) {
     PyObject *m = PyModule_Create(&_lckdef_module);
+    if (m == NULL) {
+        return NULL;
+    }
     PyModule_AddIntConstant(m, "LCK_M_VALBLK", 0x1L);
     PyModule_AddIntConstant(m, "LCK_M_CONVERT", 0x2L);
     PyModule_AddIntConstant(m, "LCK_M_NOQUEUE", 0x4L);

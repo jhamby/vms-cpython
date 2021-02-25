@@ -18,6 +18,9 @@ static struct PyModuleDef _dmtdef_module = {
 PyMODINIT_FUNC
 PyInit__dmtdef(void) {
     PyObject *m = PyModule_Create(&_dmtdef_module);
+    if (m == NULL) {
+        return NULL;
+    }
     PyModule_AddIntConstant(m, "DMT_M_NOUNLOAD", 0x1L);
     PyModule_AddIntConstant(m, "DMT_M_UNIT", 0x2L);
     PyModule_AddIntConstant(m, "DMT_M_ABORT", 0x4L);

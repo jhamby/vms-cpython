@@ -18,6 +18,9 @@ static struct PyModuleDef _rmidef_module = {
 PyMODINIT_FUNC
 PyInit__rmidef(void) {
     PyObject *m = PyModule_Create(&_rmidef_module);
+    if (m == NULL) {
+        return NULL;
+    }
     PyModule_AddIntConstant(m, "RMI_C_EXETYPE", 1);
     PyModule_AddIntConstant(m, "RMI_C_EWSTYPE", 2);
     PyModule_AddIntConstant(m, "RMI_C_MONTYPE", 3);

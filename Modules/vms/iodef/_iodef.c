@@ -18,6 +18,9 @@ static struct PyModuleDef _iodef_module = {
 PyMODINIT_FUNC
 PyInit__iodef(void) {
     PyObject *m = PyModule_Create(&_iodef_module);
+    if (m == NULL) {
+        return NULL;
+    }
     PyModule_AddIntConstant(m, "IO__NOP", 0);
     PyModule_AddIntConstant(m, "IO__UNLOAD", 1);
     PyModule_AddIntConstant(m, "IO__LOADMCODE", 1);

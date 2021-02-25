@@ -18,6 +18,9 @@ static struct PyModuleDef _fabdef_module = {
 PyMODINIT_FUNC
 PyInit__fabdef(void) {
     PyObject *m = PyModule_Create(&_fabdef_module);
+    if (m == NULL) {
+        return NULL;
+    }
     PyModule_AddIntConstant(m, "FAB_C_BID", 3);
     PyModule_AddIntConstant(m, "FAB_M_PPF_RAT", 0x3FC0L);
     PyModule_AddIntConstant(m, "FAB_M_PPF_IND", 0x4000L);

@@ -761,10 +761,10 @@
 #undef HAVE_PLOCK
 
 /* Define to 1 if you have the `poll' function. */
-#define HAVE_POLL 1
+#undef HAVE_POLL
 
 /* Define to 1 if you have the <poll.h> header file. */
-#define HAVE_POLL_H 1
+#undef HAVE_POLL_H
 
 /* Define to 1 if you have the `posix_fadvise' function. */
 #undef HAVE_POSIX_FADVISE

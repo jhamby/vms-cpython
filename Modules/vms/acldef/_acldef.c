@@ -18,6 +18,9 @@ static struct PyModuleDef _acldef_module = {
 PyMODINIT_FUNC
 PyInit__acldef(void) {
     PyObject *m = PyModule_Create(&_acldef_module);
+    if (m == NULL) {
+        return NULL;
+    }
     PyModule_AddIntConstant(m, "ACL_K_LENGTH", 12);
     PyModule_AddIntConstant(m, "ACL_C_LENGTH", 12);
     PyModule_AddIntConstant(m, "ACL_C_FILE", 1);

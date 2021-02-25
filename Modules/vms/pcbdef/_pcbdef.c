@@ -18,6 +18,9 @@ static struct PyModuleDef _pcbdef_module = {
 PyMODINIT_FUNC
 PyInit__pcbdef(void) {
     PyObject *m = PyModule_Create(&_pcbdef_module);
+    if (m == NULL) {
+        return NULL;
+    }
     PyModule_AddIntConstant(m, "PCB_M_RES", 0x1L);
     PyModule_AddIntConstant(m, "PCB_M_DELPEN", 0x2L);
     PyModule_AddIntConstant(m, "PCB_M_FORCPEN", 0x4L);

@@ -18,6 +18,9 @@ static struct PyModuleDef _statedef_module = {
 PyMODINIT_FUNC
 PyInit__statedef(void) {
     PyObject *m = PyModule_Create(&_statedef_module);
+    if (m == NULL) {
+        return NULL;
+    }
     PyModule_AddIntConstant(m, "SCH_C_COLPG", 1);
     PyModule_AddIntConstant(m, "SCH_C_MWAIT", 2);
     PyModule_AddIntConstant(m, "SCH_C_CEF", 3);

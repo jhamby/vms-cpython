@@ -18,6 +18,9 @@ static struct PyModuleDef _maildef_module = {
 PyMODINIT_FUNC
 PyInit__maildef(void) {
     PyObject *m = PyModule_Create(&_maildef_module);
+    if (m == NULL) {
+        return NULL;
+    }
     PyModule_AddIntConstant(m, "MAIL__SEND_SPARE_0", 1);
     PyModule_AddIntConstant(m, "MAIL__SEND_FOREIGN", 2);
     PyModule_AddIntConstant(m, "MAIL__SEND_CC_LINE", 3);

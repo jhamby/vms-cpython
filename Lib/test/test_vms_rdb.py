@@ -6,8 +6,8 @@ import tempfile
 if sys.platform != 'OpenVMS':
     raise unittest.SkipTest('OpenVMS required')
 
-import rdb
-import vms.decc
+import _rdb
+import _decc
 
 class BaseTestCase(unittest.TestCase):
 
@@ -98,13 +98,13 @@ $exit
         fd, self.dbname = tempfile.mkstemp(suffix='.RDB')
         os.close(fd)
         os.unlink(self.dbname)
-        self.dbname_vms = vms.decc.to_vms(self.dbname, 0, 0)[0]
+        self.dbname_vms = _decc.to_vms(self.dbname)[0]
         sql_content = sql_content.format(dbname=self.dbname_vms)
 
         with tempfile.NamedTemporaryFile(suffix=".COM", delete=False) as tmpfile:
             tmpfile.write(sql_content.encode())
             tmpfile.close()
-            tmpfile_vms_name = vms.decc.to_vms(tmpfile.name, 0, 0)[0]
+            tmpfile_vms_name = _decc.to_vms(tmpfile.name)[0]
             p = os.popen('@' + tmpfile_vms_name)
             data = p.read()
             p.close()
@@ -113,32 +113,35 @@ $exit
     def test_sql_database(self):
         """ tests SQL database """
 
-        self.assertIsNot(rdb.Attach(self.dbname_vms), -1, rdb.Error())
+        sqlca = _rdb.sqlca()
+        sqlca.attach(self.dbname_vms)
+        self.assertIsNot(sqlca.code, -1, sqlca.message)
 
-        cursor = "C0001"
-        ch = rdb.DeclareCursor(cursor, "select name, address, city from customer")
+        sqlca.set_readonly()
+        self.assertIsNot(sqlca.code, -1, sqlca.message)
 
-        self.assertIsNot(ch, None, rdb.Error())
+        ch = sqlca.declare_cursor("C001", "select name, address, city from customer")
+        self.assertIsNot(ch, None, sqlca.message)
 
-        rdb.SetReadonly()
+        fields = ch.fields()
+        self.assertIsNot(fields, None, sqlca.message)
+        self.assertIsNot(len(fields), 3, "must be 3 columns")
 
-        self.assertIsNot(rdb.OpenCursor(ch), -1, rdb.Error())
+        ch.open_cursor()
+        self.assertIsNot(sqlca.code, -1, sqlca.message)
 
-        results = []
+        while ch.fetch() == 0:
+            data = ch.data()
+            self.assertIsNot(data, None, sqlca.message)
+            self.assertIsNot(len(data), 3, "must be 3 columns")
 
-        while True:
-            row = rdb.FetchRow(ch)
-            if row is None:
-                break
-            results.append((row[0], row[1], row[2]))
+        self.assertIs(sqlca.code, _rdb.SQLCODE_EOS, sqlca.message)
 
-        self.assertIs(rdb.Sqlcode(), 100, rdb.Error())
+        ch.close_cursor()
+        self.assertIsNot(sqlca.code, -1, sqlca.message)
 
-        self.assertIsNot(rdb.CloseCursor(ch), -1, rdb.Error())
-
-        rdb.Free(ch)                # Free cursor handle
-        rdb.Rollback()
-        rdb.Detach()
+        ch.release()
+        sqlca.detach()
 
 
 if __name__ == "__main__":

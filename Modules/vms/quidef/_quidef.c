@@ -18,6 +18,9 @@ static struct PyModuleDef _quidef_module = {
 PyMODINIT_FUNC
 PyInit__quidef(void) {
     PyObject *m = PyModule_Create(&_quidef_module);
+    if (m == NULL) {
+        return NULL;
+    }
     PyModule_AddIntConstant(m, "QUI__CANCEL_OPERATION", 1);
     PyModule_AddIntConstant(m, "QUI__DISPLAY_CHARACTERISTIC", 2);
     PyModule_AddIntConstant(m, "QUI__DISPLAY_FILE", 3);

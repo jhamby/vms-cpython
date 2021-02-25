@@ -18,6 +18,9 @@ static struct PyModuleDef _iccdef_module = {
 PyMODINIT_FUNC
 PyInit__iccdef(void) {
     PyObject *m = PyModule_Create(&_iccdef_module);
+    if (m == NULL) {
+        return NULL;
+    }
     PyModule_AddIntConstant(m, "IOS_ICC_S_IOS_ICC", 20);
     PyModule_AddIntConstant(m, "IOS_ICC_s_parameters", 16);
     PyModule_AddIntConstant(m, "IOS_ICC_s_connect", 16);

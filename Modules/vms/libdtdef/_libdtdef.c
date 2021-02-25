@@ -18,6 +18,9 @@ static struct PyModuleDef _libdtdef_module = {
 PyMODINIT_FUNC
 PyInit__libdtdef(void) {
     PyObject *m = PyModule_Create(&_libdtdef_module);
+    if (m == NULL) {
+        return NULL;
+    }
     PyModule_AddIntConstant(m, "LIB_K_MONTH_NAME", 0);
     PyModule_AddIntConstant(m, "LIB_K_MONTH_NAME_ABB", 3);
     PyModule_AddIntConstant(m, "LIB_K_WEEKDAY_NAME", 6);

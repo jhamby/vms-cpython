@@ -18,6 +18,9 @@ static struct PyModuleDef _libfisdef_module = {
 PyMODINIT_FUNC
 PyInit__libfisdef(void) {
     PyObject *m = PyModule_Create(&_libfisdef_module);
+    if (m == NULL) {
+        return NULL;
+    }
     PyModule_AddIntConstant(m, "LIB_M_FIS_PARANOID", 0x1L);
     PyModule_AddIntConstant(m, "LIB_M_FIS_NOTRANSLOG", 0x8L);
     PyModule_AddIntConstant(m, "LIB_M_FIS_MIXEDCASE", 0x10L);

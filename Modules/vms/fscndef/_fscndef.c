@@ -18,6 +18,9 @@ static struct PyModuleDef _fscndef_module = {
 PyMODINIT_FUNC
 PyInit__fscndef(void) {
     PyObject *m = PyModule_Create(&_fscndef_module);
+    if (m == NULL) {
+        return NULL;
+    }
     PyModule_AddIntConstant(m, "FSCN_M_NODE", 0x1L);
     PyModule_AddIntConstant(m, "FSCN_M_DEVICE", 0x2L);
     PyModule_AddIntConstant(m, "FSCN_M_ROOT", 0x4L);

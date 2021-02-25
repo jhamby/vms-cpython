@@ -18,6 +18,9 @@ static struct PyModuleDef _ciadef_module = {
 PyMODINIT_FUNC
 PyInit__ciadef(void) {
     PyObject *m = PyModule_Create(&_ciadef_module);
+    if (m == NULL) {
+        return NULL;
+    }
     PyModule_AddIntConstant(m, "CIA_K_SCAN", 1);
     PyModule_AddIntConstant(m, "CIA_K_DELETE", 2);
     PyModule_AddIntConstant(m, "CIA_K_SHOW", 3);

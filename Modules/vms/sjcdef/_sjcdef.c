@@ -18,6 +18,9 @@ static struct PyModuleDef _sjcdef_module = {
 PyMODINIT_FUNC
 PyInit__sjcdef(void) {
     PyObject *m = PyModule_Create(&_sjcdef_module);
+    if (m == NULL) {
+        return NULL;
+    }
     PyModule_AddIntConstant(m, "SJC__ABORT_JOB", 1);
     PyModule_AddIntConstant(m, "SJC__ADD_FILE", 2);
     PyModule_AddIntConstant(m, "SJC__ALTER_JOB", 3);

@@ -20,6 +20,7 @@ from test.support import warnings_helper
 
 TESTFN = os_helper.TESTFN
 
+_IS_OPENVMS = (sys.platform == 'OpenVMS')
 
 class TestSupport(unittest.TestCase):
 
@@ -201,7 +202,9 @@ class TestSupport(unittest.TestCase):
 
         with os_helper.temp_dir() as temp_path:
             with os_helper.change_cwd(temp_path) as new_cwd:
-                self.assertEqual(new_cwd, temp_path)
+                # on OpenVMS /tmp is virtual and is the same as the home directory
+                if not _IS_OPENVMS:
+                    self.assertEqual(new_cwd, temp_path)
                 self.assertEqual(os.getcwd(), new_cwd)
 
         self.assertEqual(os.getcwd(), original_cwd)
@@ -411,8 +414,9 @@ class TestSupport(unittest.TestCase):
 
         self.assertRaises(AssertionError, support.check__all__, self, unittest)
 
-    @unittest.skipUnless(hasattr(os, 'waitpid') and hasattr(os, 'WNOHANG'),
-                         'need os.waitpid() and os.WNOHANG')
+    @unittest.skipUnless(hasattr(os, 'waitpid') and hasattr(os, 'WNOHANG')
+                         and hasattr(os, 'fork'),
+                         'need os.fork(), os.waitpid() and os.WNOHANG')
     def test_reap_children(self):
         # Make sure that there is no other pending child process
         support.reap_children()

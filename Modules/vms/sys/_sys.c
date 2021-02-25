@@ -1613,7 +1613,7 @@ SYS_readvblk(
         }
     } else if (PyLong_CheckExact(args[1])) {
         size = PyLong_AsLongLong(args[1]);
-        buffer = PyMem_MALLOC(size);
+        buffer = PyMem_Malloc(size);
         if (buffer == NULL) {
             PyErr_SetNone(PyExc_MemoryError);
             return NULL;
@@ -1644,7 +1644,7 @@ SYS_readvblk(
     Py_END_ALLOW_THREADS
     PyObject *pRet = Py_BuildValue("(i,y#,H)", status, buffer, iosb.iosb$w_bcnt, iosb.iosb$w_status);
     if (free_buffer) {
-        PyMem_FREE(buffer);
+        PyMem_Free(buffer);
     }
     return pRet;
 }

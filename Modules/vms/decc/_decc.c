@@ -454,9 +454,13 @@ static struct PyModuleDef _module_definition = {
     NULL,
 };
 
-PyMODINIT_FUNC PyInit__decc(void)
+PyMODINIT_FUNC
+PyInit__decc(void)
 {
     PyObject *m = PyModule_Create(&_module_definition);
+    if (m == NULL) {
+        return NULL;
+    }
     PyModule_AddIntConstant(m, "DECC_SC_ARG_MAX", 100);
     PyModule_AddIntConstant(m, "DECC_SC_CHILD_MAX", 101);
     PyModule_AddIntConstant(m, "DECC_SC_CLK_TCK", 102);

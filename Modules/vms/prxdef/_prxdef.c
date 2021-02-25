@@ -18,6 +18,9 @@ static struct PyModuleDef _prxdef_module = {
 PyMODINIT_FUNC
 PyInit__prxdef(void) {
     PyObject *m = PyModule_Create(&_prxdef_module);
+    if (m == NULL) {
+        return NULL;
+    }
     PyModule_AddIntConstant(m, "PRX_K_ADD", 1);
     PyModule_AddIntConstant(m, "PRX_K_DELETE", 2);
     PyModule_AddIntConstant(m, "PRX_K_SHOW", 3);

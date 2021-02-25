@@ -18,6 +18,9 @@ static struct PyModuleDef _rsdmdef_module = {
 PyMODINIT_FUNC
 PyInit__rsdmdef(void) {
     PyObject *m = PyModule_Create(&_rsdmdef_module);
+    if (m == NULL) {
+        return NULL;
+    }
     PyModule_AddIntConstant(m, "RSDM__JOIN_SYSTEM", 1);
     PyModule_AddIntConstant(m, "RSDM__JOIN_DEFAULT", 2);
     PyModule_AddIntConstant(m, "RSDM__JOIN_DOMAIN", 3);

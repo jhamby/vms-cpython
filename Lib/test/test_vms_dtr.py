@@ -4,9 +4,13 @@ import unittest
 if sys.platform != 'OpenVMS':
     raise unittest.SkipTest('OpenVMS required')
 
-import vms.rec as rec
-import vms.dtr as dtr
-import vms.ssdef as SS
+import _dtr
+import _ssdef
+
+def _show_messages(dab):
+    while dab.state == _dtr.DTR_K_STL_MSG:
+        print(dab.message)
+        dab.cont()
 
 class BaseTestCase(unittest.TestCase):
 
@@ -18,102 +22,82 @@ class BaseTestCase(unittest.TestCase):
 
     def test_demo_01(self):
         """ tests demo 01 """
-        r = rec.new()
-        rec.addstr(r, None, 10, 0)
-        rec.addstr(r, None, 10, 10)
-        rec.addstr(r, None, 6, 20)
-        rec.addstr(r, None, 3, 26)
-        rec.addstr(r, None, 5, 29)
-        rec.addstr(r, None, 2, 34)
-        rec.addstr(r, None, 5, 36)
+        # r = rec.new()
+        # rec.addstr(r, None, 10, 0)
+        # rec.addstr(r, None, 10, 10)
+        # rec.addstr(r, None, 6, 20)
+        # rec.addstr(r, None, 3, 26)
+        # rec.addstr(r, None, 5, 29)
+        # rec.addstr(r, None, 2, 34)
+        # rec.addstr(r, None, 5, 36)
 
-        sts, dab = dtr.init(100, 0)
+        dab = _dtr.dab(100)
 
-        self.assertEqual(sts, SS.SS__NORMAL, "Initialization failed")
+        self.assertEqual(dab.status, _ssdef.SS__NORMAL, "Initialization failed")
 
-        sts, cond, state = dtr.command(dab, "set dictionary cdd$top.dtr$lib.demo;")
+        dab.command("set dictionary cdd$top.dtr$lib.demo;")
+        self.assertEqual(dab.status, _ssdef.SS__NORMAL, "Command 'set dictionary' failed")
+        _show_messages(dab)
 
-        self.assertEqual(sts, SS.SS__NORMAL, "Command 'set dictionary' failed")
+        dab.command("declare port yport using yacht;")
 
-        if state == dtr._K_STL_MSG:
-            errorMsg = dtr.msg_buf(dab)
-            dtr.cont(dab)
+        self.assertEqual(dab.status, _ssdef.SS__NORMAL, "Command 'declare port' failed")
+        _show_messages(dab)
 
-        sts, cond, state = dtr.command(dab, "declare port yport using yacht;")
+        dab.command("ready yachts; ready yport write;")
+        self.assertEqual(dab.status, _ssdef.SS__NORMAL, "Command 'ready' failed")
+        _show_messages(dab)
 
-        self.assertEqual(sts, SS.SS__NORMAL, "Command 'declare port' failed")
+        dab.command("yport = yachts with loa > 30;")
+        self.assertEqual(dab.status, _ssdef.SS__NORMAL, "Command '=' failed")
+        _show_messages(dab)
 
-        while state == dtr._K_STL_MSG:
-            errorMsg = dtr.msg_buf(dab)
-            sts, cond, state = dtr.cont(dab)
+        while dab.state == _dtr.DAB_K_STL_PGET:
+            port_data = dab.port
+            self.assertEqual(dab.status, _ssdef.SS__NORMAL, "Unable to retrieve data")
+            self.assertEqual(len(port_data), dab.rec_length, "Invalid record length")
+            _show_messages(dab)
 
-        sts, cond, state = dtr.command(dab, "ready yachts; ready yport write;")
+        dab.finish()
 
-        self.assertEqual(sts, SS.SS__NORMAL, "Command 'ready' failed")
+        self.assertEqual(dab.status, _ssdef.SS__NORMAL, "Problems tidying up")
 
-        while state == dtr._K_STL_MSG:
-            errorMsg = dtr.msg_buf(dab)
-            sts, cond, state = dtr.cont(dab)
+    # def test_demo_02(self):
+    #     """ tests demo 02 """
+    #     sts, dab = dtr.init(100, 0)
 
-        sts, cond, state = dtr.command(dab, "yport = yachts with loa > 30;")
+    #     self.assertEqual(sts, _ssdef.SS__NORMAL, "initialization failed")
 
-        self.assertEqual(sts, SS.SS__NORMAL, "Command '=' failed")
+    #     sts, cond, state = dtr.command(dab, "set dictionary cdd$top.dtr$lib.demo.rdb;")
 
-        while state == dtr._K_STL_MSG:
-            errorMsg = dtr.msg_buf(dab)
-            sts, cond, state = dtr.cont(dab)
+    #     self.assertEqual(sts, _ssdef.SS__NORMAL, "Command 'set dictionary' failed")
 
-        while state == dtr._K_STL_PGET:
-            sts = dtr.get_port(dab, r)
+    #     if state == dtr._K_STL_MSG:
+    #         errorMsg = dtr.msg_buf(dab)
+    #         dtr.cont(dab)
 
-            self.assertEqual(sts, SS.SS__NORMAL, "Unable to retrieve data")
+    #     sts, cond, state = dtr.command(dab, "ready jobs shared read;")
 
-            dataStr = "%-10s\t%-10s\t%-6s\t%-3s\t%-5s\t%-2s\t%-5s" % (rec.getstr(r, 0), rec.getstr(r, 1), rec.getstr(r, 2), rec.getstr(r, 3), rec.getstr(r, 4), rec.getstr(r, 5), rec.getstr(r, 6))
+    #     self.assertEqual(sts, _ssdef.SS__NORMAL, "Command 'ready' failed")
 
-            state = dtr.state(dab)
+    #     while state == dtr._K_STL_MSG:
+    #         errorMsg = dtr.msg_buf(dab)
+    #         sts, cond, state = dtr.cont(dab)
 
-        sts = dtr.finish(dab)
+    #     sts, cond, state = dtr.command(dab, "print jobs;")
 
-        self.assertEqual(sts, SS.SS__NORMAL, "Problems tidying up")
+    #     self.assertEqual(sts, _ssdef.SS__NORMAL, "Command 'print' failed")
 
-        rec.delete(r)
+    #     sts = dtr.skip(dab, 4)
 
-    def test_demo_02(self):
-        """ tests demo 02 """
-        sts, dab = dtr.init(100, 0)
+    #     fmt = "%4c   %1c   %20c %11c  %11c"
 
-        self.assertEqual(sts, SS.SS__NORMAL, "initialization failed")
+    #     while dtr.state(dab) == dtr._K_STL_LINE:
+    #         row = dtr.row(dab, fmt)
 
-        sts, cond, state = dtr.command(dab, "set dictionary cdd$top.dtr$lib.demo.rdb;")
+    #     sts = dtr.finish(dab)
 
-        self.assertEqual(sts, SS.SS__NORMAL, "Command 'set dictionary' failed")
-
-        if state == dtr._K_STL_MSG:
-            errorMsg = dtr.msg_buf(dab)
-            dtr.cont(dab)
-
-        sts, cond, state = dtr.command(dab, "ready jobs shared read;")
-
-        self.assertEqual(sts, SS.SS__NORMAL, "Command 'ready' failed")
-
-        while state == dtr._K_STL_MSG:
-            errorMsg = dtr.msg_buf(dab)
-            sts, cond, state = dtr.cont(dab)
-
-        sts, cond, state = dtr.command(dab, "print jobs;")
-
-        self.assertEqual(sts, SS.SS__NORMAL, "Command 'print' failed")
-
-        sts = dtr.skip(dab, 4)
-
-        fmt = "%4c   %1c   %20c %11c  %11c"
-
-        while dtr.state(dab) == dtr._K_STL_LINE:
-            row = dtr.row(dab, fmt)
-
-        sts = dtr.finish(dab)
-
-        self.assertEqual(sts, SS.SS__NORMAL, "Problems tidying up")
+    #     self.assertEqual(sts, _ssdef.SS__NORMAL, "Problems tidying up")
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

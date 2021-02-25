@@ -1251,7 +1251,7 @@ _parse(char *path, char *node, char *dev, char *dir, char *name,
     status = sys$parse((void *) &fo->fab);
 
     if (!OKAY(status)) {
-	PyMem_FREE(fo);
+	PyMem_Free(fo);
 	return (status);
     }
 
@@ -1298,7 +1298,7 @@ _parse(char *path, char *node, char *dev, char *dir, char *name,
 	ver[p6] = '\0';
     }
 
-    PyMem_FREE(fo);
+    PyMem_Free(fo);
     return (status);
 }
 
@@ -1448,6 +1448,9 @@ PyMODINIT_FUNC PyInit__rms(void)
     PyObject *str = NULL;
 
     m = PyModule_Create(&moddef);
+    if (m == NULL) {
+        return NULL;
+    }
     d = PyModule_GetDict(m);
 
     addint(d, "RMSATTR_K_ORG", RMSATTR_K_ORG);

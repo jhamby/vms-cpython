@@ -18,6 +18,9 @@ static struct PyModuleDef _syidef_module = {
 PyMODINIT_FUNC
 PyInit__syidef(void) {
     PyObject *m = PyModule_Create(&_syidef_module);
+    if (m == NULL) {
+        return NULL;
+    }
     PyModule_AddIntConstant(m, "SYI_C_EXETYPE", 1);
     PyModule_AddIntConstant(m, "SYI_C_FLDTYPE", 2);
     PyModule_AddIntConstant(m, "SYI_C_RSDTYPE", 3);

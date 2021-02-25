@@ -18,6 +18,9 @@ static struct PyModuleDef _ppropdef_module = {
 PyMODINIT_FUNC
 PyInit__ppropdef(void) {
     PyObject *m = PyModule_Create(&_ppropdef_module);
+    if (m == NULL) {
+        return NULL;
+    }
     PyModule_AddIntConstant(m, "PPROP_C_PARSE_STYLE_TEMP", 0);
     PyModule_AddIntConstant(m, "PPROP_C_PARSE_STYLE_PERM", 1);
     PyModule_AddIntConstant(m, "PPROP_C_HOME_RAD", 2);

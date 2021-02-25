@@ -18,6 +18,9 @@ static struct PyModuleDef _nsadef_module = {
 PyMODINIT_FUNC
 PyInit__nsadef(void) {
     PyObject *m = PyModule_Create(&_nsadef_module);
+    if (m == NULL) {
+        return NULL;
+    }
     PyModule_AddIntConstant(m, "NSA_C_MSG_SERVER", 1);
     PyModule_AddIntConstant(m, "NSA_C_MSG_AUDIT", 2);
     PyModule_AddIntConstant(m, "NSA_C_MSG_BREAKIN", 3);

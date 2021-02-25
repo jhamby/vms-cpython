@@ -18,6 +18,9 @@ static struct PyModuleDef _dvidef_module = {
 PyMODINIT_FUNC
 PyInit__dvidef(void) {
     PyObject *m = PyModule_Create(&_dvidef_module);
+    if (m == NULL) {
+        return NULL;
+    }
     PyModule_AddIntConstant(m, "DVI__DEVCHAR", 2);
     PyModule_AddIntConstant(m, "DVI__DEVCLASS", 4);
     PyModule_AddIntConstant(m, "DVI__DEVTYPE", 6);

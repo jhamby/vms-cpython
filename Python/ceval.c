@@ -361,46 +361,46 @@ void
 _PyEval_Fini(void)
 {
 #if OPCACHE_STATS
-    fprintf(stderr, "-- Opcode cache number of objects  = %zd\n",
+    fprintf(stderr, "-- Opcode cache number of objects  = %"PY_FORMAT_SIZE_T"d\n",
             opcache_code_objects);
 
-    fprintf(stderr, "-- Opcode cache total extra mem    = %zd\n",
+    fprintf(stderr, "-- Opcode cache total extra mem    = %"PY_FORMAT_SIZE_T"d\n",
             opcache_code_objects_extra_mem);
 
     fprintf(stderr, "\n");
 
-    fprintf(stderr, "-- Opcode cache LOAD_GLOBAL hits   = %zd (%d%%)\n",
+    fprintf(stderr, "-- Opcode cache LOAD_GLOBAL hits   = %"PY_FORMAT_SIZE_T"d (%d%%)\n",
             opcache_global_hits,
             (int) (100.0 * opcache_global_hits /
                 (opcache_global_hits + opcache_global_misses)));
 
-    fprintf(stderr, "-- Opcode cache LOAD_GLOBAL misses = %zd (%d%%)\n",
+    fprintf(stderr, "-- Opcode cache LOAD_GLOBAL misses = %"PY_FORMAT_SIZE_T"d (%d%%)\n",
             opcache_global_misses,
             (int) (100.0 * opcache_global_misses /
                 (opcache_global_hits + opcache_global_misses)));
 
-    fprintf(stderr, "-- Opcode cache LOAD_GLOBAL opts   = %zd\n",
+    fprintf(stderr, "-- Opcode cache LOAD_GLOBAL opts   = %"PY_FORMAT_SIZE_T"d\n",
             opcache_global_opts);
 
     fprintf(stderr, "\n");
 
-    fprintf(stderr, "-- Opcode cache LOAD_ATTR hits     = %zd (%d%%)\n",
+    fprintf(stderr, "-- Opcode cache LOAD_ATTR hits     = %"PY_FORMAT_SIZE_T"d (%d%%)\n",
             opcache_attr_hits,
             (int) (100.0 * opcache_attr_hits /
                 opcache_attr_total));
 
-    fprintf(stderr, "-- Opcode cache LOAD_ATTR misses   = %zd (%d%%)\n",
+    fprintf(stderr, "-- Opcode cache LOAD_ATTR misses   = %"PY_FORMAT_SIZE_T"d (%d%%)\n",
             opcache_attr_misses,
             (int) (100.0 * opcache_attr_misses /
                 opcache_attr_total));
 
-    fprintf(stderr, "-- Opcode cache LOAD_ATTR opts     = %zd\n",
+    fprintf(stderr, "-- Opcode cache LOAD_ATTR opts     = %"PY_FORMAT_SIZE_T"d\n",
             opcache_attr_opts);
 
-    fprintf(stderr, "-- Opcode cache LOAD_ATTR deopts   = %zd\n",
+    fprintf(stderr, "-- Opcode cache LOAD_ATTR deopts   = %"PY_FORMAT_SIZE_T"d\n",
             opcache_attr_deopts);
 
-    fprintf(stderr, "-- Opcode cache LOAD_ATTR total    = %zd\n",
+    fprintf(stderr, "-- Opcode cache LOAD_ATTR total    = %"PY_FORMAT_SIZE_T"d\n",
             opcache_attr_total);
 #endif
 }

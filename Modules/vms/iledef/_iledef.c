@@ -18,6 +18,9 @@ static struct PyModuleDef _iledef_module = {
 PyMODINIT_FUNC
 PyInit__iledef(void) {
     PyObject *m = PyModule_Create(&_iledef_module);
+    if (m == NULL) {
+        return NULL;
+    }
     PyModule_AddIntConstant(m, "ILE3_S_ILE3", 12);
     PyModule_AddIntConstant(m, "ILE3_K_LENGTH", 12);
     PyModule_AddIntConstant(m, "ILE3_C_LENGTH", 12);

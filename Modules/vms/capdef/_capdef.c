@@ -18,6 +18,9 @@ static struct PyModuleDef _capdef_module = {
 PyMODINIT_FUNC
 PyInit__capdef(void) {
     PyObject *m = PyModule_Create(&_capdef_module);
+    if (m == NULL) {
+        return NULL;
+    }
     PyModule_AddIntConstant(m, "CAP_K_ALL_USER", -1);
     PyModule_AddIntConstant(m, "CAP_K_ALL_USER_ADD", -1);
     PyModule_AddIntConstant(m, "CAP_K_ALL_CPU_ADD", -1);

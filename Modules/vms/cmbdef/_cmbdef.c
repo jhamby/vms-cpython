@@ -18,6 +18,9 @@ static struct PyModuleDef _cmbdef_module = {
 PyMODINIT_FUNC
 PyInit__cmbdef(void) {
     PyObject *m = PyModule_Create(&_cmbdef_module);
+    if (m == NULL) {
+        return NULL;
+    }
     PyModule_AddIntConstant(m, "CMB_M_READONLY",  0x1L);
     PyModule_AddIntConstant(m, "CMB_M_WRITEONLY",  0x2L);
     PyModule_AddIntConstant(m, "CMB_S_CMBDEF",  4);

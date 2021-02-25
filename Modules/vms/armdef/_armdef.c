@@ -18,6 +18,9 @@ static struct PyModuleDef _armdef_module = {
 PyMODINIT_FUNC
 PyInit__armdef(void) {
     PyObject *m = PyModule_Create(&_armdef_module);
+    if (m == NULL) {
+        return NULL;
+    }
     PyModule_AddIntConstant(m, "ARM_M_READ", 0x1L);
     PyModule_AddIntConstant(m, "ARM_M_WRITE", 0x2L);
     PyModule_AddIntConstant(m, "ARM_M_EXECUTE", 0x4L);

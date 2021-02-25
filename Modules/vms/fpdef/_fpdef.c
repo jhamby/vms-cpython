@@ -18,6 +18,9 @@ static struct PyModuleDef _fpdef_module = {
 PyMODINIT_FUNC
 PyInit__fpdef(void) {
     PyObject *m = PyModule_Create(&_fpdef_module);
+    if (m == NULL) {
+        return NULL;
+    }
     PyModule_AddIntConstant(m, "FP_K_BALANCE_PORTS", 1);
     PyModule_AddIntConstant(m, "FP_K_CPU_CONFIGURED", 2);
     PyModule_AddIntConstant(m, "FP_K_CPU_STARTING", 3);

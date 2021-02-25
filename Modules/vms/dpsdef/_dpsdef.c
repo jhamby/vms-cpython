@@ -18,6 +18,9 @@ static struct PyModuleDef _dpsdef_module = {
 PyMODINIT_FUNC
 PyInit__dpsdef(void) {
     PyObject *m = PyModule_Create(&_dpsdef_module);
+    if (m == NULL) {
+        return NULL;
+    }
     PyModule_AddIntConstant(m, "DPS__MP_PATHNAME", 1);
     return m;
 }

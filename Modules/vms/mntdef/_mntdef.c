@@ -18,6 +18,9 @@ static struct PyModuleDef _mntdef_module = {
 PyMODINIT_FUNC
 PyInit__mntdef(void) {
     PyObject *m = PyModule_Create(&_mntdef_module);
+    if (m == NULL) {
+        return NULL;
+    }
     PyModule_AddIntConstant(m, "MNT_M_FOREIGN", 0x1L);
     PyModule_AddIntConstant(m, "MNT_M_GROUP", 0x2L);
     PyModule_AddIntConstant(m, "MNT_M_NOASSIST", 0x4L);

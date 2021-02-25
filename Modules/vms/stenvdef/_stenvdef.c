@@ -18,6 +18,9 @@ static struct PyModuleDef _stenvdef_module = {
 PyMODINIT_FUNC
 PyInit__stenvdef(void) {
     PyObject *m = PyModule_Create(&_stenvdef_module);
+    if (m == NULL) {
+        return NULL;
+    }
     PyModule_AddIntConstant(m, "STENV_K_AUTO_ACTION", 1);
     PyModule_AddIntConstant(m, "STENV_K_BOOT_DEV", 2);
     PyModule_AddIntConstant(m, "STENV_K_BOOTDEF_DEV", 3);

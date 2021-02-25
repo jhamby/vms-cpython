@@ -1,4 +1,3 @@
-python$build_obj:[Programs]_freeze_importlib.obc
 python$build_obj:[Modules]getbuildinfo.obc
 python$build_obj:[Parser]token.obc
 python$build_obj:[Parser]pegen.obc
@@ -111,6 +110,7 @@ python$build_obj:[Modules]main.obc
 python$build_obj:[Modules]gcmodule.obc
 python$build_obj:[vms]vms_smg_readline.obc
 python$build_obj:[vms]vms_poll_select_hack.obc
+python$build_obj:[vms]vms_crtl_values.obc
 python$build_obj:[Modules]posixmodule.obb
 python$build_obj:[Modules]_functoolsmodule.obb
 python$build_obj:[Modules]signalmodule.obb

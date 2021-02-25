@@ -18,6 +18,9 @@ static struct PyModuleDef _clidef_module = {
 PyMODINIT_FUNC
 PyInit__clidef(void) {
     PyObject *m = PyModule_Create(&_clidef_module);
+    if (m == NULL) {
+        return NULL;
+    }
     PyModule_AddIntConstant(m, "CLI_M_DEBUG", 0x1L);
     PyModule_AddIntConstant(m, "CLI_M_DBGTRU", 0x2L);
     PyModule_AddIntConstant(m, "CLI_M_VERIFY", 0x4L);

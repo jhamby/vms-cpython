@@ -18,6 +18,9 @@ static struct PyModuleDef _libclidef_module = {
 PyMODINIT_FUNC
 PyInit__libclidef(void) {
     PyObject *m = PyModule_Create(&_libclidef_module);
+    if (m == NULL) {
+        return NULL;
+    }
     PyModule_AddIntConstant(m, "LIB_K_CLI_LOCAL_SYM", 1);
     PyModule_AddIntConstant(m, "LIB_K_CLI_GLOBAL_SYM", 2);
     PyModule_AddIntConstant(m, "LIB_M_CLI_CTRLT", 0x100000L);

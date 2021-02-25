@@ -18,6 +18,9 @@ static struct PyModuleDef _lnmdef_module = {
 PyMODINIT_FUNC
 PyInit__lnmdef(void) {
     PyObject *m = PyModule_Create(&_lnmdef_module);
+    if (m == NULL) {
+        return NULL;
+    }
     PyModule_AddIntConstant(m, "LNM_M_NO_ALIAS", 0x1L);
     PyModule_AddIntConstant(m, "LNM_M_CONFINE", 0x2L);
     PyModule_AddIntConstant(m, "LNM_M_CRELOG", 0x4L);

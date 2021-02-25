@@ -792,6 +792,9 @@ static struct PyModuleDef _module_definition = {
 PyMODINIT_FUNC PyInit__lib(void)
 {
     PyObject *m = PyModule_Create(&_module_definition);
+    if (m == NULL) {
+        return NULL;
+    }
     PyModule_AddIntConstant(m, "LIB_FACILITY", 21);
     PyModule_AddIntConstant(m, "LIB_NORMAL", 1409025);
     PyModule_AddIntConstant(m, "LIB_STRTRU", 1409041);

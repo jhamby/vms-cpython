@@ -18,6 +18,9 @@ static struct PyModuleDef _brkdef_module = {
 PyMODINIT_FUNC
 PyInit__brkdef(void) {
     PyObject *m = PyModule_Create(&_brkdef_module);
+    if (m == NULL) {
+        return NULL;
+    }
     PyModule_AddIntConstant(m, "BRK_C_DEVICE", 1);
     PyModule_AddIntConstant(m, "BRK_C_USERNAME", 2);
     PyModule_AddIntConstant(m, "BRK_C_ALLUSERS", 3);

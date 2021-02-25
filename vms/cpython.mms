@@ -48,6 +48,7 @@ $(CC_QUALIFIERS)-
 CC_DEFINES = -
 $(CC_DEFINES), -
 _USE_STD_STAT, -                ! COMMON
+_POSIX_EXIT, -
 __STDC_FORMAT_MACROS, -
 _POSIX_SEMAPHORES, -
 _LARGEFILE, -
@@ -361,6 +362,7 @@ MODOBJS= -
 LIBRARY_OBJS_OMIT_FROZEN= -
 [.$(OBJ_DIR).Modules]getbuildinfo.obc -
 [.$(OBJ_DIR).vms]vms_poll_select_hack.obc -
+[.$(OBJ_DIR).vms]vms_crtl_values.obc -
 $(PARSER_OBJS) -
 $(OBJECT_OBJS) -
 $(PYTHON_OBJS) -
@@ -564,9 +566,9 @@ $(PARSER_HEADERS) -
 ############################################################################
 # Importlib
 
-[.$(OUT_DIR).Programs]_freeze_importlib.exe : [.$(OBJ_DIR).Programs]_freeze_importlib.obc $(LIBRARY_OBJS_OMIT_FROZEN)
+[.$(OUT_DIR).Programs]_freeze_importlib.exe : [.$(OBJ_DIR).Programs]_freeze_importlib.obc [.$(OBJ_DIR).vms]vms_crtl_init.obc $(LIBRARY_OBJS_OMIT_FROZEN)
   @ pipe create/dir $(DIR $(MMS$TARGET)) | copy SYS$INPUT nl:
-    $(LINK)/NODEBUG/NOMAP/EXECUTABLE=python$build_out:[Programs]$(NOTDIR $(MMS$TARGET_NAME)).exe [.vms.opt]$(NOTDIR $(MMS$TARGET_NAME)).opt/OPT
+    $(LINK)/NODEBUG/NOMAP/EXECUTABLE=python$build_out:[Programs]$(NOTDIR $(MMS$TARGET_NAME)).exe [.$(OBJ_DIR).vms]vms_crtl_init.obc,$(MMS$SOURCE),[.vms.opt]$(NOTDIR $(MMS$TARGET_NAME)).opt/OPT
 
 [.$(OBJ_DIR).Programs]_freeze_importlib.obc : [.Programs]_freeze_importlib.c $(PYTHON_HEADERS)
 
@@ -736,6 +738,7 @@ $(PARSER_HEADERS) -
 
 [.$(OBJ_DIR).Modules]getbuildinfo.obc : [.Modules]getbuildinfo.c $(PYTHON_HEADERS)
 [.$(OBJ_DIR).vms]vms_poll_select_hack.obc : [.vms]vms_poll_select_hack.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).vms]vms_crtl_values.obc : [.vms]vms_crtl_values.c
 
 [.$(OBJ_DIR).Python]frozen.obc : [.Python]frozen.c -
 [.Python]importlib.h -
@@ -828,10 +831,10 @@ LIBDYNLOAD_VMS = -
 [.$(OUT_DIR).$(DYNLOAD_DIR)]_decc.exe -
 [.$(OUT_DIR).$(DYNLOAD_DIR)]_lib.exe -
 [.$(OUT_DIR).$(DYNLOAD_DIR)]_ile3.exe -
-[.$(OUT_DIR).$(DYNLOAD_DIR)]_sys.exe
-! [.$(OUT_DIR).$(DYNLOAD_DIR)]_rdb.exe
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_sys.exe -
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_dtr.exe -
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_rdb.exe
 ! [.$(OUT_DIR).$(DYNLOAD_DIR)]_rec.exe
-! [.$(OUT_DIR).$(DYNLOAD_DIR)]_dtr.exe
 
 
 LIBDYNLOAD = -
@@ -1604,6 +1607,12 @@ DECIMAL_HEADERS = -
 [.$(OBJ_DIR).modules.vms.lib]_lib.obm : [.modules.vms.lib]_lib.c $(PYTHON_HEADERS)
 [.$(OBJ_DIR).modules.vms.ile3]_ile3.obm : [.modules.vms.ile3]_ile3.c [.modules.vms.ile3]_ile3.h $(PYTHON_HEADERS)
 [.$(OBJ_DIR).modules.vms.sys]_sys.obm : [.modules.vms.sys]_sys.c [.modules.vms.ile3]_ile3.h $(PYTHON_HEADERS)
+[.$(OBJ_DIR).modules.vms.dtr]_dtr.obm : [.modules.vms.dtr]_dtr.c $(PYTHON_HEADERS)
+
+[.$(OBJ_DIR).modules.rdb]sql.obj : [.modules.rdb]sql.sqlmod
+    sqlmod [.modules.rdb]sql.sqlmod
+    rename sql.obj python$build_obj:[modules.rdb]
+[.$(OBJ_DIR).modules.rdb]_rdb.obm : [.modules.rdb]_rdb.c $(PYTHON_HEADERS)
 
 [.$(OUT_DIR).$(DYNLOAD_DIR)]_accdef.exe : [.$(OBJ_DIR).modules.vms.accdef]_accdef.obm
 [.$(OUT_DIR).$(DYNLOAD_DIR)]_acldef.exe : [.$(OBJ_DIR).modules.vms.acldef]_acldef.obm
@@ -1678,19 +1687,21 @@ DECIMAL_HEADERS = -
 [.$(OUT_DIR).$(DYNLOAD_DIR)]_lib.exe : [.$(OBJ_DIR).modules.vms.lib]_lib.obm
 [.$(OUT_DIR).$(DYNLOAD_DIR)]_ile3.exe : [.$(OBJ_DIR).modules.vms.ile3]_ile3.obm
 [.$(OUT_DIR).$(DYNLOAD_DIR)]_sys.exe : [.$(OBJ_DIR).modules.vms.sys]_sys.obm
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_dtr.exe : [.$(OBJ_DIR).modules.vms.dtr]_dtr.obm
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_rdb.exe : [.$(OBJ_DIR).modules.rdb]_rdb.obm,[.$(OBJ_DIR).modules.rdb]sql.obj
 
 ############################################################################
 # testembed EXE
 [.$(OBJ_DIR).Programs]_testembed.obc : [.Programs]_testembed.c $(PYTHON_HEADERS)
-[.$(OUT_DIR)]_testembed.exe : [.$(OBJ_DIR).Programs]_testembed.obc,[.$(OUT_DIR)]python$shr.exe
+[.$(OUT_DIR)]_testembed.exe : [.$(OBJ_DIR).Programs]_testembed.obc [.$(OBJ_DIR).vms]vms_crtl_init.obc [.$(OUT_DIR)]python$shr.exe
    @ pipe create/dir $(DIR $(MMS$TARGET)) | copy SYS$INPUT nl:
-    $(LINK)$(LINK_FLAGS)/EXECUTABLE=python$build_out:[000000]$(NOTDIR $(MMS$TARGET_NAME)).exe $(MMS$SOURCE),[.vms.opt]$(NOTDIR $(MMS$TARGET_NAME)).opt/OPT
+    $(LINK)$(LINK_FLAGS)/EXECUTABLE=python$build_out:[000000]$(NOTDIR $(MMS$TARGET_NAME)).exe [.$(OBJ_DIR).vms]vms_crtl_init.obc,$(MMS$SOURCE),[.vms.opt]$(NOTDIR $(MMS$TARGET_NAME)).opt/OPT
 
 ############################################################################
 # Python EXE
 [.$(OBJ_DIR).vms]vms_crtl_init.obc : [.vms]vms_crtl_init.c
 [.$(OBJ_DIR).Programs]python.obc : [.Programs]python.c $(PYTHON_HEADERS)
 
-[.$(OUT_DIR)]python3^.10.exe : [.$(OBJ_DIR).Programs]python.obc,[.$(OBJ_DIR).vms]vms_crtl_init.obc,[.$(OUT_DIR)]python$shr.exe
+[.$(OUT_DIR)]python3^.10.exe : [.$(OBJ_DIR).Programs]python.obc [.$(OBJ_DIR).vms]vms_crtl_init.obc [.$(OUT_DIR)]python$shr.exe
    @ pipe create/dir $(DIR $(MMS$TARGET)) | copy SYS$INPUT nl:
-    $(LINK)$(LINK_FLAGS)/THREADS/EXECUTABLE=python$build_out:[000000]$(NOTDIR $(MMS$TARGET_NAME)).exe [.$(OBJ_DIR).vms]vms_crtl_init.obc,[.$(OBJ_DIR).Programs]python.obc,[.vms.opt]$(NOTDIR $(MMS$TARGET_NAME)).opt/OPT
+    $(LINK)$(LINK_FLAGS)/THREADS/EXECUTABLE=python$build_out:[000000]$(NOTDIR $(MMS$TARGET_NAME)).exe [.$(OBJ_DIR).vms]vms_crtl_init.obc,$(MMS$SOURCE),[.vms.opt]$(NOTDIR $(MMS$TARGET_NAME)).opt/OPT

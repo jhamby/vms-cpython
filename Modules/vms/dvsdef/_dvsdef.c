@@ -18,6 +18,9 @@ static struct PyModuleDef _dvsdef_module = {
 PyMODINIT_FUNC
 PyInit__dvsdef(void) {
     PyObject *m = PyModule_Create(&_dvsdef_module);
+    if (m == NULL) {
+        return NULL;
+    }
     PyModule_AddIntConstant(m, "DVS__DEVCLASS", 1);
     PyModule_AddIntConstant(m, "DVS__DEVTYPE", 2);
     return m;

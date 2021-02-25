@@ -18,6 +18,9 @@ static struct PyModuleDef _pqldef_module = {
 PyMODINIT_FUNC
 PyInit__pqldef(void) {
     PyObject *m = PyModule_Create(&_pqldef_module);
+    if (m == NULL) {
+        return NULL;
+    }
     PyModule_AddIntConstant(m, "PQL__LISTEND", 0);
     PyModule_AddIntConstant(m, "PQL__ASTLM", 1);
     PyModule_AddIntConstant(m, "PQL__BIOLM", 2);

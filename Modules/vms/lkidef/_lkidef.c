@@ -18,6 +18,9 @@ static struct PyModuleDef _lkidef_module = {
 PyMODINIT_FUNC
 PyInit__lkidef(void) {
     PyObject *m = PyModule_Create(&_lkidef_module);
+    if (m == NULL) {
+        return NULL;
+    }
     PyModule_AddIntConstant(m, "LKI_K_LENGTH", 24);
     PyModule_AddIntConstant(m, "LKI_C_LENGTH", 24);
     PyModule_AddIntConstant(m, "LKI_K_BR_LENGTH", 56);

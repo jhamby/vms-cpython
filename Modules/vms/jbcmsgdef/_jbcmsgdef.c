@@ -18,6 +18,9 @@ static struct PyModuleDef _jbcmsgdef_module = {
 PyMODINIT_FUNC
 PyInit__jbcmsgdef(void) {
     PyObject *m = PyModule_Create(&_jbcmsgdef_module);
+    if (m == NULL) {
+        return NULL;
+    }
     PyModule_AddIntConstant(m, "JBC__FACILITY", 4);
     PyModule_AddIntConstant(m, "JBC__NORMAL", 262145);
     PyModule_AddIntConstant(m, "JBC__NOCMKRNL", 272386);

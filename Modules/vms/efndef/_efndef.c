@@ -18,6 +18,9 @@ static struct PyModuleDef _efndef_module = {
 PyMODINIT_FUNC
 PyInit__efndef(void) {
     PyObject *m = PyModule_Create(&_efndef_module);
+    if (m == NULL) {
+        return NULL;
+    }
     PyModule_AddIntConstant(m, "EFN_C_ENF", 128);
     PyModule_AddIntConstant(m, "EFN_C_CTX", 129);
     return m;

@@ -18,6 +18,9 @@ static struct PyModuleDef _kgbdef_module = {
 PyMODINIT_FUNC
 PyInit__kgbdef(void) {
     PyObject *m = PyModule_Create(&_kgbdef_module);
+    if (m == NULL) {
+        return NULL;
+    }
     PyModule_AddIntConstant(m, "KGB_M_RESOURCE", 0x1L);
     PyModule_AddIntConstant(m, "KGB_M_DYNAMIC", 0x2L);
     PyModule_AddIntConstant(m, "KGB_M_NOACCESS", 0x4L);

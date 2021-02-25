@@ -2420,7 +2420,7 @@ _PyObject_DebugDumpAddress(const void *p)
     fprintf(stderr, " API '%c'\n", id);
 
     nbytes = read_size_t(q - 2*SST);
-    fprintf(stderr, "    %zu bytes originally requested\n", nbytes);
+    fprintf(stderr, "    %"PY_FORMAT_SIZE_T"u bytes originally requested\n", nbytes);
 
     /* In case this is nuts, check the leading pad bytes first. */
     fprintf(stderr, "    The %d pad bytes at p-%d are ", SST-1, SST-1);
@@ -2694,7 +2694,7 @@ _PyObject_DebugMallocStats(FILE *out)
             assert(b == 0 && f == 0);
             continue;
         }
-        fprintf(out, "%5u %6u %11zu %15zu %13zu\n",
+        fprintf(out, "%5u %6u %11"PY_FORMAT_SIZE_T"u %15"PY_FORMAT_SIZE_T"u %13"PY_FORMAT_SIZE_T"u\n",
                 i, size, p, b, f);
         allocated_bytes += b * size;
         available_bytes += f * size;

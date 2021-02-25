@@ -18,6 +18,9 @@ static struct PyModuleDef _ssdef_module = {
 PyMODINIT_FUNC
 PyInit__ssdef(void) {
     PyObject *m = PyModule_Create(&_ssdef_module);
+    if (m == NULL) {
+        return NULL;
+    }
     PyModule_AddIntConstant(m, "SYSTEM__FACILITY", 0);
     PyModule_AddIntConstant(m, "SS__NORMAL", 1);
     PyModule_AddIntConstant(m, "SS__CONTINUE", 1);

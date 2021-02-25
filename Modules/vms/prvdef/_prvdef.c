@@ -18,6 +18,9 @@ static struct PyModuleDef _prvdef_module = {
 PyMODINIT_FUNC
 PyInit__prvdef(void) {
     PyObject *m = PyModule_Create(&_prvdef_module);
+    if (m == NULL) {
+        return NULL;
+    }
     PyModule_AddIntConstant(m, "PRV_M_CMKRNL", 0x1L);
     PyModule_AddIntConstant(m, "PRV_M_CMEXEC", 0x2L);
     PyModule_AddIntConstant(m, "PRV_M_SYSNAM", 0x4L);

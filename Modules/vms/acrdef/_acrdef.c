@@ -18,6 +18,9 @@ static struct PyModuleDef _acrdef_module = {
 PyMODINIT_FUNC
 PyInit__acrdef(void) {
     PyObject *m = PyModule_Create(&_acrdef_module);
+    if (m == NULL) {
+        return NULL;
+    }
     PyModule_AddIntConstant(m, "ACR_K_VERSION2", 0);
     PyModule_AddIntConstant(m, "ACR_K_VERSION3T", 1);
     PyModule_AddIntConstant(m, "ACR_K_VERSION3", 2);

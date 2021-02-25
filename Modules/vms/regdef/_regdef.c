@@ -18,6 +18,9 @@ static struct PyModuleDef _regdef_module = {
 PyMODINIT_FUNC
 PyInit__regdef(void) {
     PyObject *m = PyModule_Create(&_regdef_module);
+    if (m == NULL) {
+        return NULL;
+    }
     PyModule_AddIntConstant(m, "REG_FC_CLOSE_KEY",  1);
     PyModule_AddIntConstant(m, "REG_FC_CREATE_KEY",  2);
     PyModule_AddIntConstant(m, "REG_FC_DELETE_KEY",  3);

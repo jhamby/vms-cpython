@@ -18,6 +18,9 @@ static struct PyModuleDef _ossdef_module = {
 PyMODINIT_FUNC
 PyInit__ossdef(void) {
     PyObject *m = PyModule_Create(&_ossdef_module);
+    if (m == NULL) {
+        return NULL;
+    }
     PyModule_AddIntConstant(m, "OSS_M_WLOCK", 0x1L);
     PyModule_AddIntConstant(m, "OSS_M_RELCTX", 0x2L);
     PyModule_AddIntConstant(m, "OSS_M_LOCAL", 0x4L);

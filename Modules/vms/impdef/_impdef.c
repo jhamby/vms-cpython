@@ -18,6 +18,9 @@ static struct PyModuleDef _impdef_module = {
 PyMODINIT_FUNC
 PyInit__impdef(void) {
     PyObject *m = PyModule_Create(&_impdef_module);
+    if (m == NULL) {
+        return NULL;
+    }
     PyModule_AddIntConstant(m, "IMP_C_ASYEFN", 30);
     PyModule_AddIntConstant(m, "IMP_C_IOREFN", 30);
     PyModule_AddIntConstant(m, "IMP_C_ASYQIOEFN", 31);

@@ -18,6 +18,9 @@ static struct PyModuleDef _uafdef_module = {
 PyMODINIT_FUNC
 PyInit__uafdef(void) {
     PyObject *m = PyModule_Create(&_uafdef_module);
+    if (m == NULL) {
+        return NULL;
+    }
     PyModule_AddIntConstant(m, "UAF_C_USER_ID", 1);
     PyModule_AddIntConstant(m, "UAF_C_VERSION1", 1);
     PyModule_AddIntConstant(m, "UAF_C_KEYED_PART", 52);

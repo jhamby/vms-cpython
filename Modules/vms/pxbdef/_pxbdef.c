@@ -18,6 +18,9 @@ static struct PyModuleDef _pxbdef_module = {
 PyMODINIT_FUNC
 PyInit__pxbdef(void) {
     PyObject *m = PyModule_Create(&_pxbdef_module);
+    if (m == NULL) {
+        return NULL;
+    }
     PyModule_AddIntConstant(m, "PXB_S_PXB", 12);
     PyModule_AddIntConstant(m, "PXB_K_LENGTH", 12);
     PyModule_AddIntConstant(m, "PXB_ARRAY_ELEMENTS", 16);

@@ -1715,7 +1715,7 @@ memo_get(PicklerObject *self, PyObject *key)
     if (!self->bin) {
         pdata[0] = GET;
         PyOS_snprintf(pdata + 1, sizeof(pdata) - 1,
-                      "%zd\n", *value);
+                      "%"PY_FORMAT_SIZE_T"d\n", *value);
         len = strlen(pdata);
     }
     else {
@@ -1772,7 +1772,7 @@ memo_put(PicklerObject *self, PyObject *obj)
     else if (!self->bin) {
         pdata[0] = PUT;
         PyOS_snprintf(pdata + 1, sizeof(pdata) - 1,
-                      "%zd\n", idx);
+                      "%"PY_FORMAT_SIZE_T"d\n", idx);
         len = strlen(pdata);
     }
     else {

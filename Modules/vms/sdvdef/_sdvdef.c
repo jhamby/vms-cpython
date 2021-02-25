@@ -18,6 +18,9 @@ static struct PyModuleDef _sdvdef_module = {
 PyMODINIT_FUNC
 PyInit__sdvdef(void) {
     PyObject *m = PyModule_Create(&_sdvdef_module);
+    if (m == NULL) {
+        return NULL;
+    }
     PyModule_AddIntConstant(m, "SDV__MP_SWITCH_PATH", 1);
     PyModule_AddIntConstant(m, "SDV__MP_ENABLE_PATH", 2);
     PyModule_AddIntConstant(m, "SDV__MP_DISABLE_PATH", 3);

@@ -18,6 +18,9 @@ static struct PyModuleDef _dscdef_module = {
 PyMODINIT_FUNC
 PyInit__dscdef(void) {
     PyObject *m = PyModule_Create(&_dscdef_module);
+    if (m == NULL) {
+        return NULL;
+    }
     PyModule_AddIntConstant(m, "DSC_K_DTYPE_Z", 0);
     PyModule_AddIntConstant(m, "DSC64_K_DTYPE_Z", 0);
     PyModule_AddIntConstant(m, "DSC_K_DTYPE_BU", 2);

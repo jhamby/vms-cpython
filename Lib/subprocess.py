@@ -1155,7 +1155,7 @@ class Popen(object):
                         ret_data = self._translate_newlines(ret_data,
                                     std.encoding,
                                     std.errors)
-                return ret_data
+                    return ret_data
             if self.stdin:
                 self._stdin_write(input)
             elif self.stdout:

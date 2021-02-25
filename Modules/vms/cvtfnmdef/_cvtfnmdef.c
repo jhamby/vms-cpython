@@ -18,6 +18,9 @@ static struct PyModuleDef _cvtfnmdef_module = {
 PyMODINIT_FUNC
 PyInit__cvtfnmdef(void) {
     PyObject *m = PyModule_Create(&_cvtfnmdef_module);
+    if (m == NULL) {
+        return NULL;
+    }
     PyModule_AddIntConstant(m, "CVTFNM_M_WORD_CHARS",  0x1L);
     PyModule_AddIntConstant(m, "CVTFNM_M_NO_DELIMITERS",  0x2L);
     PyModule_AddIntConstant(m, "CVTFNM_M_FORCE_UPCASE",  0x4L);

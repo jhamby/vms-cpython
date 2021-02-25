@@ -5053,7 +5053,7 @@ os_unlink_impl(PyObject *module, path_t *path, int dir_fd)
             strncpy(t_path, path->narrow, t_len);
             t_path[t_len - 1] = 0;
             result = unlink(t_path);
-            PyMem_FREE(t_path);
+            PyMem_Free(t_path);
         } else {
             // remove all versions
             result = unlink(path->narrow);

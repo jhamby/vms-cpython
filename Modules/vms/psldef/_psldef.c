@@ -18,6 +18,9 @@ static struct PyModuleDef _psldef_module = {
 PyMODINIT_FUNC
 PyInit__psldef(void) {
     PyObject *m = PyModule_Create(&_psldef_module);
+    if (m == NULL) {
+        return NULL;
+    }
     PyModule_AddIntConstant(m, "PSL_M_PRVMOD", 0x3L);
     PyModule_AddIntConstant(m, "PSL_M_CURMOD", 0x18L);
     PyModule_AddIntConstant(m, "PSL_M_IPL", 0x1F00L);

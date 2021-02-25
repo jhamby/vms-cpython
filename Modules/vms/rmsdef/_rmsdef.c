@@ -18,6 +18,9 @@ static struct PyModuleDef _rmsdef_module = {
 PyMODINIT_FUNC
 PyInit__rmsdef(void) {
     PyObject *m = PyModule_Create(&_rmsdef_module);
+    if (m == NULL) {
+        return NULL;
+    }
     PyModule_AddIntConstant(m, "RMS__FACILITY", 1);
     PyModule_AddIntConstant(m, "RMS_V_STVSTATUS", 14);
     PyModule_AddIntConstant(m, "RMS__SUC", 65537);

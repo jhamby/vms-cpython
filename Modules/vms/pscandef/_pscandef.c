@@ -18,6 +18,9 @@ static struct PyModuleDef _pscandef_module = {
 PyMODINIT_FUNC
 PyInit__pscandef(void) {
     PyObject *m = PyModule_Create(&_pscandef_module);
+    if (m == NULL) {
+        return NULL;
+    }
     PyModule_AddIntConstant(m, "PSCAN__BEGIN", 0);
     PyModule_AddIntConstant(m, "PSCAN__ACCOUNT", 1);
     PyModule_AddIntConstant(m, "PSCAN__AUTHPRI", 2);

@@ -1342,18 +1342,18 @@ _PyUnicode_Dump(PyObject *op)
     }
     else
         data = unicode->data.any;
-    printf("%s: len=%zu, ", unicode_kind_name(op), ascii->length);
+    printf("%s: len=%"PY_FORMAT_SIZE_T"u, ", unicode_kind_name(op), ascii->length);
 
     if (ascii->wstr == data)
         printf("shared ");
     printf("wstr=%p", (void *)ascii->wstr);
 
     if (!(ascii->state.ascii == 1 && ascii->state.compact == 1)) {
-        printf(" (%zu), ", compact->wstr_length);
+        printf(" (%"PY_FORMAT_SIZE_T"u), ", compact->wstr_length);
         if (!ascii->state.compact && compact->utf8 == unicode->data.any) {
             printf("shared ");
         }
-        printf("utf8=%p (%zu)", (void *)compact->utf8, compact->utf8_length);
+        printf("utf8=%p (%"PY_FORMAT_SIZE_T"u)", (void *)compact->utf8, compact->utf8_length);
     }
     printf(", data=%p\n", data);
 }
@@ -15826,7 +15826,7 @@ _PyUnicode_ClearInterned(PyThreadState *tstate)
        interned dict. */
 
 #ifdef INTERNED_STATS
-    fprintf(stderr, "releasing %zd interned strings\n",
+    fprintf(stderr, "releasing %"PY_FORMAT_SIZE_T"d interned strings\n",
             PyDict_GET_SIZE(state->interned));
 
     Py_ssize_t immortal_size = 0, mortal_size = 0;

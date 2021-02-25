@@ -533,7 +533,7 @@ exec_dcl(char *const argv[], int p2cread, int c2pwrite, PyObject* returncode_ast
         ++i;
     }
 
-    char *execute_str = PyMem_MALLOC(exec_len + 1);
+    char *execute_str = PyMem_Malloc(exec_len + 1);
 
     i = 1;
     execute_str[0] = 0;
@@ -575,7 +575,7 @@ exec_dcl(char *const argv[], int p2cread, int c2pwrite, PyObject* returncode_ast
         }
     }
 
-    PyMem_FREE(execute_str);
+    PyMem_Free(execute_str);
 
     return (pid);
 }

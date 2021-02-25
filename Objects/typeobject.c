@@ -256,13 +256,13 @@ _PyType_ClearCache(struct type_cache *cache)
 {
 #if MCACHE_STATS
     size_t total = cache->hits + cache->collisions + cache->misses;
-    fprintf(stderr, "-- Method cache hits        = %zd (%d%%)\n",
+    fprintf(stderr, "-- Method cache hits        = %"PY_FORMAT_SIZE_T"d (%d%%)\n",
             cache->hits, (int) (100.0 * cache->hits / total));
-    fprintf(stderr, "-- Method cache true misses = %zd (%d%%)\n",
+    fprintf(stderr, "-- Method cache true misses = %"PY_FORMAT_SIZE_T"d (%d%%)\n",
             cache->misses, (int) (100.0 * cache->misses / total));
-    fprintf(stderr, "-- Method cache collisions  = %zd (%d%%)\n",
+    fprintf(stderr, "-- Method cache collisions  = %"PY_FORMAT_SIZE_T"d (%d%%)\n",
             cache->collisions, (int) (100.0 * cache->collisions / total));
-    fprintf(stderr, "-- Method cache size        = %zd KiB\n",
+    fprintf(stderr, "-- Method cache size        = %"PY_FORMAT_SIZE_T"d KiB\n",
             sizeof(cache->hashtable) / 1024);
 #endif
 

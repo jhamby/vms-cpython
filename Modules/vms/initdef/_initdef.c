@@ -18,6 +18,9 @@ static struct PyModuleDef _initdef_module = {
 PyMODINIT_FUNC
 PyInit__initdef(void) {
     PyObject *m = PyModule_Create(&_initdef_module);
+    if (m == NULL) {
+        return NULL;
+    }
     PyModule_AddIntConstant(m, "INIT_K_DENSITY_800_BPI", 1);
     PyModule_AddIntConstant(m, "INIT_K_DENSITY_1600_BPI", 2);
     PyModule_AddIntConstant(m, "INIT_K_DENSITY_6250_BPI", 3);

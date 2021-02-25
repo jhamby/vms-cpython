@@ -197,7 +197,7 @@ if_indextoname(index) -- return the corresponding interface name\n\
 # define USE_GETHOSTBYNAME_LOCK
 #endif
 
-#if defined(__APPLE__) || defined(__CYGWIN__) || defined(__NetBSD__)
+#if defined(__APPLE__) || defined(__CYGWIN__) || defined(__NetBSD__) || defined(HAVE_SYS_IOCTL_H)
 #  include <sys/ioctl.h>
 #endif
 
@@ -661,7 +661,7 @@ internal_setblocking(PySocketSockObject *s, int block)
     u_long arg;
 #endif
 #if !defined(MS_WINDOWS) \
-    && !((defined(HAVE_SYS_IOCTL_H) && defined(FIONBIO)))
+    && !(defined(HAVE_SYS_IOCTL_H) && defined(FIONBIO))
     int delay_flag, new_delay_flag;
 #endif
 
@@ -3426,6 +3426,11 @@ sock_listen(PySocketSockObject *s, PyObject *args)
      * (which doesn't make sense anyway) we force a minimum value of 0. */
     if (backlog < 0)
         backlog = 0;
+#ifdef __VMS
+    // OpenVMS does not allow zero length queue?
+    if (backlog == 0)
+        backlog = 1;
+#endif
     res = listen(s->sock_fd, backlog);
     Py_END_ALLOW_THREADS
     if (res < 0)

@@ -18,6 +18,9 @@ static struct PyModuleDef _uaidef_module = {
 PyMODINIT_FUNC
 PyInit__uaidef(void) {
     PyObject *m = PyModule_Create(&_uaidef_module);
+    if (m == NULL) {
+        return NULL;
+    }
     PyModule_AddIntConstant(m, "UAI__RTYPE", 1);
     PyModule_AddIntConstant(m, "UAI__VERSION", 2);
     PyModule_AddIntConstant(m, "UAI__USRDATOFF", 3);

@@ -18,6 +18,9 @@ static struct PyModuleDef _stsdef_module = {
 PyMODINIT_FUNC
 PyInit__stsdef(void) {
     PyObject *m = PyModule_Create(&_stsdef_module);
+    if (m == NULL) {
+        return NULL;
+    }
     PyModule_AddIntConstant(m, "STS_M_SEVERITY", 0x7L);
     PyModule_AddIntConstant(m, "STS_M_COND_ID", 0xFFFFFF8L);
     PyModule_AddIntConstant(m, "STS_M_CONTROL", 0xF0000000L);

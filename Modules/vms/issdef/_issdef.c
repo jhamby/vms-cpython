@@ -18,6 +18,9 @@ static struct PyModuleDef _issdef_module = {
 PyMODINIT_FUNC
 PyInit__issdef(void) {
     PyObject *m = PyModule_Create(&_issdef_module);
+    if (m == NULL) {
+        return NULL;
+    }
     PyModule_AddIntConstant(m, "ISS__FLAGS", 1);
     PyModule_AddIntConstant(m, "ISS__ARBFLAGS", 2);
     PyModule_AddIntConstant(m, "ISS__WORKPRIV", 3);

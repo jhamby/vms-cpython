@@ -18,6 +18,9 @@ static struct PyModuleDef _jpidef_module = {
 PyMODINIT_FUNC
 PyInit__jpidef(void) {
     PyObject *m = PyModule_Create(&_jpidef_module);
+    if (m == NULL) {
+        return NULL;
+    }
     PyModule_AddIntConstant(m, "JPI_K_DEFAULT_POLICY", 0);
     PyModule_AddIntConstant(m, "JPI_K_PSX_FIFO_POLICY", 1);
     PyModule_AddIntConstant(m, "JPI_K_PSX_RR_POLICY", 2);

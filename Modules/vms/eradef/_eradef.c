@@ -18,6 +18,9 @@ static struct PyModuleDef _eradef_module = {
 PyMODINIT_FUNC
 PyInit__eradef(void) {
     PyObject *m = PyModule_Create(&_eradef_module);
+    if (m == NULL) {
+        return NULL;
+    }
     PyModule_AddIntConstant(m, "ERA_K_LODUMMY", 0);
     PyModule_AddIntConstant(m, "ERA_K_MEMORY", 1);
     PyModule_AddIntConstant(m, "ERA_K_DISK", 2);

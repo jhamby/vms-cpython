@@ -18,6 +18,9 @@ static struct PyModuleDef _dcdef_module = {
 PyMODINIT_FUNC
 PyInit__dcdef(void) {
     PyObject *m = PyModule_Create(&_dcdef_module);
+    if (m == NULL) {
+        return NULL;
+    }
     PyModule_AddIntConstant(m, "AT__MBA", 0);
     PyModule_AddIntConstant(m, "AT__UBA", 1);
     PyModule_AddIntConstant(m, "AT__DR", 2);

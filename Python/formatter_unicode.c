@@ -145,10 +145,10 @@ DEBUG_PRINT_FORMAT_SPEC(InternalFormatSpec *format)
     printf("internal format spec: align %d\n", format->align);
     printf("internal format spec: alternate %d\n", format->alternate);
     printf("internal format spec: sign %d\n", format->sign);
-    printf("internal format spec: width %zd\n", format->width);
+    printf("internal format spec: width %"PY_FORMAT_SIZE_T"d\n", format->width);
     printf("internal format spec: thousands_separators %d\n",
            format->thousands_separators);
-    printf("internal format spec: precision %zd\n", format->precision);
+    printf("internal format spec: precision %"PY_FORMAT_SIZE_T"d\n", format->precision);
     printf("internal format spec: type %c\n", format->type);
     printf("\n");
 }

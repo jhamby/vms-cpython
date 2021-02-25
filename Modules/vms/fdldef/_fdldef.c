@@ -18,6 +18,9 @@ static struct PyModuleDef _fdldef_module = {
 PyMODINIT_FUNC
 PyInit__fdldef(void) {
     PyObject *m = PyModule_Create(&_fdldef_module);
+    if (m == NULL) {
+        return NULL;
+    }
     PyModule_AddIntConstant(m, "FDL_C_VERSION", 2);
     PyModule_AddIntConstant(m, "FDL_K_VERSION", 2);
     PyModule_AddIntConstant(m, "FDL_M_SIGNAL", 0x1L);

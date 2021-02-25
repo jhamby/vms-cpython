@@ -22,7 +22,7 @@ import unittest
 from unittest import mock
 import weakref
 
-if sys.platform not in ('win32', 'vxworks'):
+if sys.platform not in ('win32', 'vxworks', 'OpenVMS'):
     import tty
 
 import asyncio
