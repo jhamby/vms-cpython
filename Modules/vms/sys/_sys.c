@@ -15,11 +15,16 @@
 #include <iodef.h>
 #include <psldef.h>
 #include <ciadef.h>
+#include <opcdef.h>
 
 #include "modules/vms/ile3/_ile3.h"
 
 #ifndef DEF_TABNAM
 #define DEF_TABNAM "LNM$FILE_DEV"
+#endif
+
+#ifndef min
+#define min(a, b) ((a) < (b) ? (a) : (b))
 #endif
 
 #define ConvertArgToStr(arg, value, size, func_name)            \
@@ -1697,6 +1702,39 @@ SYS_writevblk(
     return Py_BuildValue("(i,H,H)", status, iosb.iosb$w_bcnt, iosb.iosb$w_status);
 }
 
+static PyObject*
+SYS_sndopr(
+    PyObject *self,
+    PyObject *args)
+{
+    char *message = NULL;
+    Py_ssize_t message_size = 0;
+    ConvertArgToStr(args, message, message_size, "sndopr");
+
+    struct dsc$descriptor_s         msg_dsc;
+    OPCDEF                          msg;
+
+    msg.opc$b_ms_type   = OPC$_RQ_RQST;
+    msg.opc$b_ms_target = OPC$M_NM_CENTRL;
+    msg.opc$l_ms_rqstid = 0;
+
+    message_size = min(message_size, 128);
+
+    memcpy((char *) &msg.opc$l_ms_text, message, message_size);
+
+    msg_dsc.dsc$w_length = message_size + 8;
+    msg_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
+    msg_dsc.dsc$b_class = DSC$K_CLASS_S;
+    msg_dsc.dsc$a_pointer = (char *) &msg;
+
+    int status = 0;
+    Py_BEGIN_ALLOW_THREADS
+    status = sys$sndopr(&msg_dsc, 0);
+    Py_END_ALLOW_THREADS
+    return PyLong_FromLong(status);
+}
+
+
 /********************************************************************
   Module
 */
@@ -1776,6 +1814,8 @@ static PyMethodDef _module_methods[] = {
         PyDoc_STR("readvblk(chan: int, data: bytes | int, ?start: int, ?func: int)->[status: int, data: bytes, iostatus: int]   Reads from the channel")},
     {"writevblk", (PyCFunction) SYS_writevblk, METH_FASTCALL,
         PyDoc_STR("writevblk(chan: int, data: bytes, ?start: int, ?func: int)->[status: int, written: int, iostatus: int]   Writes to the channel")},
+    {"sndopr", (PyCFunction) SYS_sndopr, METH_O,
+        PyDoc_STR("sndopr(message: str)->status: int   Sends message to operator terminals")},
 
     {NULL, NULL}
 };

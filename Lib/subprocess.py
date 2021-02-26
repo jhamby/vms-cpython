@@ -57,6 +57,7 @@ import types
 _IS_OPENVMS = (sys.platform == "OpenVMS")
 if _IS_OPENVMS:
     import ctypes
+    import socket
 
 try:
     import pwd
@@ -822,6 +823,7 @@ class Popen(object):
         self.returncode = None
         if _IS_OPENVMS:
             self.returncode_ast = ctypes.c_longlong(-1)
+            self.socket_pair = []
         self.encoding = encoding
         self.errors = errors
         self.pipesize = pipesize
@@ -1625,7 +1627,12 @@ class Popen(object):
             if stdin is None:
                 pass
             elif stdin == PIPE:
-                p2cread, p2cwrite = os.pipe()
+                if _IS_OPENVMS:
+                    self.socket_pair = socket.socketpair()
+                    p2cread = self.socket_pair[0].fileno()
+                    p2cwrite = self.socket_pair[1].fileno()
+                else:
+                    p2cread, p2cwrite = os.pipe()
                 if self.pipesize > 0 and hasattr(fcntl, "F_SETPIPE_SZ"):
                     fcntl.fcntl(p2cwrite, fcntl.F_SETPIPE_SZ, self.pipesize)
             elif stdin == DEVNULL:
