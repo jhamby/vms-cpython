@@ -35,6 +35,7 @@ import _testinternalcapi
 Py_DEBUG = hasattr(sys, 'gettotalrefcount')
 
 
+
 def decode_stderr(err):
     return err.decode('utf-8', 'replace').replace('\r', '')
 
@@ -69,7 +70,9 @@ class CAPITest(unittest.TestCase):
                                  stdout=subprocess.PIPE,
                                  stderr=subprocess.PIPE)
         (out, err) = p.communicate()
-        self.assertEqual(out, b'')
+        if not (sys.platform == 'OpenVMS'):
+            # for some reason in OpenVMS crash dump is put into output
+            self.assertEqual(out, b'')
         # This used to cause an infinite loop.
         self.assertTrue(err.rstrip().startswith(
                          b'Fatal Python error: '

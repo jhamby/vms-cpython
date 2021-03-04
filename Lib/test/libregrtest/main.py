@@ -22,6 +22,36 @@ from test.libregrtest.utils import removepy, count, format_duration, printlist
 from test import support
 from test.support import os_helper
 
+if sys.platform == 'OpenVMS':
+
+    import _jpidef
+    import _syidef
+    import _lib
+
+    def format_mem(mem):
+        """ mem in bytes
+        """
+        abb = ['b', 'kb', 'Mb', 'Gb', 'Tb']
+        p = 0
+        unit = 1024
+        while mem >= unit:
+            unit = unit * 1024
+            p = p + 1
+        unit = unit / 1024
+        if p < len(abb):
+            return "{0}{1}".format(int(mem/unit), abb[p])
+        else:
+            return "{0:,d}b".format(mem)
+
+    # turns out page size is always 512 bytes
+    def get_mem():
+        try:
+            sts, pagecount = _lib.getjpi(_jpidef.JPI__PPGCNT, 0, None)
+            if sts != 1:
+                return 0
+        except:
+            return 0
+        return 512 * int(pagecount)
 
 # bpo-38203: Maximum delay in seconds to exit Python (call Py_Finalize()).
 # Used to protect against threading._shutdown() hang.
@@ -167,6 +197,9 @@ class Regrtest:
         fails = len(self.bad) + len(self.environment_changed)
         if fails and not self.ns.pgo:
             line = f"{line}/{fails}"
+        #show used memory
+        if sys.platform == 'OpenVMS':
+            line += " (%s)" % format_mem(get_mem())
         self.log(f"[{line}] {text}")
 
     def parse_args(self, kwargs):
@@ -398,6 +431,9 @@ class Regrtest:
         msg = "Run tests sequentially"
         if self.ns.timeout:
             msg += " (timeout: %s)" % format_duration(self.ns.timeout)
+        #show used memory
+        if sys.platform == 'OpenVMS':
+            msg += " (memory: %s)" % format_mem(get_mem())
         self.log(msg)
 
         previous_test = None

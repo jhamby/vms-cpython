@@ -20,6 +20,7 @@
 #include <stddef.h> /* For offsetof */
 #include "_iomodule.h"
 
+
 /*
  * Known likely problems:
  *
@@ -74,6 +75,12 @@ typedef struct {
 } fileio;
 
 PyTypeObject PyFileIO_Type;
+
+#ifdef __VMS
+extern int isapipe(int);
+extern char *getname (int file_desc, char *buffer, ...);
+int is_a_disk(char *device);
+#endif
 
 _Py_IDENTIFIER(name);
 
@@ -196,6 +203,7 @@ fileio_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     return (PyObject *) self;
 }
 
+
 #ifdef O_CLOEXEC
 extern int _Py_open_cloexec_works;
 #endif
@@ -247,6 +255,9 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
     struct _Py_stat_struct fdfstat;
     int fstat_result;
     int async_err = 0;
+#ifdef __VMS
+    int reopen = 0;
+#endif
 
     assert(PyFileIO_Check(self));
     if (self->fd >= 0) {
@@ -337,6 +348,11 @@ _Py_COMP_DIAG_POP
             self->readable = self->writable = 1;
             plus = 1;
             break;
+    #ifdef __VMS
+        case 'n':
+            reopen = 1;
+            break;
+    #endif
         default:
             PyErr_Format(PyExc_ValueError,
                          "invalid mode: %.200s", mode);
@@ -372,8 +388,19 @@ _Py_COMP_DIAG_POP
         self->fd = fd;
         self->closefd = closefd;
 #ifdef __VMS
-        extern int isapipe(int);
         self->is_a_pipe = (isapipe(fd) == 1);
+        if (reopen) {
+            char buffer[1024];
+            if (getname(fd, buffer, 0)) {
+                if (flags & O_BINARY) {
+                    self->fd = open(buffer, flags & ~O_BINARY, 0666, "ctx=bin");
+                } else {
+                    self->fd = open(buffer, flags, 0666);
+                }
+                // dup2
+                self->fd = dup2(self->fd, fd);
+            }
+        }
 #endif
     }
     else {
@@ -1283,3 +1310,44 @@ PyTypeObject PyFileIO_Type = {
     0,                                          /* tp_version_tag */
     0,                                          /* tp_finalize */
 };
+
+#ifdef __VMS
+
+#define __NEW_STARLET
+
+#include <starlet.h>
+#include <dcdef.h>
+#include <dvidef.h>
+#include <descrip.h>
+
+int is_a_disk(char *device) {
+    struct {
+        short int buf_len;
+        short int item;
+        char *buf_addr;
+        unsigned short int *ret_len;
+        int end;
+    } item_list;
+
+    unsigned int mbx_len;
+    unsigned int mbx_char;
+    struct dsc$descriptor_s dev_desc;
+    dev_desc.dsc$a_pointer = device;
+    dev_desc.dsc$w_length = strlen(device);
+    dev_desc.dsc$b_dtype = DSC$K_DTYPE_T;
+    dev_desc.dsc$b_class = DSC$K_CLASS_S;
+
+    item_list.buf_len = 4;
+    item_list.item = DVI$_DEVCLASS;
+    item_list.buf_addr = (void *)&mbx_char;
+    item_list.ret_len = (void *)&mbx_len;
+    item_list.end = 0;
+
+    sys$getdviw(0, 0, &dev_desc, &item_list, 0, 0, 0, 0);
+    if ((mbx_char & DC$_DISK) != 0) {
+        return 1;
+    } else {
+        return 0;
+    }
+}
+#endif

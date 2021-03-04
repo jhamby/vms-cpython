@@ -104,13 +104,13 @@
 #undef HAVE_BROKEN_POLL
 
 /* Define if the Posix semaphores do not work on your system */
-#undef HAVE_BROKEN_POSIX_SEMAPHORES
+#define HAVE_BROKEN_POSIX_SEMAPHORES
 
 /* Define if pthread_sigmask() does not work on your system. */
 #define HAVE_BROKEN_PTHREAD_SIGMASK
 
 /* define to 1 if your sem_getvalue is broken. */
-#undef HAVE_BROKEN_SEM_GETVALUE
+#define HAVE_BROKEN_SEM_GETVALUE 1
 
 /* Define if `unsetenv` does not return an int. */
 #define HAVE_BROKEN_UNSETENV
@@ -839,7 +839,7 @@
 #define HAVE_READV 1
 
 /* Define to 1 if you have the `realpath' function. */
-#define HAVE_REALPATH 1
+#undef HAVE_REALPATH
 
 /* Define to 1 if you have the `renameat' function. */
 #undef HAVE_RENAMEAT
@@ -893,16 +893,16 @@
 #undef HAVE_SCHED_SETSCHEDULER
 
 /* Define to 1 if you have the `sem_getvalue' function. */
-#define HAVE_SEM_GETVALUE 1
+#undef HAVE_SEM_GETVALUE
 
 /* Define to 1 if you have the `sem_open' function. */
-#define HAVE_SEM_OPEN 1
+#undef HAVE_SEM_OPEN
 
 /* Define to 1 if you have the `sem_timedwait' function. */
-#define HAVE_SEM_TIMEDWAIT 1
+#undef HAVE_SEM_TIMEDWAIT
 
 /* Define to 1 if you have the `sem_unlink' function. */
-#define HAVE_SEM_UNLINK 1
+#undef HAVE_SEM_UNLINK
 
 /* Define to 1 if you have the `sendfile' function. */
 #undef HAVE_SENDFILE
@@ -1389,7 +1389,7 @@
 #undef PACKAGE_VERSION
 
 /* Define if POSIX semaphores aren't enabled on your system */
-#undef POSIX_SEMAPHORES_NOT_ENABLED
+#define POSIX_SEMAPHORES_NOT_ENABLED
 
 /* Define if pthread_key_t is compatible with int. */
 #define PTHREAD_KEY_T_IS_COMPATIBLE_WITH_INT

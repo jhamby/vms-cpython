@@ -17,7 +17,7 @@ from distutils.extension import Extension
 from distutils.util import get_platform
 from distutils import log
 
-_IS_OPENVMS = (sys.platform == "OpenVMS")
+
 
 from site import USER_BASE
 
@@ -620,7 +620,7 @@ class build_ext(Command):
         just "swig" -- it should be in the PATH.  Tries a bit harder on
         Windows.
         """
-        if _IS_OPENVMS:
+        if (sys.platform == 'OpenVMS'):
             return "mcr swig$root:[bin]swig.exe"
         if os.name == "posix":
             return "swig"
@@ -727,7 +727,7 @@ class build_ext(Command):
                 # don't extend ext.libraries, it may be shared with other
                 # extensions, it is a reference to the original list
                 return ext.libraries + [pythonlib]
-        elif _IS_OPENVMS:
+        elif (sys.platform == 'OpenVMS'):
             pythonlib = "/python$root/lib/python$shr.exe"
             return ext.libraries + [pythonlib]
         else:

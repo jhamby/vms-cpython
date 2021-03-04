@@ -8,6 +8,8 @@ from distutils.command.config import dump_file, config
 from distutils.tests import support
 from distutils import log
 
+
+
 class ConfigTestCase(support.LoggingSilencer,
                      support.TempdirManager,
                      unittest.TestCase):
@@ -38,6 +40,7 @@ class ConfigTestCase(support.LoggingSilencer,
         self.assertEqual(len(self._logs), numlines+1)
 
     @unittest.skipIf(sys.platform == 'win32', "can't test on Windows")
+    @unittest.skipIf((sys.platform == 'OpenVMS'), "can't test on OpenVMS")
     def test_search_cpp(self):
         cmd = missing_compiler_executable(['preprocessor'])
         if cmd is not None:

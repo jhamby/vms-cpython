@@ -3,8 +3,6 @@
 import os as _os, sys as _sys
 import types as _types
 
-_IS_OPENVMS = (_sys.platform == "OpenVMS")
-
 __version__ = "1.1.0"
 
 from _ctypes import Union, Structure, Array
@@ -391,7 +389,7 @@ class CDLL(object):
         return func
 
     def __getitem__(self, name_or_ordinal):
-        if _IS_OPENVMS and self._name == 'decc$shr':
+        if (_sys.platform == 'OpenVMS') and self._name == 'decc$shr':
             func = self._FuncPtr(('decc$' + name_or_ordinal, self))
         else:
             func = self._FuncPtr((name_or_ordinal, self))
@@ -465,7 +463,7 @@ if _os.name == "nt":
     pythonapi = PyDLL("python dll", None, _sys.dllhandle)
 elif _sys.platform == "cygwin":
     pythonapi = PyDLL("libpython%d.%d.dll" % _sys.version_info[:2])
-elif _IS_OPENVMS:
+elif (_sys.platform == 'OpenVMS'):
     pythonapi = PyDLL("python$shr")
 else:
     pythonapi = PyDLL(None)

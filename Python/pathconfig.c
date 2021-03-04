@@ -634,14 +634,14 @@ _PyPathConfig_ComputeSysPath0(const PyWideStringList *argv, PyObject **path0_p)
     wchar_t *path0 = argv0;
     Py_ssize_t n = 0;
 
-#ifdef HAVE_REALPATH
+#if defined(HAVE_REALPATH) || defined(__VMS)
     wchar_t fullpath[MAXPATHLEN];
 #elif defined(MS_WINDOWS)
     wchar_t fullpath[MAX_PATH];
 #endif
 
     if (have_module_arg) {
-#if defined(HAVE_REALPATH) || defined(MS_WINDOWS)
+#if defined(HAVE_REALPATH) || defined(MS_WINDOWS) || defined(__VMS)
         if (!_Py_wgetcwd(fullpath, Py_ARRAY_LENGTH(fullpath))) {
             return 0;
         }
@@ -721,6 +721,19 @@ _PyPathConfig_ComputeSysPath0(const PyWideStringList *argv, PyObject **path0_p)
 #if defined(HAVE_REALPATH)
         if (_Py_wrealpath(path0, fullpath, Py_ARRAY_LENGTH(fullpath))) {
             path0 = fullpath;
+        }
+#elif defined(__VMS)
+        if (path0 && path0[0] != SEP) {
+            if (!_Py_wgetcwd(fullpath, Py_ARRAY_LENGTH(fullpath))) {
+                return 0;
+            }
+            int des_len = wcslen(fullpath) + 1 + wcslen(path0);
+            if (des_len < Py_ARRAY_LENGTH(fullpath)) {
+                wchar_t sep_s = SEP;
+                wcsncat(fullpath, &sep_s, 1);
+                wcscat(fullpath, path0);
+                path0 = fullpath;
+            }
         }
 #endif
         p = wcsrchr(path0, SEP);

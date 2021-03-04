@@ -15,10 +15,14 @@ from functools import partial
 
 _fname = os_helper.TESTFN
 
+import sys
+
 
 def _delete_files():
     for ext in [".dir", ".dat", ".bak"]:
         try:
+            if (sys.platform == 'OpenVMS'):
+                os.chmod(_fname + ext, 0o777)
             os.unlink(_fname + ext)
         except OSError:
             pass
@@ -278,6 +282,11 @@ class DumbDBMTestCase(unittest.TestCase):
             with dumbdbm.open(fname, 'r') as f:
                 self.assertEqual(sorted(f.keys()), sorted(self._dict))
                 f.close()  # don't write
+            if (sys.platform == 'OpenVMS'):
+                # give permissions otherwise with... will fail on __exit__
+                os.chmod(dir, 0o777)
+                os.chmod(fname + ".dir", 0o777)
+                os.chmod(fname + ".dat", 0o777)
 
     @unittest.skipUnless(os_helper.TESTFN_NONASCII,
                          'requires OS support of non-ASCII encodings')

@@ -16,6 +16,7 @@ from test.support.script_helper import (
 )
 
 
+
 # Debug build?
 Py_DEBUG = hasattr(sys, "gettotalrefcount")
 
@@ -330,6 +331,8 @@ class CmdLineTest(unittest.TestCase):
             stdin.write(sep.join((b'abc', b'def')))
             stdin.flush()
             stdin.seek(0)
+            if (sys.platform == 'OpenVMS'):
+                os.fsync(stdin.fileno())
             with subprocess.Popen(
                 (sys.executable, "-c", code),
                 stdin=stdin, stdout=subprocess.PIPE) as proc:
@@ -397,7 +400,7 @@ class CmdLineTest(unittest.TestCase):
     # Issue #7111: Python should work without standard streams
 
     @unittest.skipIf(os.name != 'posix', "test needs POSIX semantics")
-    @unittest.skipIf(sys.platform == "vxworks",
+    @unittest.skipIf(sys.platform == "vxworks" or (sys.platform == 'OpenVMS'),
                          "test needs preexec support in subprocess.Popen")
     def _test_no_stdio(self, streams):
         code = """if 1:

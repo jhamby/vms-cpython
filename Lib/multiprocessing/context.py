@@ -2,6 +2,8 @@ import os
 import sys
 import threading
 
+
+
 from . import process
 from . import reduction
 
@@ -266,8 +268,26 @@ class DefaultContext(BaseContext):
 #
 # Context types for fixed start method
 #
+if (sys.platform == 'OpenVMS'):
 
-if sys.platform != 'win32':
+    class SpawnProcess(process.BaseProcess):
+        _start_method = 'spawn'
+        @staticmethod
+        def _Popen(process_obj):
+            from .popen_spawn_posix import Popen
+            return Popen(process_obj)
+
+    class SpawnContext(BaseContext):
+        _name = 'spawn'
+        Process = SpawnProcess
+
+    _concrete_contexts = {
+        'spawn': SpawnContext(),
+    }
+
+    _default_context = DefaultContext(_concrete_contexts['spawn'])
+
+elif sys.platform != 'win32':
 
     class ForkProcess(process.BaseProcess):
         _start_method = 'fork'

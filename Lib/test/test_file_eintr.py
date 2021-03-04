@@ -22,6 +22,7 @@ import _pyio
 
 
 @unittest.skipUnless(os.name == 'posix', 'tests requires a posix system.')
+@unittest.skipIf(sys.platform == 'OpenVMS', 'OpenVMS has no correct EINTR handling.')
 class TestFileIOSignalInterrupt:
     def setUp(self):
         self._process = None

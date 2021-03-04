@@ -32,7 +32,7 @@ GenericAlias = type(list[int])
 
 _names = sys.builtin_module_names
 
-_IS_OPENVMS = (sys.platform == "OpenVMS")
+
 
 # Note:  more names are added to __all__ later.
 __all__ = ["altsep", "curdir", "pardir", "sep", "pathsep", "linesep",
@@ -715,7 +715,7 @@ class _Environ(MutableMapping):
 
     def setdefault(self, key, value):
         if key not in self:
-            if _IS_OPENVMS:
+            if (sys.platform == 'OpenVMS'):
                 try:
                     import _decc
                     value = _decc.getenv(key, value)

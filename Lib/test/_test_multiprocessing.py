@@ -118,6 +118,8 @@ HAVE_GETVALUE = not getattr(_multiprocessing,
 
 WIN32 = (sys.platform == "win32")
 
+
+
 from multiprocessing.connection import wait
 
 def wait_for_handle(handle, timeout):
@@ -5108,7 +5110,7 @@ class TestStartMethod(unittest.TestCase):
             self.fail("failed spawning forkserver or grandchild")
 
 
-@unittest.skipIf(sys.platform == "win32",
+@unittest.skipIf(sys.platform == "win32" or (sys.platform == 'OpenVMS'),
                  "test semantics don't make sense on Windows")
 class TestResourceTracker(unittest.TestCase):
 

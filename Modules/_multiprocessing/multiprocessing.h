@@ -86,8 +86,11 @@ PyObject *_PyMp_SetError(PyObject *Type, int num);
 /*
  * Externs - not all will really exist on all platforms
  */
-
-extern PyTypeObject _PyMp_SemLockType;
-extern PyObject *_PyMp_sem_unlink(const char *name);
+#if defined(HAVE_SEM_OPEN) && !defined(POSIX_SEMAPHORES_NOT_ENABLED)
+  extern PyTypeObject _PyMp_SemLockType;
+  extern PyObject *_PyMp_sem_unlink(const char *name);
+#else
+#  define _PyMp_sem_unlink(name) NULL
+#endif
 
 #endif /* MULTIPROCESSING_H */

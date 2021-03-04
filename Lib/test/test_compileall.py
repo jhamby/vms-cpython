@@ -30,6 +30,13 @@ from .test_py_compile import without_source_date_epoch
 from .test_py_compile import SourceDateEpochTestMeta
 
 
+have_semlock = False
+try:
+    from _multiprocessing import SemLock
+    have_semlock = True
+except:
+    pass
+
 def get_pyc(script, opt):
     if not opt:
         # Replace None and 0 with ''
@@ -262,6 +269,7 @@ class CompileallTestsBase:
         """Recursive compile_dir ddir= contains package paths; bpo39769."""
         return self._test_ddir_only(ddir="<a prefix>", parallel=False)
 
+    @unittest.skipUnless(have_semlock, "SemLock is required")
     def test_ddir_multiple_workers(self):
         """Recursive compile_dir ddir= contains package paths; bpo39769."""
         return self._test_ddir_only(ddir="<a prefix>", parallel=True)
@@ -270,6 +278,7 @@ class CompileallTestsBase:
         """Recursive compile_dir ddir='' contains package paths; bpo39769."""
         return self._test_ddir_only(ddir="", parallel=False)
 
+    @unittest.skipUnless(have_semlock, "SemLock is required")
     def test_ddir_empty_multiple_workers(self):
         """Recursive compile_dir ddir='' contains package paths; bpo39769."""
         return self._test_ddir_only(ddir="", parallel=True)
@@ -358,6 +367,7 @@ class CompileallTestsBase:
                     pass
 
     @os_helper.skip_unless_symlink
+    @unittest.skipIf((sys.platform == 'OpenVMS'), "OpenVMS does not support compiling of symlinks")
     def test_ignore_symlink_destination(self):
         # Create folders for allowed files, symlinks and prohibited area
         allowed_path = os.path.join(self.directory, "test", "dir", "allowed")
@@ -759,6 +769,7 @@ class CommandLineTestsBase:
         self.assertEqual(int.from_bytes(data[4:8], 'little'), 0b01)
 
     @skipUnless(_have_multiprocessing, "requires multiprocessing")
+    @unittest.skipUnless(have_semlock, "requires SemLock")
     def test_workers(self):
         bar2fn = script_helper.make_script(self.directory, 'bar2', '')
         files = []
@@ -825,6 +836,7 @@ class CommandLineTestsBase:
                     pass
 
     @os_helper.skip_unless_symlink
+    @unittest.skipIf((sys.platform == 'OpenVMS'), "OpenVMS does not support compiling of symlinks")
     def test_ignore_symlink_destination(self):
         # Create folders for allowed files, symlinks and prohibited area
         allowed_path = os.path.join(self.directory, "test", "dir", "allowed")

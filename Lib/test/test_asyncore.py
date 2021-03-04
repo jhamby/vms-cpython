@@ -19,9 +19,7 @@ from io import BytesIO
 if support.PGO:
     raise unittest.SkipTest("test is not helpful for PGO")
 
-_IS_OPENVMS = (sys.platform == 'OpenVMS')
-
-HAS_UNIX_SOCKETS = hasattr(socket, 'AF_UNIX') and not _IS_OPENVMS
+HAS_UNIX_SOCKETS = hasattr(socket, 'AF_UNIX') and not (sys.platform == 'OpenVMS')
 
 class dummysocket:
     def __init__(self):

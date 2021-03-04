@@ -20,7 +20,7 @@ from site import USER_SITE
 
 HAS_USER_SITE = (USER_SITE is not None)
 
-_IS_OPENVMS = (sys.platform == "OpenVMS")
+
 
 WINDOWS_SCHEME = {
     'purelib': '$base/Lib/site-packages',
@@ -472,7 +472,7 @@ class install(Command):
             if val is not None:
                 if os.name == 'posix' or os.name == 'nt':
                     val = os.path.expanduser(val)
-                if _IS_OPENVMS:
+                if (sys.platform == 'OpenVMS'):
                     for key in ['sys_prefix', 'prefix', 'sys_exec_prefix', 'exec_prefix']:
                         value = self.config_vars.get(key)
                         if value and val.startswith(value):

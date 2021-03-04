@@ -1,7 +1,7 @@
 IDENT	"12-NOV-2002 09:59:33  OpenVMS FDL Editor"
 
 SYSTEM
-	SOURCE			"OpenVMS"
+	SOURCE			'OpenVMS'
 
 FILE
 	NAME			"Test file"

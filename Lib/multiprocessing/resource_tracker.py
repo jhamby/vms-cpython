@@ -37,10 +37,15 @@ if os.name == 'posix':
     import _multiprocessing
     import _posixshmem
 
+    if hasattr(_multiprocessing, 'sem_unlink'):
+        _CLEANUP_FUNCS.update({
+            'semaphore': _multiprocessing.sem_unlink,
+        })
+
     _CLEANUP_FUNCS.update({
-        'semaphore': _multiprocessing.sem_unlink,
         'shared_memory': _posixshmem.shm_unlink,
     })
+
 
 
 class ResourceTracker(object):

@@ -31,7 +31,7 @@ __all__ = ['Mailbox', 'Maildir', 'mbox', 'MH', 'Babyl', 'MMDF',
            'BabylMessage', 'MMDFMessage', 'Error', 'NoSuchMailboxError',
            'NotEmptyError', 'ExternalClashError', 'FormatError']
 
-_IS_OPENVMS = (sys.platform == "OpenVMS")
+
 
 linesep = os.linesep.encode('ascii')
 
@@ -531,7 +531,7 @@ class Maildir(Mailbox):
         # instance variable and so can be adjusted if dealing with a
         # particularly skewed or irregular system.
         # OpenVMS does not change directory time even if contained files has been changed
-        if not _IS_OPENVMS and (time.time() - self._last_read > 2 + self._skewfactor):
+        if not (sys.platform == 'OpenVMS') and (time.time() - self._last_read > 2 + self._skewfactor):
             refresh = False
             for subdir in self._toc_mtimes:
                 mtime = os.path.getmtime(self._paths[subdir])
@@ -1014,7 +1014,7 @@ class MH(Mailbox):
             if self._locked:
                 _lock_file(f)
             try:
-                if _IS_OPENVMS:
+                if (sys.platform == 'OpenVMS'):
                     os.ftruncate(f.fileno(), 0)
                 else:
                     os.close(os.open(path, os.O_WRONLY | os.O_TRUNC))
@@ -1179,7 +1179,7 @@ class MH(Mailbox):
         """Set sequences using the given name-to-key-list dictionary."""
         f = open(os.path.join(self._path, '.mh_sequences'), 'r+', encoding='ASCII')
         try:
-            if _IS_OPENVMS:
+            if (sys.platform == 'OpenVMS'):
                 os.ftruncate(f.fileno(), 0)
             else:
                 os.close(os.open(f.name, os.O_WRONLY | os.O_TRUNC))

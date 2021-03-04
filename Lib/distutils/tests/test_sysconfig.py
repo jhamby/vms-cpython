@@ -15,6 +15,7 @@ from test.support.os_helper import TESTFN
 from test.support.warnings_helper import check_warnings
 
 
+
 class SysconfigTestCase(support.EnvironGuard, unittest.TestCase):
     def setUp(self):
         super(SysconfigTestCase, self).setUp()
@@ -48,6 +49,7 @@ class SysconfigTestCase(support.EnvironGuard, unittest.TestCase):
         self.assertIsInstance(cvars, dict)
         self.assertTrue(cvars)
 
+    @unittest.skipIf((sys.platform == 'OpenVMS'), 'OpenVMS has no source installed')
     def test_srcdir(self):
         # See Issues #15322, #15364.
         srcdir = sysconfig.get_config_var('srcdir')

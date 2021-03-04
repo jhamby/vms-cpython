@@ -11,7 +11,7 @@ import fnmatch
 import collections
 import errno
 
-_IS_OPENVMS = (sys.platform == "OpenVMS")
+
 
 try:
     import zlib
@@ -381,7 +381,7 @@ def copystat(src, dst, *, follow_symlinks=True):
     _copyxattr(src, dst, follow_symlinks=follow)
     try:
         lookup("chmod")(dst, mode, follow_symlinks=follow)
-        if _IS_OPENVMS:
+        if (sys.platform == 'OpenVMS'):
             # OpenVMS changes modification time during chmod()
             lookup("utime")(dst, ns=(st.st_atime_ns, st.st_mtime_ns),
                 follow_symlinks=follow)

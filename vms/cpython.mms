@@ -903,7 +903,8 @@ $(LIBDYNLOAD_VMS) -
 - ! [.$(OUT_DIR).$(DYNLOAD_DIR)]spwd.exe
 [.$(OUT_DIR).$(DYNLOAD_DIR)]syslog.exe -
 [.$(OUT_DIR).$(DYNLOAD_DIR)]unicodedata.exe -
-[.$(OUT_DIR).$(DYNLOAD_DIR)]zlib.exe
+[.$(OUT_DIR).$(DYNLOAD_DIR)]zlib.exe -
+[.$(OUT_DIR).$(DYNLOAD_DIR)]xxsubtype.exe
 
 LIB_DYNLOAD : $(LIBDYNLOAD)
     continue
@@ -1371,6 +1372,8 @@ SQL_OBJ_LIST = -
 
 # Another example -- the 'xxsubtype' module shows C-level subtyping in action
 # xxsubtype xxsubtype.c
+[.$(OBJ_DIR).Modules]xxsubtype.obm : [.Modules]xxsubtype.c $(PYTHON_HEADERS)
+[.$(OUT_DIR).$(DYNLOAD_DIR)]xxsubtype.exe : [.$(OBJ_DIR).Modules]xxsubtype.obm
 
 # Uncommenting the following line tells makesetup that all following modules
 # are not built (see above for more detail).
@@ -1483,8 +1486,9 @@ DECIMAL_HEADERS = -
 
 # _multiprocessing
 [.$(OBJ_DIR).Modules._multiprocessing]multiprocessing.obm : [.Modules._multiprocessing]multiprocessing.c [.Modules._multiprocessing]multiprocessing.h $(PYTHON_HEADERS)
-[.$(OBJ_DIR).Modules._multiprocessing]semaphore.obm : [.Modules._multiprocessing]semaphore.c [.Modules._multiprocessing]multiprocessing.h $(PYTHON_HEADERS)
-[.$(OUT_DIR).$(DYNLOAD_DIR)]_multiprocessing.exe : [.$(OBJ_DIR).Modules._multiprocessing]multiprocessing.obm,[.$(OBJ_DIR).Modules._multiprocessing]semaphore.obm
+# [.$(OBJ_DIR).Modules._multiprocessing]semaphore.obm : [.Modules._multiprocessing]semaphore.c [.Modules._multiprocessing]multiprocessing.h $(PYTHON_HEADERS)
+# [.$(OUT_DIR).$(DYNLOAD_DIR)]_multiprocessing.exe : [.$(OBJ_DIR).Modules._multiprocessing]multiprocessing.obm,[.$(OBJ_DIR).Modules._multiprocessing]semaphore.obm
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_multiprocessing.exe : [.$(OBJ_DIR).Modules._multiprocessing]multiprocessing.obm
     @ pipe create/dir $(DIR $(MMS$TARGET)) | copy SYS$INPUT nl:
     $(LINK)$(LINK_FLAGS)/SHARE=python$build_out:[$(DYNLOAD_DIR)]$(NOTDIR $(MMS$TARGET_NAME)).exe $(MMS$SOURCE_LIST),[.vms.opt]$(NOTDIR $(MMS$TARGET_NAME)).opt/OPT
 

@@ -24,6 +24,7 @@ from test.support import bigaddrspacetest, MAX_Py_ssize_t
 from test.support.script_helper import assert_python_failure
 
 
+
 if sys.flags.bytes_warning:
     def check_bytes_warnings(func):
         @functools.wraps(func)
@@ -1079,9 +1080,13 @@ class BytesTest(BaseBytesTest, unittest.TestCase):
             def ptr_formatter(ptr):
                 return (ptr_format % ptr)
         else:
-            # UNIX (glibc)
-            def ptr_formatter(ptr):
-                return '%#x' % ptr
+            if (sys.platform == 'OpenVMS'):
+                def ptr_formatter(ptr):
+                    return '0x%X' % ptr
+            else:
+                # UNIX (glibc)
+                def ptr_formatter(ptr):
+                    return '%#x' % ptr
 
         ptr = 0xabcdef
         self.assertEqual(PyBytes_FromFormat(b'ptr=%p', c_char_p(ptr)),

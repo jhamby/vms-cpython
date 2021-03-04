@@ -47,7 +47,7 @@ import struct
 import copy
 import re
 
-_IS_OPENVMS = (sys.platform == "OpenVMS")
+
 
 try:
     import pwd
@@ -2048,7 +2048,7 @@ class TarFile(object):
             dirpath = os.path.join(path, tarinfo.name)
             try:
                 self.chown(tarinfo, dirpath, numeric_owner=numeric_owner)
-                if _IS_OPENVMS:
+                if (sys.platform == 'OpenVMS'):
                     # OpenVMS chmod modifies the time
                     self.chmod(tarinfo, dirpath)
                     self.utime(tarinfo, dirpath)

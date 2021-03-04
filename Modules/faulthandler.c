@@ -625,6 +625,10 @@ faulthandler_thread(void *unused)
         errmsg = _Py_DumpTracebackThreads(thread.fd, thread.interp, NULL);
         ok = (errmsg == NULL);
 
+        #ifdef __VMS
+        fsync(thread.fd);
+        #endif
+
         if (thread.exit)
             _exit(1);
     } while (ok && thread.repeat);

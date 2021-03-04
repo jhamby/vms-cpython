@@ -823,6 +823,9 @@ dump_traceback(int fd, PyThreadState *tstate, int write_header)
         frame = back;
         depth++;
     }
+    #ifdef __VMS
+    fsync(fd);
+    #endif
 }
 
 /* Dump the traceback of a Python thread into fd. Use write() to write the
@@ -835,6 +838,9 @@ void
 _Py_DumpTraceback(int fd, PyThreadState *tstate)
 {
     dump_traceback(fd, tstate, 1);
+    #ifdef __VMS
+    fsync(fd);
+    #endif
 }
 
 /* Write the thread identifier into the file 'fd': "Current thread 0xHHHH:\" if
@@ -921,6 +927,9 @@ _Py_DumpTracebackThreads(int fd, PyInterpreterState *interp,
     } while (tstate != NULL);
     _Py_END_SUPPRESS_IPH
 
+    #ifdef __VMS
+    fsync(fd);
+    #endif
     return NULL;
 }
 

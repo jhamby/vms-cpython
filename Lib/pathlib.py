@@ -6,10 +6,10 @@ import os
 import posixpath
 import re
 import sys
-_IS_OPENVMS = (sys.platform == "OpenVMS")
+
 from _collections_abc import Sequence
 from errno import EINVAL, ENOENT, ENOTDIR, EBADF, ELOOP
-if _IS_OPENVMS:
+if (sys.platform == 'OpenVMS'):
     from errno import EPERM
 from operator import attrgetter
 from stat import S_ISDIR, S_ISLNK, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
@@ -348,7 +348,7 @@ class _PosixFlavour(_Flavour):
                 try:
                     target = accessor.readlink(newpath)
                 except OSError as e:
-                    if _IS_OPENVMS:
+                    if (sys.platform == 'OpenVMS'):
                         if e.errno not in (EINVAL,EPERM) and strict:
                             raise
                     else:

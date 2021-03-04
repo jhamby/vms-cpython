@@ -825,10 +825,10 @@ _Py_stat=PROCEDURE,-
 _Py_wfopen=PROCEDURE,-
 _Py_wgetcwd=PROCEDURE,-
 _Py_wreadlink=PROCEDURE,-
-_Py_wrealpath=PROCEDURE,-
 _Py_write=PROCEDURE,-
 _Py_write_noraise=PROCEDURE-
 )
+! _Py_wrealpath=PROCEDURE
 ! Module floatobject
 SYMBOL_VECTOR=(-
 PyFloat_AsDouble=PROCEDURE,-

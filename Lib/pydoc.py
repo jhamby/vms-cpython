@@ -75,7 +75,7 @@ from collections import deque
 from reprlib import Repr
 from traceback import format_exception_only
 
-_IS_OPENVMS = (sys.platform == "OpenVMS")
+
 
 # --------------------------------------------------------- common routines
 
@@ -1556,7 +1556,7 @@ def pager(text):
 
 def getpager():
     """Decide what method to use for paging through text."""
-    if _IS_OPENVMS:
+    if (sys.platform == 'OpenVMS'):
         return plainpager
     if not hasattr(sys.stdin, "isatty"):
         return plainpager

@@ -20,8 +20,6 @@ from test.support import warnings_helper
 
 TESTFN = os_helper.TESTFN
 
-_IS_OPENVMS = (sys.platform == 'OpenVMS')
-
 class TestSupport(unittest.TestCase):
 
     def test_import_module(self):
@@ -203,7 +201,7 @@ class TestSupport(unittest.TestCase):
         with os_helper.temp_dir() as temp_path:
             with os_helper.change_cwd(temp_path) as new_cwd:
                 # on OpenVMS /tmp is virtual and is the same as the home directory
-                if not _IS_OPENVMS:
+                if not (sys.platform == 'OpenVMS'):
                     self.assertEqual(new_cwd, temp_path)
                 self.assertEqual(os.getcwd(), new_cwd)
 

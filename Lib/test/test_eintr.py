@@ -4,8 +4,8 @@ import unittest
 from test import support
 from test.support import script_helper
 
-
 @unittest.skipUnless(os.name == "posix", "only supported on Unix")
+@unittest.skipIf((os.sys.platform == 'OpenVMS'), "only supported on Unix")
 class EINTRTests(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(signal, "setitimer"), "requires setitimer()")

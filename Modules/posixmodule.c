@@ -3890,6 +3890,7 @@ posix_getcwd(int use_bytes)
         // getcwd() must set ENOENT if default directory is deleted
         cwd = getcwd(buf, buflen, 1);
         if (cwd) {
+            // NOTE: getcwd() does not work with unix names if DECC$POSIX_COMPLIANT_PATHNAMES is enabled
             cwd = getcwd(buf, buflen, 0);
             if (!cwd) {
                 if (!try_get_cwd) {
@@ -10278,6 +10279,38 @@ os_isatty_impl(PyObject *module, int fd)
     return return_value;
 }
 
+#ifdef __VMS
+
+#define OS_PIPE_SOCKET_METHODDEF    \
+    {"pipe_socket", (PyCFunction)(void(*)(void))os_pipe_socket, METH_FASTCALL, os_pipe_socket__doc__},
+
+PyDoc_STRVAR(os_pipe_socket__doc__,
+"pipe_socket($module, /)\n"
+"--\n"
+"\n"
+"Create a pipe using socketpair().\n"
+"No reset inheritance.\n"
+"\n"
+"Returns a tuple of two file descriptors:\n"
+"  (read_fd, write_fd)");
+
+static PyObject *
+os_pipe_socket(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    int fds[2];
+    int res;
+
+    Py_BEGIN_ALLOW_THREADS
+    res = socketpair(AF_UNIX, SOCK_STREAM, 0, fds);
+    Py_END_ALLOW_THREADS
+
+    if (res != 0)
+        return PyErr_SetFromErrno(PyExc_OSError);
+
+    return Py_BuildValue("(ii)", fds[0], fds[1]);
+}
+
+#endif /* __VMS */
 
 #ifdef HAVE_PIPE
 /*[clinic input]
@@ -15000,6 +15033,7 @@ static PyMethodDef posix_methods[] = {
     OS_READ_METHODDEF
 #ifdef __VMS
     OS_READ_PIPE_METHODDEF
+    OS_PIPE_SOCKET_METHODDEF
 #endif
     OS_READV_METHODDEF
     OS_PREAD_METHODDEF

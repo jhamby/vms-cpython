@@ -32,7 +32,6 @@ MEMORY_SANITIZER = (
     '--with-memory-sanitizer' in _config_args
 )
 
-
 def expected_traceback(lineno1, lineno2, header, min_count=1):
     regex = header
     regex += '  File "<string>", line %s in func\n' % lineno1
@@ -84,7 +83,10 @@ class FaultHandlerTests(unittest.TestCase):
         elif fd is not None:
             self.assertEqual(output, '')
             os.lseek(fd, os.SEEK_SET, 0)
-            with open(fd, "rb", closefd=False) as fp:
+            mode = "rb"
+            if (sys.platform == 'OpenVMS'):
+                mode = "rbn"
+            with open(fd, mode, closefd=False) as fp:
                 output = fp.read()
             output = output.decode('ascii', 'backslashreplace')
         return output.splitlines(), exitcode

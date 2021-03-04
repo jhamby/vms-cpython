@@ -10,15 +10,15 @@ $ com_nam = f$environment("procedure")
 $ com_dir = f$parse(com_nam,,,"directory")
 $ com_dev = f$parse(com_nam,,,"device")
 $ com_pat = com_dev + com_dir
-$ prj_pat = com_pat - ".vms]"
-$ bld_pat = prj_pat + ".out.''CONFIG']"
-$ inc_pat = prj_pat + ".include]"
-$ cpy_pat = prj_pat + ".include.cpython]"
-$ lib_pat = prj_pat + ".lib...]"
-$ vms_py_pat = prj_pat + ".modules.vms...]"
-$ rdb_py_pat = prj_pat + ".modules.rdb...]"
-$ vms_pat = prj_pat + ".vms]"
-$ dyn_pat = prj_pat + ".out.'CONFIG'.lib-dynload...]"
+$ prj_ptt = com_pat - ".vms]"
+$ bld_pat = prj_ptt + ".out.''CONFIG']"
+$ inc_pat = prj_ptt + ".include]"
+$ cpy_pat = prj_ptt + ".include.cpython]"
+$ lib_pat = prj_ptt + ".lib...]"
+$ vms_py_pat = prj_ptt + ".modules.vms...]"
+$ rdb_py_pat = prj_ptt + ".modules.rdb...]"
+$ vms_pat = prj_ptt + ".vms]"
+$ dyn_pat = prj_ptt + ".out.'CONFIG'.lib-dynload...]"
 $ @'com_pat'Python3^.10^.def.com
 $
 $ pipe delete/tree python$root:[000000...]*.*;* | copy SYS$INPUT nl:
@@ -27,6 +27,7 @@ $ backup 'bld_pat'python3^.10.exe python$root:[bin]
 $
 $ backup 'inc_pat'*.h python$root:[include]
 $ backup 'cpy_pat'*.h python$root:[include.cpython]
+$ backup 'vms_pat'pyconfig.h python$root:[include]
 $
 $ backup 'lib_pat'*.* python$root:[lib.python3^.10...]
 $ backup 'vms_py_pat'*.py python$root:[lib.python3^.10.vms]

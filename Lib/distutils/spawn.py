@@ -14,7 +14,7 @@ from distutils.errors import DistutilsPlatformError, DistutilsExecError
 from distutils.debug import DEBUG
 from distutils import log
 
-_IS_OPENVMS = (sys.platform == "OpenVMS")
+
 
 if sys.platform == 'darwin':
     _cfg_target = None
@@ -45,7 +45,7 @@ def spawn(cmd, search_path=1, verbose=0, dry_run=0):
     if dry_run:
         return
 
-    if not _IS_OPENVMS and search_path:
+    if not (sys.platform == 'OpenVMS') and search_path:
         executable = find_executable(cmd[0])
         if executable is not None:
             cmd[0] = executable
@@ -77,7 +77,7 @@ def spawn(cmd, search_path=1, verbose=0, dry_run=0):
         proc.wait()
         exitcode = proc.returncode
     except OSError as exc:
-        if _IS_OPENVMS:
+        if (sys.platform == 'OpenVMS'):
             try:
                 proc = subprocess.Popen(cmd, env=env, shell=True)
                 proc.wait()

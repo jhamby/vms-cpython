@@ -20,6 +20,17 @@ from test.support.script_helper import (
     make_pkg, make_script, make_zip_pkg, make_zip_script,
     assert_python_ok, assert_python_failure, spawn_python, kill_python)
 
+
+if (sys.platform == 'OpenVMS'):
+    import _decc
+    def fix_temp(temp_path):
+        try:
+            vwd = _decc.to_vms(temp_path)
+            uwd = _decc.from_vms(vwd[0])
+            return uwd[0]
+        except:
+            return temp_path
+
 verbose = support.verbose
 
 example_args = ['test1', 'test2', 'test3']
@@ -72,6 +83,7 @@ example_args_list = test_cmd_line_script.example_args
 assertEqual(sys.argv[1:], example_args_list)
 print('sys.argv[0]==%a' % sys.argv[0])
 print('sys.path[0]==%a' % sys.path[0])
+print('sys.path==%a' % repr(sys.path))
 # Check the working directory
 import os
 print('cwd==%a' % os.getcwd())
@@ -217,6 +229,8 @@ class CmdLineTest(unittest.TestCase):
 
     def test_basic_script(self):
         with os_helper.temp_dir() as script_dir:
+            if (sys.platform == 'OpenVMS'):
+                script_dir = fix_temp(script_dir)
             script_name = _make_test_script(script_dir, 'script')
             self._check_script(script_name, script_name, script_name,
                                script_dir, None,
@@ -227,6 +241,8 @@ class CmdLineTest(unittest.TestCase):
         # pass the script using the relative path, expect the absolute path
         # in __file__
         with os_helper.temp_cwd() as script_dir:
+            if (sys.platform == 'OpenVMS'):
+                script_dir = fix_temp(script_dir)
             self.assertTrue(os.path.isabs(script_dir), script_dir)
 
             script_name = _make_test_script(script_dir, 'script')
@@ -237,6 +253,8 @@ class CmdLineTest(unittest.TestCase):
 
     def test_script_compiled(self):
         with os_helper.temp_dir() as script_dir:
+            if (sys.platform == 'OpenVMS'):
+                script_dir = fix_temp(script_dir)
             script_name = _make_test_script(script_dir, 'script')
             py_compile.compile(script_name, doraise=True)
             os.remove(script_name)
@@ -313,6 +331,8 @@ class CmdLineTest(unittest.TestCase):
 
     def test_module_in_package(self):
         with os_helper.temp_dir() as script_dir:
+            if (sys.platform == 'OpenVMS'):
+                script_dir = fix_temp(script_dir)
             pkg_dir = os.path.join(script_dir, 'test_pkg')
             make_pkg(pkg_dir)
             script_name = _make_test_script(pkg_dir, 'script')
@@ -323,6 +343,8 @@ class CmdLineTest(unittest.TestCase):
 
     def test_module_in_package_in_zipfile(self):
         with os_helper.temp_dir() as script_dir:
+            if (sys.platform == 'OpenVMS'):
+                script_dir = fix_temp(script_dir)
             zip_name, run_name = _make_test_zip_pkg(script_dir, 'test_zip', 'test_pkg', 'script')
             self._check_script(["-m", "test_pkg.script"], run_name, run_name,
                                script_dir, 'test_pkg', zipimport.zipimporter,
@@ -330,6 +352,8 @@ class CmdLineTest(unittest.TestCase):
 
     def test_module_in_subpackage_in_zipfile(self):
         with os_helper.temp_dir() as script_dir:
+            if (sys.platform == 'OpenVMS'):
+                script_dir = fix_temp(script_dir)
             zip_name, run_name = _make_test_zip_pkg(script_dir, 'test_zip', 'test_pkg', 'script', depth=2)
             self._check_script(["-m", "test_pkg.test_pkg.script"], run_name, run_name,
                                script_dir, 'test_pkg.test_pkg',
@@ -338,6 +362,8 @@ class CmdLineTest(unittest.TestCase):
 
     def test_package(self):
         with os_helper.temp_dir() as script_dir:
+            if (sys.platform == 'OpenVMS'):
+                script_dir = fix_temp(script_dir)
             pkg_dir = os.path.join(script_dir, 'test_pkg')
             make_pkg(pkg_dir)
             script_name = _make_test_script(pkg_dir, '__main__')
@@ -348,6 +374,8 @@ class CmdLineTest(unittest.TestCase):
 
     def test_package_compiled(self):
         with os_helper.temp_dir() as script_dir:
+            if (sys.platform == 'OpenVMS'):
+                script_dir = fix_temp(script_dir)
             pkg_dir = os.path.join(script_dir, 'test_pkg')
             make_pkg(pkg_dir)
             script_name = _make_test_script(pkg_dir, '__main__')
@@ -382,6 +410,8 @@ class CmdLineTest(unittest.TestCase):
         # Make sure package __init__ modules see "-m" in sys.argv0 while
         # searching for the module to execute
         with os_helper.temp_dir() as script_dir:
+            if (sys.platform == 'OpenVMS'):
+                script_dir = fix_temp(script_dir)
             with os_helper.change_cwd(path=script_dir):
                 pkg_dir = os.path.join(script_dir, 'test_pkg')
                 make_pkg(pkg_dir, "import sys; print('init_argv0==%r' % sys.argv[0])")
@@ -399,6 +429,8 @@ class CmdLineTest(unittest.TestCase):
         # Make sure a "-c" file in the current directory
         # does not alter the value of sys.path[0]
         with os_helper.temp_dir() as script_dir:
+            if (sys.platform == 'OpenVMS'):
+                script_dir = fix_temp(script_dir)
             with os_helper.change_cwd(path=script_dir):
                 with open("-c", "w") as f:
                     f.write("data")
@@ -414,6 +446,8 @@ class CmdLineTest(unittest.TestCase):
         # Make sure a "-m" file in the current directory
         # does not alter the value of sys.path[0]
         with os_helper.temp_dir() as script_dir:
+            if (sys.platform == 'OpenVMS'):
+                script_dir = fix_temp(script_dir)
             script_name = _make_test_script(script_dir, 'other')
             with os_helper.change_cwd(path=script_dir):
                 with open("-m", "w") as f:
@@ -670,6 +704,9 @@ class CmdLineTest(unittest.TestCase):
         # Always show full path diffs on errors
         self.maxDiff = None
         with os_helper.temp_dir() as work_dir, os_helper.temp_dir() as script_dir:
+            if (sys.platform == 'OpenVMS'):
+                script_dir = fix_temp(script_dir)
+                work_dir = fix_temp(work_dir)
             script_name = _make_test_script(script_dir, '__main__', script)
             # Reference output comes from directly executing __main__.py
             # We omit PYTHONPATH and user site to align with isolated mode
@@ -702,6 +739,8 @@ class CmdLineTest(unittest.TestCase):
         # Always show full path diffs on errors
         self.maxDiff = None
         with os_helper.temp_dir() as work_dir:
+            if (sys.platform == 'OpenVMS'):
+                work_dir = fix_temp(work_dir)
             script_dir = os.path.join(work_dir, "script_pkg")
             os.mkdir(script_dir)
             script_name = _make_test_script(script_dir, '__main__', script)

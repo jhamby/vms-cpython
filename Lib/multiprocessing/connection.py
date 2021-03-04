@@ -38,6 +38,8 @@ except ImportError:
 #
 #
 
+
+
 BUFSIZE = 8192
 # A very generous timeout when it comes to local connections...
 CONNECTION_TIMEOUT = 20.
@@ -47,7 +49,7 @@ _mmap_counter = itertools.count()
 default_family = 'AF_INET'
 families = ['AF_INET']
 
-if hasattr(socket, 'AF_UNIX'):
+if hasattr(socket, 'AF_UNIX') and not (sys.platform == 'OpenVMS'):
     default_family = 'AF_UNIX'
     families += ['AF_UNIX']
 
@@ -71,6 +73,8 @@ def arbitrary_address(family):
     Return an arbitrary free address for the given family
     '''
     if family == 'AF_INET':
+        if (sys.platform == 'OpenVMS'):
+            return ('127.0.0.1', 0)
         return ('localhost', 0)
     elif family == 'AF_UNIX':
         # Prefer abstract sockets if possible to avoid problems with the address

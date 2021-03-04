@@ -54,10 +54,9 @@ import contextlib
 from time import monotonic as _time
 import types
 
-_IS_OPENVMS = (sys.platform == "OpenVMS")
-if _IS_OPENVMS:
+
+if (sys.platform == 'OpenVMS'):
     import ctypes
-    import socket
 
 try:
     import pwd
@@ -231,7 +230,7 @@ else:
     # poll/select have the advantage of not requiring any extra file
     # descriptor, contrarily to epoll/kqueue (also, they require a single
     # syscall).
-    if _IS_OPENVMS:
+    if (sys.platform == 'OpenVMS'):
         _PopenSelector = selectors.SelectSelector
     else:
         if hasattr(selectors, 'PollSelector'):
@@ -801,7 +800,7 @@ class Popen(object):
                                  "platforms")
         else:
             # POSIX
-            if _IS_OPENVMS:
+            if (sys.platform == 'OpenVMS'):
                 if preexec_fn is not None:
                     raise ValueError("preexec_fn is not supported on OpenVMS "
                                     "platforms")
@@ -821,9 +820,8 @@ class Popen(object):
         self.stderr = None
         self.pid = None
         self.returncode = None
-        if _IS_OPENVMS:
+        if (sys.platform == 'OpenVMS'):
             self.returncode_ast = ctypes.c_longlong(-1)
-            self.socket_pair = []
         self.encoding = encoding
         self.errors = errors
         self.pipesize = pipesize
@@ -1141,7 +1139,7 @@ class Popen(object):
             [self.stdin, self.stdout, self.stderr].count(None) >= 2):
             stdout = None
             stderr = None
-            if _IS_OPENVMS:
+            if (sys.platform == 'OpenVMS'):
                 def read_std(std):
                     ret_data = []
                     while True:
@@ -1161,13 +1159,13 @@ class Popen(object):
             if self.stdin:
                 self._stdin_write(input)
             elif self.stdout:
-                if _IS_OPENVMS:
+                if (sys.platform == 'OpenVMS'):
                     stdout = read_std(self.stdout)
                 else:
                     stdout = self.stdout.read()
                 self.stdout.close()
             elif self.stderr:
-                if _IS_OPENVMS:
+                if (sys.platform == 'OpenVMS'):
                     stderr = read_std(self.stderr)
                 else:
                     stderr = self.stderr.read()
@@ -1627,10 +1625,8 @@ class Popen(object):
             if stdin is None:
                 pass
             elif stdin == PIPE:
-                if _IS_OPENVMS:
-                    self.socket_pair = socket.socketpair()
-                    p2cread = self.socket_pair[0].fileno()
-                    p2cwrite = self.socket_pair[1].fileno()
+                if (sys.platform == 'OpenVMS'):
+                    p2cread, p2cwrite = os.pipe_socket()
                 else:
                     p2cread, p2cwrite = os.pipe()
                 if self.pipesize > 0 and hasattr(fcntl, "F_SETPIPE_SZ"):
@@ -1742,7 +1738,7 @@ class Popen(object):
                 args = list(args)
 
             if shell:
-                if _IS_OPENVMS:
+                if (sys.platform == 'OpenVMS'):
                     # DCL is a keyword :)
                     args = ["DCL"] + args
                     if self.stderr:
@@ -1811,7 +1807,7 @@ class Popen(object):
                     else:
                         env_list = None  # Use execv instead of execve.
                     executable = os.fsencode(executable)
-                    if os.path.dirname(executable) or (_IS_OPENVMS and shell):
+                    if os.path.dirname(executable) or ((sys.platform == 'OpenVMS') and shell):
                         executable_list = (executable,)
                     else:
                         # This matches the behavior of os._execvpe().
@@ -1820,7 +1816,7 @@ class Popen(object):
                             for dir in os.get_exec_path(env))
                     fds_to_keep = set(pass_fds)
                     fds_to_keep.add(errpipe_write)
-                    if _IS_OPENVMS:
+                    if (sys.platform == 'OpenVMS'):
                         self.pid = _posixsubprocess.fork_exec(
                             args, executable_list,
                             close_fds, tuple(sorted(map(int, fds_to_keep))),
@@ -1844,7 +1840,7 @@ class Popen(object):
                             gid, gids, uid, umask,
                             preexec_fn)
                     self._child_created = True
-                    if _IS_OPENVMS:
+                    if (sys.platform == 'OpenVMS'):
                         for pipe in [self.stdout, self.stderr]:
                             while pipe:
                                 if hasattr(pipe, "_pid"):
@@ -1920,7 +1916,7 @@ class Popen(object):
             """All callers to this function MUST hold self._waitpid_lock."""
             # This method is called (indirectly) by __del__, so it cannot
             # refer to anything outside of its local scope.
-            if _IS_OPENVMS and self.returncode_ast.value != -1:
+            if (sys.platform == 'OpenVMS') and self.returncode_ast.value != -1:
                 # Get return code from AST
                 def vms_code_convert(code):
                     code = code & 7
@@ -2100,12 +2096,12 @@ class Popen(object):
                                     selector.unregister(key.fileobj)
                                     key.fileobj.close()
                         elif key.fileobj in (self.stdout, self.stderr):
-                            if _IS_OPENVMS:
+                            if (sys.platform == 'OpenVMS'):
                                 data, pid = os.read_pipe(key.fd)
                             else:
                                 data = os.read(key.fd, 32768)
                             if not data:
-                                if _IS_OPENVMS and self.pid != pid:
+                                if (sys.platform == 'OpenVMS') and self.pid != pid:
                                     continue
                                 else:
                                     selector.unregister(key.fileobj)
