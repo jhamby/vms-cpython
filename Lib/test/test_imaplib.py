@@ -9,6 +9,8 @@ import time
 import calendar
 import threading
 import socket
+import sys
+import errno
 
 from test.support import (verbose,
                           run_with_tz, run_with_locale, cpython_only)
@@ -76,6 +78,10 @@ class TestImaplib(unittest.TestCase):
 
     def test_imap4_host_default_value(self):
         # Check whether the IMAP4_PORT is truly unavailable.
+        addr = ''
+        if (sys.platform == 'OpenVMS'):
+            # OpenVMS fails on empty address
+            addr = '127.0.0.1'
         with socket.socket() as s:
             try:
                 s.connect(('', imaplib.IMAP4_PORT))
@@ -86,6 +92,8 @@ class TestImaplib(unittest.TestCase):
 
         # This is the exception that should be raised.
         expected_errnos = socket_helper.get_socket_conn_refused_errs()
+        if (sys.platform == 'OpenVMS'):
+            expected_errnos.append(errno.EPROTOTYPE)
         with self.assertRaises(OSError) as cm:
             imaplib.IMAP4()
         self.assertIn(cm.exception.errno, expected_errnos)
@@ -476,7 +484,10 @@ class NewIMAPTestsMixin():
 
         _, server = self._setup(TimeoutHandler)
         addr = server.server_address[1]
-        with self.assertRaises(TimeoutError):
+        exception = TimeoutError
+        if (sys.platform == 'OpenVMS'):
+            exception = (exception, ssl.SSLWantReadError)
+        with self.assertRaises(exception):
             client = self.imap_class("localhost", addr, timeout=0.001)
 
     def test_with_statement(self):

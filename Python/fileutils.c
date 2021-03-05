@@ -1384,7 +1384,7 @@ _Py_open_impl(const char *pathname, int flags, int gil_held)
             Py_BEGIN_ALLOW_THREADS
 #ifdef __VMS
             if (flags & O_BINARY) {
-                fd = open(pathname, flags & ~O_BINARY, 0777, "ctx=bin");
+                fd = open(pathname, flags & ~O_BINARY, 0, "ctx=bin");
             } else
 #endif
             fd = open(pathname, flags);

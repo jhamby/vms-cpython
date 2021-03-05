@@ -3,6 +3,7 @@
 import unittest
 from test.support import import_helper
 
+import sys
 
 grp = import_helper.import_module('grp')
 
@@ -15,7 +16,8 @@ class GroupDatabaseTestCase(unittest.TestCase):
         self.assertEqual(value[0], value.gr_name)
         self.assertIsInstance(value.gr_name, str)
         self.assertEqual(value[1], value.gr_passwd)
-        self.assertIsInstance(value.gr_passwd, str)
+        if not (sys.platform == 'OpenVMS'): # password is None
+            self.assertIsInstance(value.gr_passwd, str)
         self.assertEqual(value[2], value.gr_gid)
         self.assertIsInstance(value.gr_gid, int)
         self.assertEqual(value[3], value.gr_mem)

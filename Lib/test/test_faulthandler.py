@@ -83,10 +83,7 @@ class FaultHandlerTests(unittest.TestCase):
         elif fd is not None:
             self.assertEqual(output, '')
             os.lseek(fd, os.SEEK_SET, 0)
-            mode = "rb"
-            if (sys.platform == 'OpenVMS'):
-                mode = "rbn"
-            with open(fd, mode, closefd=False) as fp:
+            with open(fd, "rb", closefd=False) as fp:
                 output = fp.read()
             output = output.decode('ascii', 'backslashreplace')
         return output.splitlines(), exitcode
@@ -293,6 +290,7 @@ class FaultHandlerTests(unittest.TestCase):
     @unittest.skipIf(UB_SANITIZER or MEMORY_SANITIZER,
                      "sanitizer builds change crashing process output.")
     @skip_segfault_on_android
+    @unittest.skipIf(sys.platform == 'OpenVMS', 'OpenVMS has no file stream synchronization')
     def test_enable_fd(self):
         with tempfile.TemporaryFile('wb+') as fp:
             fd = fp.fileno()
@@ -467,6 +465,7 @@ class FaultHandlerTests(unittest.TestCase):
 
     @unittest.skipIf(sys.platform == "win32",
                      "subprocess doesn't support pass_fds on Windows")
+    @unittest.skipIf(sys.platform == 'OpenVMS', 'OpenVMS has no file stream synchronization')
     def test_dump_traceback_fd(self):
         with tempfile.TemporaryFile('wb+') as fp:
             self.check_dump_traceback(fd=fp.fileno())

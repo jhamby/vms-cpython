@@ -237,12 +237,7 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
 
     int creating = 0, reading = 0, writing = 0, appending = 0, updating = 0;
     int text = 0, binary = 0, universal = 0;
-#ifdef __VMS
-    int reopen = 0;
-    char rawmode[8], *m;
-#else
     char rawmode[6], *m;
-#endif
     int line_buffering, is_number;
     long isatty = 0;
 
@@ -302,11 +297,6 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
             universal = 1;
             reading = 1;
             break;
-    #ifdef __VMS
-        case 'n':
-            reopen = 1;
-            break;
-    #endif
         default:
             goto invalid_mode;
         }
@@ -326,9 +316,6 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
     if (writing)   *(m++) = 'w';
     if (appending) *(m++) = 'a';
     if (updating)  *(m++) = '+';
-#ifdef __VMS
-    if (reopen)    *(m++) = 'n';
-#endif
     *m = '\0';
 
     /* Parameters validation */

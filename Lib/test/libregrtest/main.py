@@ -27,6 +27,7 @@ if sys.platform == 'OpenVMS':
     import _jpidef
     import _syidef
     import _lib
+    import gc
 
     def format_mem(mem):
         """ mem in bytes
@@ -124,6 +125,9 @@ class Regrtest:
         self.tmp_dir = None
         self.worker_test_name = None
 
+        # OpenVMS
+        self.home_files_count = None
+
     def get_executed(self):
         return (set(self.good) | set(self.bad) | set(self.skipped)
                 | set(self.resource_denieds) | set(self.environment_changed)
@@ -199,7 +203,14 @@ class Regrtest:
             line = f"{line}/{fails}"
         #show used memory
         if sys.platform == 'OpenVMS':
+            gc.collect()
             line += " (%s)" % format_mem(get_mem())
+            if self.home_files_count:
+                os.popen('purge sys$login:').read()
+                home_files_count = os.popen('dir sys$login: /grand').read().strip()
+                if home_files_count != self.home_files_count:
+                    line += " D"
+                    self.home_files_count = home_files_count
         self.log(f"[{line}] {text}")
 
     def parse_args(self, kwargs):
@@ -433,7 +444,9 @@ class Regrtest:
             msg += " (timeout: %s)" % format_duration(self.ns.timeout)
         #show used memory
         if sys.platform == 'OpenVMS':
-            msg += " (memory: %s)" % format_mem(get_mem())
+            msg += " (initial memory: %s)" % format_mem(get_mem())
+            os.popen('purge sys$login:').read()
+            self.home_files_count = os.popen('dir sys$login: /grand').read().strip()
         self.log(msg)
 
         previous_test = None

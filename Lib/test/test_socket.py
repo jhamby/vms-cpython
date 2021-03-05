@@ -891,7 +891,10 @@ class GeneralModuleTests(unittest.TestCase):
         # Testing that sendto doesn't mask failures. See #10169.
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.addCleanup(s.close)
-        s.bind(('', 0))
+        addr = ''
+        if (sys.platform == 'OpenVMS'):
+            addr = '127.0.0.1'
+        s.bind((addr, 0))
         sockname = s.getsockname()
         # 2 args
         with self.assertRaises(TypeError) as cm:
@@ -1139,6 +1142,7 @@ class GeneralModuleTests(unittest.TestCase):
             self.assertRaises(OverflowError, socket.ntohl, k)
             self.assertRaises(OverflowError, socket.htonl, k)
 
+    @unittest.skipIf(sys.platform == 'OpenVMS', 'OpenVMS has no appropriate service to test (TBD?)')
     def testGetServBy(self):
         eq = self.assertEqual
         # Find one service that exists, then check all the related interfaces.
@@ -1510,7 +1514,7 @@ class GeneralModuleTests(unittest.TestCase):
         # port number or None
         # Issue #26936: Android getaddrinfo() was broken before API level 23.
         if (not hasattr(sys, 'getandroidapilevel') or
-                sys.getandroidapilevel() >= 23):
+                sys.getandroidapilevel() >= 23) and not (sys.platform == 'OpenVMS'):
             socket.getaddrinfo(HOST, "http")
         socket.getaddrinfo(HOST, 80)
         socket.getaddrinfo(HOST, None)
@@ -1618,9 +1622,11 @@ class GeneralModuleTests(unittest.TestCase):
             c.close()
             s.close()
 
+    @unittest.skipIf(sys.platform == 'OpenVMS', 'OpenVMS has no correct signal handling')
     def test_sendall_interrupted(self):
         self.check_sendall_interrupted(False)
 
+    @unittest.skipIf(sys.platform == 'OpenVMS', 'OpenVMS has no correct signal handling')
     def test_sendall_interrupted_with_timeout(self):
         self.check_sendall_interrupted(True)
 
@@ -1886,7 +1892,7 @@ class GeneralModuleTests(unittest.TestCase):
             s.bind((socket_helper.HOSTv6, 0, 0, 0))
             self._test_socket_fileno(s, socket.AF_INET6, socket.SOCK_STREAM)
 
-        if hasattr(socket, "AF_UNIX"):
+        if hasattr(socket, "AF_UNIX") and not (sys.platform == 'OpenVMS'):
             tmpdir = tempfile.mkdtemp()
             self.addCleanup(shutil.rmtree, tmpdir)
             s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
@@ -1916,19 +1922,21 @@ class GeneralModuleTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "negative file descriptor"):
             socket.socket(socket.AF_INET, socket.SOCK_STREAM, fileno=-42)
 
+    @unittest.skipIf(sys.platform == 'OpenVMS', 'OpenVMS has invalid socket from fileno implementation')
     def test_socket_fileno_requires_valid_fd(self):
         WSAENOTSOCK = 10038
         with self.assertRaises(OSError) as cm:
-            socket.socket(fileno=os_helper.make_bad_fd())
+            socket.socket(fileno=support.make_bad_fd())
         self.assertIn(cm.exception.errno, (errno.EBADF, WSAENOTSOCK))
 
         with self.assertRaises(OSError) as cm:
             socket.socket(
                 socket.AF_INET,
                 socket.SOCK_STREAM,
-                fileno=os_helper.make_bad_fd())
+                fileno=support.make_bad_fd())
         self.assertIn(cm.exception.errno, (errno.EBADF, WSAENOTSOCK))
 
+    @unittest.skipIf(sys.platform == 'OpenVMS', 'OpenVMS has invalid socket from fileno implementation')
     def test_socket_fileno_requires_socket_fd(self):
         with tempfile.NamedTemporaryFile() as afile:
             with self.assertRaises(OSError):
@@ -4626,7 +4634,8 @@ class NonBlockingTCPTests(ThreadedTCPSocketTest):
             fd_blocking = (timeout is None)
 
             flag = fcntl.fcntl(sock, fcntl.F_GETFL, os.O_NONBLOCK)
-            self.assertEqual(not bool(flag & os.O_NONBLOCK), fd_blocking)
+            if not (sys.platform == 'OpenVMS'): # OpenVMS fcntl does not work with O_NONBLOCK
+                self.assertEqual(not bool(flag & os.O_NONBLOCK), fd_blocking)
 
     def testSetBlocking(self):
         # Test setblocking() and settimeout() methods
@@ -5179,9 +5188,12 @@ class NetworkConnectionAttributesTest(SocketTCPTest, ThreadableTest):
 
     testSourceAddress = _justAccept
     def _testSourceAddress(self):
+        addr = ''
+        if (sys.platform == 'OpenVMS'):
+            addr = '127.0.0.1'
         self.cli = socket.create_connection((HOST, self.port),
                             timeout=support.LOOPBACK_TIMEOUT,
-                            source_address=('', self.source_port))
+                            source_address=(addr, self.source_port))
         self.addCleanup(self.cli.close)
         self.assertEqual(self.cli.getsockname()[1], self.source_port)
         # The port number being used is sufficient to show that the bind()
@@ -5279,6 +5291,7 @@ class TCPTimeoutTest(SocketTCPTest):
 
     @unittest.skipUnless(hasattr(signal, 'alarm'),
                          'test needs signal.alarm()')
+    @unittest.skipIf(sys.platform == 'OpenVMS', 'OpenVMS has no correct signal handling')
     def testInterruptedTimeout(self):
         # XXX I don't know how to do this test on MSWindows or any other
         # platform that doesn't support signal.alarm() or os.kill(), though
@@ -5425,6 +5438,7 @@ class TestLinuxAbstractNamespace(unittest.TestCase):
             self.assertEqual(s.getsockname(), b"\x00python\x00test\x00")
 
 @unittest.skipUnless(hasattr(socket, 'AF_UNIX'), 'test needs socket.AF_UNIX')
+@unittest.skipIf(sys.platform == 'OpenVMS', 'OpenVMS does not implement socket.AF_UNIX')
 class TestUnixDomain(unittest.TestCase):
 
     def setUp(self):
@@ -5743,6 +5757,7 @@ class InheritanceTest(unittest.TestCase):
             self.assertEqual(sock.get_inheritable(), False)
 
     @unittest.skipIf(fcntl is None, "need fcntl")
+    @unittest.skipIf(sys.platform == 'OpenVMS', "OpenVMS has invalid F_SETFD implementation for sockets")
     def test_get_inheritable_cloexec(self):
         sock = socket.socket()
         with sock:
@@ -6521,7 +6536,10 @@ class CreateServerFunctionalTest(unittest.TestCase):
 
     def test_tcp4(self):
         port = socket_helper.find_unused_port()
-        with socket.create_server(("", port)) as sock:
+        addr = ''
+        if (sys.platform == 'OpenVMS'):
+            addr = '127.0.0.1'
+        with socket.create_server((addr, port)) as sock:
             self.echo_server(sock)
             self.echo_client(("127.0.0.1", port), socket.AF_INET)
 

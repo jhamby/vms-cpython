@@ -90,6 +90,7 @@ class TestFcntl(unittest.TestCase):
             print('String from fcntl with F_SETLKW: ', repr(rv))
         self.f.close()
 
+    @unittest.skipIf(sys.platform == 'OpenVMS', 'blocking does not work for files in OpenVMS')
     def test_fcntl_file_descriptor(self):
         # again, but pass the file rather than numeric descriptor
         self.f = open(TESTFN, 'wb')
@@ -101,6 +102,7 @@ class TestFcntl(unittest.TestCase):
             print('String from fcntl with F_SETLKW: ', repr(rv))
         self.f.close()
 
+    @unittest.skipIf(sys.platform == 'OpenVMS', 'blocking does not work for files in OpenVMS')
     def test_fcntl_bad_file(self):
         with self.assertRaises(ValueError):
             fcntl.fcntl(-1, fcntl.F_SETFL, os.O_NONBLOCK)
@@ -112,6 +114,7 @@ class TestFcntl(unittest.TestCase):
             fcntl.fcntl(BadFile('spam'), fcntl.F_SETFL, os.O_NONBLOCK)
 
     @cpython_only
+    @unittest.skipIf(sys.platform == 'OpenVMS', 'blocking does not work for files in OpenVMS')
     def test_fcntl_bad_file_overflow(self):
         from _testcapi import INT_MAX, INT_MIN
         # Issue 15989
@@ -157,7 +160,6 @@ class TestFcntl(unittest.TestCase):
         self.assertRaises(TypeError, fcntl.flock, 'spam', fcntl.LOCK_SH)
 
     @unittest.skipIf(platform.system() == "AIX", "AIX returns PermissionError")
-    @unittest.skipIf(sys.platform == 'OpenVMS', 'blocking does not work for files in OpenVMS')
     def test_lockf_exclusive(self):
         self.f = open(TESTFN, 'wb+')
         cmd = fcntl.LOCK_EX | fcntl.LOCK_NB

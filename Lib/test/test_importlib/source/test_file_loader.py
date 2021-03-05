@@ -668,7 +668,10 @@ class SourceLoaderBadBytecodeTest:
                 self.import_(mapping['_temp'], '_temp')
             finally:
                 # Make writable for eventual clean-up.
-                os.chmod(bytecode_path, stat.S_IWUSR)
+                if (sys.platform == 'OpenVMS'):
+                    os.chmod(bytecode_path, stat.S_IRWXU)
+                else:
+                    os.chmod(bytecode_path, stat.S_IWUSR)
 
 
 class SourceLoaderBadBytecodeTestPEP451(

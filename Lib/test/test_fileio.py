@@ -232,6 +232,7 @@ class AutoFileTests:
             self.fail("Should have raised OSError")
 
     @unittest.skipIf(os.name == 'nt', "test only works on a POSIX-like system")
+    @unittest.skipIf(sys.platform == 'OpenVMS', 'does not work on OpenVMS')
     def testOpenDirFD(self):
         fd = os.open('.', os.O_RDONLY)
         with self.assertRaises(OSError) as cm:

@@ -7,6 +7,7 @@ PyInit__testmultiphase=PROCEDURE, -
 PyInit__testmultiphase_exec_err=PROCEDURE, -
 PyInit_imp_dummy=PROCEDURE, -
 PyInit_x=PROCEDURE, -
+PyInitU_eckzbwbhc6jpgzcx415x=PROCEDURE, -
 PyInitU__testmultiphase24uq8jt$=PROCEDURE, -
 PyInit__testmultiphase_0c3e8cr$=PROCEDURE, -
 PyInit__testmultiphase_0v29c5l$=PROCEDURE, -

@@ -99,7 +99,10 @@ class ImportTests(unittest.TestCase):
             from _testcapi import i_dont_exist
         self.assertEqual(cm.exception.name, '_testcapi')
         self.assertEqual(cm.exception.path, _testcapi.__file__)
-        self.assertRegex(str(cm.exception), r"cannot import name 'i_dont_exist' from '_testcapi' \(.*\.(so|pyd)\)")
+        ext = 'so|pyd'
+        if (sys.platform == 'OpenVMS'):
+            ext = 'exe|pyd'
+        self.assertRegex(str(cm.exception), f"cannot import name 'i_dont_exist' from '_testcapi' \\(.*\\.({ext})\\)")
 
     def test_from_import_missing_attr_has_name(self):
         with self.assertRaises(ImportError) as cm:
@@ -565,6 +568,8 @@ class FilePermissionTests(unittest.TestCase):
                 self.fail("__import__ did not result in creation of "
                           "a .pyc file")
             stat_info = os.stat(cached_path)
+            if (sys.platform == 'OpenVMS'):
+                os.chmod(path, 0o700)
 
         expected = mode | 0o200 # Account for fix for issue #6074
         self.assertEqual(oct(stat.S_IMODE(stat_info.st_mode)), oct(expected))

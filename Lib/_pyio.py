@@ -1563,7 +1563,7 @@ class FileIO(RawIOBase):
 
         owned_fd = None
         try:
-            if fd < 0 or (sys.platform == 'OpenVMS' and 'n' in mode):
+            if fd < 0:
                 if not closefd:
                     raise ValueError('Cannot use closefd=False with file name')
                 if opener is None:

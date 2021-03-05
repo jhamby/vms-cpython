@@ -432,14 +432,22 @@ class IOTest(unittest.TestCase):
         # The purpose of this test is to try fileno(), reading, writing and
         # seeking operations with various objects that indicate they do not
         # support these operations.
+        # OpenVMS pipe() is implemented via record-oriented mailboxes
+        # so we should use pipe_socket() instead
 
         def pipe_reader():
-            [r, w] = os.pipe()
+            if (sys.platform == 'OpenVMS'):
+                [r, w] = os.pipe_socket()
+            else:
+                [r, w] = os.pipe()
             os.close(w)  # So that read() is harmless
             return self.FileIO(r, "r")
 
         def pipe_writer():
-            [r, w] = os.pipe()
+            if (sys.platform == 'OpenVMS'):
+                [r, w] = os.pipe_socket()
+            else:
+                [r, w] = os.pipe()
             self.addCleanup(os.close, r)
             # Guarantee that we can write into the pipe without blocking
             thread = threading.Thread(target=os.read, args=(r, 100))
@@ -510,9 +518,9 @@ class IOTest(unittest.TestCase):
                 else:
                     self.assertRaises(OSError, obj.write, data)
 
-                if sys.platform.startswith("win") and test in (
+                if sys.platform.startswith(("win", 'OpenVMS')) and test in (
                         pipe_reader, pipe_writer):
-                    # Pipes seem to appear as seekable on Windows
+                    # Pipes seem to appear as seekable on Windows and OpenVMS
                     continue
                 seekable = "s" in abilities
                 self.assertEqual(obj.seekable(), seekable)
@@ -602,6 +610,7 @@ class IOTest(unittest.TestCase):
         f = self.BytesIO(data)
         self.read_ops(f, True)
 
+    @unittest.skipIf(sys.platform == 'OpenVMS', 'OpenVMS failed to test large files')
     def test_large_file_ops(self):
         # On Windows and Mac OSX this test consumes large resources; It takes
         # a long time to build the >2 GiB file and takes >2 GiB of disk space
@@ -3949,9 +3958,9 @@ class MiscIOTest(unittest.TestCase):
         self.addCleanup(os.close, r)
         f = self.open(w, 'a')
         self.addCleanup(f.close)
-        # Check that the file is marked non-seekable. On Windows, however, lseek
+        # Check that the file is marked non-seekable. On Windows and OpenVMS, however, lseek
         # somehow succeeds on pipes.
-        if sys.platform != 'win32':
+        if sys.platform not in ('win32', 'OpenVMS'):
             self.assertFalse(f.seekable())
 
     def test_io_after_close(self):
@@ -4110,6 +4119,8 @@ class MiscIOTest(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(os, 'set_blocking'),
                          'os.set_blocking() required for this test')
+    @unittest.skipIf(sys.platform == 'OpenVMS',
+                         'OpenVMS os.set_blocking() works only for sockets')
     def _test_nonblock_pipe_write(self, bufsize):
         sent = []
         received = []
@@ -4288,6 +4299,7 @@ class PyMiscIOTest(MiscIOTest):
 
 
 @unittest.skipIf(os.name == 'nt', 'POSIX signals required for this test.')
+@unittest.skipIf(sys.platform == 'OpenVMS', 'OpenVMS has no correct signal handling')
 class SignalsTest(unittest.TestCase):
 
     def setUp(self):
