@@ -14,6 +14,8 @@ from xml.parsers.expat import errors
 
 from test.support import sortdict
 
+if (sys.platform == 'OpenVMS'):
+    import _decc
 
 class SetAttributeTest(unittest.TestCase):
     def setUp(self):
@@ -444,7 +446,11 @@ class HandlerExceptionTest(unittest.TestCase):
         raise RuntimeError(name)
 
     def check_traceback_entry(self, entry, filename, funcname):
-        self.assertEqual(os.path.basename(entry[0]), filename)
+        fullpath = entry[0]
+        if (sys.platform == 'OpenVMS'):
+            if any(a in ':[]' for a in fullpath):
+                fullpath = _decc.from_vms(fullpath)[0]
+        self.assertEqual(os.path.basename(fullpath), filename)
         self.assertEqual(entry[2], funcname)
 
     def test_exception(self):

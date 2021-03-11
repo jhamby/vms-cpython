@@ -190,6 +190,8 @@ class ProcessTestCase(BaseTestCase):
         self.addCleanup(tf.close)
         tf.write(b'pear')
         tf.seek(0)
+        if (sys.platform == 'OpenVMS'):
+            os.fsync(tf.fileno())
         output = subprocess.check_output(
                 [sys.executable, "-c",
                  "import sys; sys.stdout.write(sys.stdin.read().upper())"],
@@ -367,17 +369,20 @@ class ProcessTestCase(BaseTestCase):
                           executable=NONEXISTING_CMD[0])
 
     @unittest.skipIf(mswindows, "executable argument replaces shell")
+    @unittest.skipIf(sys.platform == 'OpenVMS', 'OpenVMS cannot run executable image via shell')
     def test_executable_replaces_shell(self):
         # Check that the executable argument replaces the default shell
         # when shell=True.
         self._assert_python([], executable=sys.executable, shell=True)
 
     @unittest.skipIf(mswindows, "executable argument replaces shell")
+    @unittest.skipIf(sys.platform == 'OpenVMS', 'OpenVMS cannot run executable image via shell')
     def test_bytes_executable_replaces_shell(self):
         self._assert_python([], executable=os.fsencode(sys.executable),
                             shell=True)
 
     @unittest.skipIf(mswindows, "executable argument replaces shell")
+    @unittest.skipIf(sys.platform == 'OpenVMS', 'OpenVMS cannot run executable image via shell')
     def test_pathlike_executable_replaces_shell(self):
         self._assert_python([], executable=FakePath(sys.executable),
                             shell=True)
@@ -433,6 +438,7 @@ class ProcessTestCase(BaseTestCase):
         self._assert_cwd(temp_dir, sys.executable, cwd=FakePath(temp_dir))
 
     @unittest.skipIf(mswindows, "pending resolution of issue #15533")
+    @unittest.skipIf(sys.platform == 'OpenVMS', "pending resolution of issue #15533")
     def test_cwd_with_relative_arg(self):
         # Check that Popen looks for args[0] relative to cwd if args[0]
         # is relative.
@@ -449,6 +455,7 @@ class ProcessTestCase(BaseTestCase):
             self._assert_cwd(python_dir, rel_python, cwd=python_dir)
 
     @unittest.skipIf(mswindows, "pending resolution of issue #15533")
+    @unittest.skipIf(sys.platform == 'OpenVMS', "pending resolution of issue #15533")
     def test_cwd_with_relative_executable(self):
         # Check that Popen looks for executable relative to cwd if executable
         # is relative (and that executable takes precedence over args[0]).
@@ -516,6 +523,8 @@ class ProcessTestCase(BaseTestCase):
         d = tf.fileno()
         os.write(d, b"pear")
         os.lseek(d, 0, 0)
+        if (sys.platform == 'OpenVMS'):
+            os.fsync(d)
         p = subprocess.Popen([sys.executable, "-c",
                          'import sys; sys.exit(sys.stdin.read() == "pear")'],
                          stdin=d)
@@ -528,6 +537,8 @@ class ProcessTestCase(BaseTestCase):
         self.addCleanup(tf.close)
         tf.write(b"pear")
         tf.seek(0)
+        if (sys.platform == 'OpenVMS'):
+            os.fsync(tf.fileno())
         p = subprocess.Popen([sys.executable, "-c",
                          'import sys; sys.exit(sys.stdin.read() == "pear")'],
                          stdin=tf)
@@ -542,6 +553,7 @@ class ProcessTestCase(BaseTestCase):
         with p:
             self.assertEqual(p.stdout.read(), b"orange")
 
+    @unittest.skipIf(sys.platform == 'OpenVMS', 'OpenVMS does not support output to opened file')
     def test_stdout_filedes(self):
         # stdout is set to open file descriptor
         tf = tempfile.TemporaryFile()
@@ -554,6 +566,7 @@ class ProcessTestCase(BaseTestCase):
         os.lseek(d, 0, 0)
         self.assertEqual(os.read(d, 1024), b"orange")
 
+    @unittest.skipIf(sys.platform == 'OpenVMS', 'OpenVMS does not support output to opened file')
     def test_stdout_fileobj(self):
         # stdout is set to open file object
         tf = tempfile.TemporaryFile()
@@ -573,6 +586,7 @@ class ProcessTestCase(BaseTestCase):
         with p:
             self.assertEqual(p.stderr.read(), b"strawberry")
 
+    @unittest.skipIf(sys.platform == 'OpenVMS', 'OpenVMS does not support output to opened file')
     def test_stderr_filedes(self):
         # stderr is set to open file descriptor
         tf = tempfile.TemporaryFile()
@@ -585,6 +599,7 @@ class ProcessTestCase(BaseTestCase):
         os.lseek(d, 0, 0)
         self.assertEqual(os.read(d, 1024), b"strawberry")
 
+    @unittest.skipIf(sys.platform == 'OpenVMS', 'OpenVMS does not support output to opened file')
     def test_stderr_fileobj(self):
         # stderr is set to open file object
         tf = tempfile.TemporaryFile()
@@ -629,6 +644,7 @@ class ProcessTestCase(BaseTestCase):
         with p:
             self.assertEqual(p.stdout.read(), b"appleorange")
 
+    @unittest.skipIf(sys.platform == 'OpenVMS', 'OpenVMS does not support output to opened file')
     def test_stdout_stderr_file(self):
         # capture stdout and stderr to the same open file
         tf = tempfile.TemporaryFile()
@@ -764,6 +780,8 @@ class ProcessTestCase(BaseTestCase):
     # Python
     @unittest.skipIf(sys.platform == 'win32',
                      'cannot test an empty env on Windows')
+    @unittest.skipIf(sys.platform == 'OpenVMS',
+                     'cannot test an empty env on OpenVMS')
     @unittest.skipIf(sysconfig.get_config_var('Py_ENABLE_SHARED') == 1,
                      'The Python shared library cannot be loaded '
                      'with an empty environment.')
@@ -1517,12 +1535,14 @@ class ProcessTestCase(BaseTestCase):
         self.assertEqual(fds_before_popen, fds_after_exception)
 
     @unittest.skipIf(mswindows, "behavior currently not supported on Windows")
+    @unittest.skipIf(sys.platform == 'OpenVMS', "behavior currently not supported on OpenVMS")
     def test_file_not_found_includes_filename(self):
         with self.assertRaises(FileNotFoundError) as c:
             subprocess.call(['/opt/nonexistent_binary', 'with', 'some', 'args'])
         self.assertEqual(c.exception.filename, '/opt/nonexistent_binary')
 
     @unittest.skipIf(mswindows, "behavior currently not supported on Windows")
+    @unittest.skipIf(sys.platform == 'OpenVMS', "behavior currently not supported on OpenVMS")
     def test_file_not_found_with_bad_cwd(self):
         with self.assertRaises(FileNotFoundError) as c:
             subprocess.Popen(['exit', '0'], cwd='/some/nonexistent/directory')
@@ -1579,6 +1599,8 @@ class RunFuncTestCase(BaseTestCase):
         self.addCleanup(tf.close)
         tf.write(b'pear')
         tf.seek(0)
+        if (sys.platform == 'OpenVMS'):
+            os.fsync(tf.fileno())
         cp = self.run_python(
                  "import sys; sys.stdout.write(sys.stdin.read().upper())",
                 stdin=tf, stdout=subprocess.PIPE)
@@ -1720,6 +1742,7 @@ def _get_test_grp_name():
 
 
 @unittest.skipIf(mswindows, "POSIX specific tests")
+@unittest.skipIf(sys.platform == 'OpenVMS', 'POSIX specific tests')
 class POSIXProcessTestCase(BaseTestCase):
 
     def setUp(self):

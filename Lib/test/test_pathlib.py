@@ -2010,9 +2010,13 @@ class _BasePathTest(object):
         # Creating a chain of directories.
         p = self.cls(BASE, 'newdirB', 'newdirC')
         self.assertFalse(p.exists())
-        with self.assertRaises(OSError) as cm:
-            p.mkdir()
-        self.assertEqual(cm.exception.errno, errno.ENOENT)
+        if sys.platform == 'OpenVMS':
+            # OpenVMS mkdir() always creates all directories in the path
+            pass
+        else:
+            with self.assertRaises(OSError) as cm:
+                p.mkdir()
+            self.assertEqual(cm.exception.errno, errno.ENOENT)
         p.mkdir(parents=True)
         self.assertTrue(p.exists())
         self.assertTrue(p.is_dir())
@@ -2022,14 +2026,20 @@ class _BasePathTest(object):
         # Test `mode` arg.
         mode = stat.S_IMODE(p.stat().st_mode)  # Default mode.
         p = self.cls(BASE, 'newdirD', 'newdirE')
-        p.mkdir(0o555, parents=True)
-        self.assertTrue(p.exists())
-        self.assertTrue(p.is_dir())
-        if os.name != 'nt':
-            # The directory's permissions follow the mode argument.
-            self.assertEqual(stat.S_IMODE(p.stat().st_mode), 0o7555 & mode)
-        # The parent's permissions follow the default process settings.
-        self.assertEqual(stat.S_IMODE(p.parent.stat().st_mode), mode)
+        if sys.platform == 'OpenVMS':
+            # OpenVMS requires write permission for intermediate directories
+            with self.assertRaises(OSError) as cm:
+                p.mkdir(0o555, parents=True)
+            self.assertEqual(cm.exception.errno, errno.EPERM)
+        else:
+            p.mkdir(0o555, parents=True)
+            self.assertTrue(p.exists())
+            self.assertTrue(p.is_dir())
+            if os.name != 'nt':
+                # The directory's permissions follow the mode argument.
+                self.assertEqual(stat.S_IMODE(p.stat().st_mode), 0o7555 & mode)
+            # The parent's permissions follow the default process settings.
+            self.assertEqual(stat.S_IMODE(p.parent.stat().st_mode), mode)
 
     def test_mkdir_exist_ok(self):
         p = self.cls(BASE, 'dirB')
@@ -2076,6 +2086,8 @@ class _BasePathTest(object):
         with self.assertRaises(OSError):
             (p / 'child' / 'path').mkdir(parents=True)
 
+    @unittest.skipIf(sys.platform == 'OpenVMS',
+        'OpenVMS might have a file and a directory with the same unix name')
     def test_mkdir_with_child_file(self):
         p = self.cls(BASE, 'dirB', 'fileB')
         self.assertTrue(p.exists())
@@ -2088,6 +2100,8 @@ class _BasePathTest(object):
             p.mkdir(parents=True, exist_ok=True)
         self.assertEqual(cm.exception.errno, errno.EEXIST)
 
+    @unittest.skipIf(sys.platform == 'OpenVMS',
+        'OpenVMS might have a file and a directory with the same unix name')
     def test_mkdir_no_parents_file(self):
         p = self.cls(BASE, 'fileA')
         self.assertTrue(p.exists())
@@ -2243,6 +2257,7 @@ class _BasePathTest(object):
         self.assertIs((P / 'fileA\x00').is_socket(), False)
 
     @unittest.skipUnless(hasattr(socket, "AF_UNIX"), "Unix sockets required")
+    @unittest.skipIf(sys.platform == 'OpenVMS', "Unix sockets required")
     def test_is_socket_true(self):
         P = self.cls(BASE, 'mysock')
         sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
@@ -2404,6 +2419,7 @@ class PosixPathTest(_BasePathTest, unittest.TestCase):
         st = os.stat(join('other_new_file'))
         self.assertEqual(stat.S_IMODE(st.st_mode), 0o644)
 
+    @unittest.skipIf(sys.platform == 'OpenVMS', 'in OpenVMS user has no access to the root')
     def test_resolve_root(self):
         current_directory = os.getcwd()
         try:

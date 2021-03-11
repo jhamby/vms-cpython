@@ -28,6 +28,8 @@ class SelectTestCase(unittest.TestCase):
     # Issue #12367: http://www.freebsd.org/cgi/query-pr.cgi?pr=kern/155606
     @unittest.skipIf(sys.platform.startswith('freebsd'),
                      'skip because of a FreeBSD bug: kern/155606')
+    @unittest.skipIf(sys.platform == 'OpenVMS',
+                     'OpenVMS allows invalid fd due to DECC$SELECT_IGNORES_INVALID_FD option')
     def test_errno(self):
         with open(__file__, 'rb') as fp:
             fd = fp.fileno()

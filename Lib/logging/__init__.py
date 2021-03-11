@@ -1077,8 +1077,11 @@ class StreamHandler(Handler):
         try:
             if self.stream and hasattr(self.stream, "flush"):
                 self.stream.flush()
-            if self.stream and hasattr(self.stream, "fileno") and (sys.platform == 'OpenVMS'):
-                os.fsync(self.stream.fileno())
+            if (sys.platform == 'OpenVMS'):
+                try:
+                    os.fsync(self.stream.fileno())
+                except:
+                    pass
         finally:
             self.release()
 

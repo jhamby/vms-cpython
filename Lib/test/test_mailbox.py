@@ -732,8 +732,12 @@ class TestMaildir(TestMailbox, unittest.TestCase):
         self.assertTrue(os.path.exists(foo_path))
         self.assertTrue(os.path.exists(bar_path))
         foo_stat = os.stat(foo_path)
-        os.utime(foo_path, (time.time() - 129600 - 2,
-                            foo_stat.st_mtime))
+        if sys.platform == 'OpenVMS':
+            # OpenVMS does not support 'access time'
+            os.utime(foo_path, (time.time() - 129600 - 2,)*2)
+        else:
+            os.utime(foo_path, (time.time() - 129600 - 2,
+                                foo_stat.st_mtime))
         self._box.clean()
         self.assertFalse(os.path.exists(foo_path))
         self.assertTrue(os.path.exists(bar_path))
@@ -892,6 +896,7 @@ class TestMaildir(TestMailbox, unittest.TestCase):
         perms = st.st_mode
         self.assertFalse((perms & 0o111)) # Execute bits should all be off.
 
+    @unittest.skipIf(sys.platform == 'OpenVMS', 'OpenVMS does not change mtime for directories')
     def test_reread(self):
         # Do an initial unconditional refresh
         self._box._refresh()

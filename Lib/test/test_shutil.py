@@ -1430,6 +1430,7 @@ class TestArchives(BaseTest, unittest.TestCase):
         self.assertRaises(ValueError, make_archive, base_name, 'xxx')
 
     @support.requires_zlib()
+    @unittest.skipIf(sys.platform == 'OpenVMS', 'OpenVMS has no root with zero uid')
     def test_make_archive_owner_group(self):
         # testing make_archive with owner and group, with various combinations
         # this works even if there's not gid/uid support
@@ -1459,6 +1460,7 @@ class TestArchives(BaseTest, unittest.TestCase):
 
     @support.requires_zlib()
     @unittest.skipUnless(UID_GID_SUPPORT, "Requires grp and pwd support")
+    @unittest.skipIf(sys.platform == 'OpenVMS', 'OpenVMS has no root with zero uid')
     def test_tarfile_root_owner(self):
         root_dir, base_dir = self._create_files()
         base_name = os.path.join(self.mkdtemp(), 'archive')
@@ -1692,6 +1694,8 @@ class TestWhich(BaseTest, unittest.TestCase):
                                                      suffix=".Exe")
         os.chmod(self.temp_file.name, stat.S_IXUSR)
         self.addCleanup(self.temp_file.close)
+        if sys.platform == 'OpenVMS':
+            self.addCleanup(os.chmod, self.temp_file.name, stat.S_IRWXU)
         self.dir, self.file = os.path.split(self.temp_file.name)
         self.env_path = self.dir
         self.curdir = os.curdir
@@ -2068,6 +2072,7 @@ class TestMove(BaseTest, unittest.TestCase):
         shutil.move(self.src_dir, self.dst_dir, copy_function=_copy)
         self.assertEqual(len(moved), 3)
 
+    @unittest.skipIf(sys.platform == 'OpenVMS', 'OpenVMS does not allow renaming to the same case-insensitive name')
     def test_move_dir_caseinsensitive(self):
         # Renames a folder to the same name
         # but a different case.
@@ -2547,13 +2552,17 @@ class TestGetTerminalSize(unittest.TestCase):
             self.assertEqual(size.columns, 10)
             self.assertEqual(size.lines, 20)
 
-            # sys.__stdout__ is not a terminal on Unix
-            # or fileno() not in (0, 1, 2) on Windows
-            with open(os.devnull, 'w') as f, \
-                 support.swap_attr(sys, '__stdout__', f):
-                size = shutil.get_terminal_size(fallback=(30, 40))
-            self.assertEqual(size.columns, 30)
-            self.assertEqual(size.lines, 40)
+            if (sys.platform == 'OpenVMS'):
+                # OpenVMS has hardcoded terminal size
+                pass
+            else:
+                # sys.__stdout__ is not a terminal on Unix
+                # or fileno() not in (0, 1, 2) on Windows
+                with open(os.devnull, 'w') as f, \
+                    support.swap_attr(sys, '__stdout__', f):
+                    size = shutil.get_terminal_size(fallback=(30, 40))
+                self.assertEqual(size.columns, 30)
+                self.assertEqual(size.lines, 40)
 
 
 class PublicAPITests(unittest.TestCase):

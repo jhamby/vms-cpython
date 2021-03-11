@@ -441,8 +441,11 @@ class ImportSideEffectTests(unittest.TestCase):
 
             self.assertEqual(proc.returncode, 0)
             os__file__, os__cached__ = stdout.splitlines()[:2]
-            self.assertFalse(os.path.isabs(os__file__))
-            self.assertFalse(os.path.isabs(os__cached__))
+            if sys.platform == 'OpenVMS':
+                pass    # in OpenVMS paths are always absolute
+            else:
+                self.assertFalse(os.path.isabs(os__file__))
+                self.assertFalse(os.path.isabs(os__cached__))
             # Now, with 'import site', it works.
             proc = subprocess.Popen([sys.executable, '-c', command],
                                     env=env,

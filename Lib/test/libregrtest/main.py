@@ -196,21 +196,22 @@ class Regrtest:
         if self.ns.quiet:
             return
 
+        #show used memory
+        if sys.platform == 'OpenVMS':
+            line = "memory (%s)" % format_mem(get_mem())
+            if self.home_files_count:
+                os.popen('purge sys$login:').read()
+                home_files_count = os.popen('dir sys$login: /grand').read().strip()
+                if home_files_count != self.home_files_count:
+                    line += " +files"
+                    self.home_files_count = home_files_count
+            print(line, flush=True)
+
         # "[ 51/405/1] test_tcl passed"
         line = f"{test_index:{self.test_count_width}}{self.test_count}"
         fails = len(self.bad) + len(self.environment_changed)
         if fails and not self.ns.pgo:
             line = f"{line}/{fails}"
-        #show used memory
-        if sys.platform == 'OpenVMS':
-            gc.collect()
-            line += " (%s)" % format_mem(get_mem())
-            if self.home_files_count:
-                os.popen('purge sys$login:').read()
-                home_files_count = os.popen('dir sys$login: /grand').read().strip()
-                if home_files_count != self.home_files_count:
-                    line += " D"
-                    self.home_files_count = home_files_count
         self.log(f"[{line}] {text}")
 
     def parse_args(self, kwargs):
@@ -442,12 +443,12 @@ class Regrtest:
         msg = "Run tests sequentially"
         if self.ns.timeout:
             msg += " (timeout: %s)" % format_duration(self.ns.timeout)
+        self.log(msg)
         #show used memory
         if sys.platform == 'OpenVMS':
-            msg += " (initial memory: %s)" % format_mem(get_mem())
+            print("initial memory: %s" % format_mem(get_mem()))
             os.popen('purge sys$login:').read()
             self.home_files_count = os.popen('dir sys$login: /grand').read().strip()
-        self.log(msg)
 
         previous_test = None
         for test_index, test_name in enumerate(self.tests, 1):

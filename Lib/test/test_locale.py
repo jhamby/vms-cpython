@@ -351,7 +351,14 @@ class TestCollation(unittest.TestCase):
         self.assertRaises(ValueError, locale.strcoll, 'a', 'a\0')
 
     def test_strxfrm(self):
-        self.assertLess(locale.strxfrm('a'), locale.strxfrm('b'))
+        if (sys.platform == 'OpenVMS'):
+            if locale.getlocale() == (None, None):
+                # broken strxfrm()
+                pass
+            else:
+                self.assertLess(locale.strxfrm('a'), locale.strxfrm('b'))
+        else:
+            self.assertLess(locale.strxfrm('a'), locale.strxfrm('b'))
         # embedded null character
         self.assertRaises(ValueError, locale.strxfrm, 'a\0')
 
@@ -372,11 +379,13 @@ class TestEnUSCollation(BaseLocalizedTest, TestCollation):
 
     @unittest.skipIf(sys.platform.startswith('aix'),
                      'bpo-29972: broken test on AIX')
+    @unittest.skipIf(sys.platform == 'OpenVMS', 'broken test on OpenVMS')
     def test_strcoll_with_diacritic(self):
         self.assertLess(locale.strcoll('à', 'b'), 0)
 
     @unittest.skipIf(sys.platform.startswith('aix'),
                      'bpo-29972: broken test on AIX')
+    @unittest.skipIf(sys.platform == 'OpenVMS', 'broken test on OpenVMS')
     def test_strxfrm_with_diacritic(self):
         self.assertLess(locale.strxfrm('à'), locale.strxfrm('b'))
 

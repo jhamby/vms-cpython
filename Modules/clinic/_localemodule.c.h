@@ -128,7 +128,7 @@ PyDoc_STRVAR(_locale_strxfrm__doc__,
 "strxfrm($module, string, /)\n"
 "--\n"
 "\n"
-"Return a string that can be used as a key for locale-aware comparisons.");
+"Return a string (bytes in OpenVMS) that can be used as a key for locale-aware comparisons.");
 
 #define _LOCALE_STRXFRM_METHODDEF    \
     {"strxfrm", (PyCFunction)_locale_strxfrm, METH_O, _locale_strxfrm__doc__},

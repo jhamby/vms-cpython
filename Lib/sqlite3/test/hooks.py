@@ -24,7 +24,7 @@ import unittest
 import sqlite3 as sqlite
 
 from test.support.os_helper import TESTFN, unlink
-
+import sys
 
 class CollationTests(unittest.TestCase):
     def test_create_collation_not_string(self):
@@ -243,6 +243,7 @@ class TraceCallbackTests(unittest.TestCase):
                         "Unicode data %s garbled in trace callback: %s"
                         % (ascii(unicode_value), ', '.join(map(ascii, traced_statements))))
 
+    @unittest.skipIf(sys.platform == 'OpenVMS', 'OpenVMS sqlite3.DatabaseError: file is encrypted or is not a database')
     def test_trace_callback_content(self):
         # set_trace_callback() shouldn't produce duplicate content (bpo-26187)
         traced_statements = []

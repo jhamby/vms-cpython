@@ -433,7 +433,11 @@ _locale_strxfrm_impl(PyObject *module, PyObject *str)
             goto exit;
         }
     }
+#ifdef __VMS
+    result = PyBytes_FromStringAndSize((const char*)buf, n2);
+#else
     result = PyUnicode_FromWideChar(buf, n2);
+#endif
 exit:
     PyMem_Free(buf);
     PyMem_Free(s);

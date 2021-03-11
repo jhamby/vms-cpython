@@ -211,6 +211,7 @@ class TestTool(unittest.TestCase):
         self.assertEqual(lines, expected)
 
     @unittest.skipIf(sys.platform =="win32", "The test is failed with ValueError on Windows")
+    @unittest.skipIf(sys.platform =="OpenVMS", "The test is passed OK on OpenVMS")
     def test_broken_pipe_error(self):
         cmd = [sys.executable, '-m', 'json.tool']
         proc = subprocess.Popen(cmd,

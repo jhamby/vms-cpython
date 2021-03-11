@@ -202,6 +202,15 @@ class PosixPathTest(unittest.TestCase):
             self.assertIs(posixpath.ismount(ABSTFN), False)
         finally:
             os.unlink(ABSTFN)
+            if sys.platform == 'OpenVMS':
+                # OpenVMS has a bug - after deleting symlink to "/" we cannot use the symlink name for some time
+                while True:
+                    try:
+                        os.mkdir(ABSTFN)
+                        os.rmdir(ABSTFN)
+                        break
+                    except:
+                        pass
 
     @unittest.skipIf(posix is None, "Test requires posix module")
     def test_ismount_different_device(self):

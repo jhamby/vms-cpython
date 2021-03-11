@@ -51,6 +51,7 @@ class TransactionTests(unittest.TestCase):
         except OSError:
             pass
 
+    @unittest.skipIf(os.sys.platform == 'OpenVMS', 'OpenVMS sqlite3.DatabaseError: file is encrypted or is not a database')
     def test_dml_does_not_auto_commit_before(self):
         self.cur1.execute("create table test(i)")
         self.cur1.execute("insert into test(i) values (5)")
@@ -59,6 +60,7 @@ class TransactionTests(unittest.TestCase):
         res = self.cur2.fetchall()
         self.assertEqual(len(res), 0)
 
+    @unittest.skipIf(os.sys.platform == 'OpenVMS', 'OpenVMS sqlite3.DatabaseError: file is encrypted or is not a database')
     def test_insert_starts_transaction(self):
         self.cur1.execute("create table test(i)")
         self.cur1.execute("insert into test(i) values (5)")
@@ -66,6 +68,7 @@ class TransactionTests(unittest.TestCase):
         res = self.cur2.fetchall()
         self.assertEqual(len(res), 0)
 
+    @unittest.skipIf(os.sys.platform == 'OpenVMS', 'OpenVMS sqlite3.DatabaseError: file is encrypted or is not a database')
     def test_update_starts_transaction(self):
         self.cur1.execute("create table test(i)")
         self.cur1.execute("insert into test(i) values (5)")
@@ -75,6 +78,7 @@ class TransactionTests(unittest.TestCase):
         res = self.cur2.fetchone()[0]
         self.assertEqual(res, 5)
 
+    @unittest.skipIf(os.sys.platform == 'OpenVMS', 'OpenVMS sqlite3.DatabaseError: file is encrypted or is not a database')
     def test_delete_starts_transaction(self):
         self.cur1.execute("create table test(i)")
         self.cur1.execute("insert into test(i) values (5)")
@@ -84,6 +88,7 @@ class TransactionTests(unittest.TestCase):
         res = self.cur2.fetchall()
         self.assertEqual(len(res), 1)
 
+    @unittest.skipIf(os.sys.platform == 'OpenVMS', 'OpenVMS sqlite3.DatabaseError: file is encrypted or is not a database')
     def test_replace_starts_transaction(self):
         self.cur1.execute("create table test(i)")
         self.cur1.execute("insert into test(i) values (5)")
@@ -94,6 +99,7 @@ class TransactionTests(unittest.TestCase):
         self.assertEqual(len(res), 1)
         self.assertEqual(res[0][0], 5)
 
+    @unittest.skipIf(os.sys.platform == 'OpenVMS', 'OpenVMS sqlite3.DatabaseError: file is encrypted or is not a database')
     def test_toggle_auto_commit(self):
         self.cur1.execute("create table test(i)")
         self.cur1.execute("insert into test(i) values (5)")
@@ -110,12 +116,14 @@ class TransactionTests(unittest.TestCase):
         res = self.cur2.fetchall()
         self.assertEqual(len(res), 1)
 
+    @unittest.skipIf(os.sys.platform == 'OpenVMS', 'OpenVMS sqlite3.DatabaseError: file is encrypted or is not a database')
     def test_raise_timeout(self):
         self.cur1.execute("create table test(i)")
         self.cur1.execute("insert into test(i) values (5)")
         with self.assertRaises(sqlite.OperationalError):
             self.cur2.execute("insert into test(i) values (5)")
 
+    @unittest.skipIf(os.sys.platform == 'OpenVMS', 'OpenVMS sqlite3.DatabaseError: file is encrypted or is not a database')
     def test_locking(self):
         """
         This tests the improved concurrency with pysqlite 2.3.4. You needed
@@ -174,6 +182,7 @@ class TransactionalDDL(unittest.TestCase):
         result = self.con.execute("select * from test").fetchall()
         self.assertEqual(result, [])
 
+    @unittest.skipIf(os.sys.platform == 'OpenVMS', 'OpenVMS begin immediate does not work')
     def test_immediate_transactional_ddl(self):
         # You can achieve transactional DDL by issuing a BEGIN
         # statement manually.
@@ -183,6 +192,7 @@ class TransactionalDDL(unittest.TestCase):
         with self.assertRaises(sqlite.OperationalError):
             self.con.execute("select * from test")
 
+    @unittest.skipIf(os.sys.platform == 'OpenVMS', 'OpenVMS does not raise exception after rollback')
     def test_transactional_ddl(self):
         # You can achieve transactional DDL by issuing a BEGIN
         # statement manually.

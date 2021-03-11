@@ -387,6 +387,8 @@ class BaseSelectorTestCase(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(signal, "alarm"),
                          "signal.alarm() required for this test")
+    @unittest.skipIf(sys.platform == 'OpenVMS',
+                         "OpenVMS has non-interruptible select()")
     def test_select_interrupt_exc(self):
         s = self.SELECTOR()
         self.addCleanup(s.close)

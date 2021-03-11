@@ -769,6 +769,11 @@ class _singlefileMailbox(Mailbox):
             self._file.truncate(before)
             raise
         self._file.flush()
+        if (os.sys.platform == 'OpenVMS'):
+            try:
+                os.fsync(self._file.fileno())
+            except:
+                pass
         self._file_length = self._file.tell()  # Record current length of mailbox
         return offsets
 

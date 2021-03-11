@@ -25,7 +25,8 @@ class GenericTests(unittest.TestCase):
             if name in {'SIG_DFL', 'SIG_IGN'}:
                 self.assertIsInstance(sig, signal.Handlers)
             elif name in {'SIG_BLOCK', 'SIG_UNBLOCK', 'SIG_SETMASK'}:
-                self.assertIsInstance(sig, signal.Sigmasks)
+                if hasattr(signal, 'Sigmasks'):
+                    self.assertIsInstance(sig, signal.Sigmasks)
             elif name.startswith('SIG') and not name.startswith('SIG_'):
                 self.assertIsInstance(sig, signal.Signals)
             elif name.startswith('CTRL_'):
@@ -88,7 +89,10 @@ class PosixTests(unittest.TestCase):
                  "for _ in range(999): time.sleep(0.01)"],
                 stderr=subprocess.PIPE)
         self.assertIn(b"KeyboardInterrupt", process.stderr)
-        self.assertEqual(process.returncode, -signal.SIGINT)
+        if (sys.platform == 'OpenVMS'):
+            self.assertEqual(process.returncode, 84)    # CTRLC
+        else:
+            self.assertEqual(process.returncode, -signal.SIGINT)
         # Caveat: The exit code is insufficient to guarantee we actually died
         # via a signal.  POSIX shells do more than look at the 8 bit value.
         # Writing an automation friendly test of an interactive shell
@@ -167,10 +171,10 @@ class WakeupFDTests(unittest.TestCase):
                           signal.set_wakeup_fd, fd)
 
     def test_set_wakeup_fd_result(self):
-        r1, w1 = os.pipe()
+        r1, w1 = os.pipe_socket() if os.sys.platform == 'OpenVMS' else os.pipe()
         self.addCleanup(os.close, r1)
         self.addCleanup(os.close, w1)
-        r2, w2 = os.pipe()
+        r2, w2 = os.pipe_socket() if os.sys.platform == 'OpenVMS' else os.pipe()
         self.addCleanup(os.close, r2)
         self.addCleanup(os.close, w2)
 
@@ -203,16 +207,19 @@ class WakeupFDTests(unittest.TestCase):
     # function to test if a socket is in non-blocking mode.
     @unittest.skipIf(sys.platform == "win32", "tests specific to POSIX")
     def test_set_wakeup_fd_blocking(self):
-        rfd, wfd = os.pipe()
+        rfd, wfd = os.pipe_socket() if os.sys.platform == 'OpenVMS' else os.pipe()
         self.addCleanup(os.close, rfd)
         self.addCleanup(os.close, wfd)
 
-        # fd must be non-blocking
-        os.set_blocking(wfd, True)
-        with self.assertRaises(ValueError) as cm:
-            signal.set_wakeup_fd(wfd)
-        self.assertEqual(str(cm.exception),
-                         "the fd %s must be in non-blocking mode" % wfd)
+        if (sys.platform == 'OpenVMS'):
+            pass    # OpenVMS has no test blocking/nonblocking
+        else:
+            # fd must be non-blocking
+            os.set_blocking(wfd, True)
+            with self.assertRaises(ValueError) as cm:
+                signal.set_wakeup_fd(wfd)
+            self.assertEqual(str(cm.exception),
+                            "the fd %s must be in non-blocking mode" % wfd)
 
         # non-blocking is ok
         os.set_blocking(wfd, False)
@@ -248,7 +255,7 @@ class WakeupSignalTests(unittest.TestCase):
         {}
 
         signal.signal(signal.SIGALRM, handler)
-        read, write = os.pipe()
+        read, write = os.pipe_socket() if os.sys.platform == 'OpenVMS' else os.pipe()
         os.set_blocking(write, False)
         signal.set_wakeup_fd(write)
 
@@ -278,7 +285,7 @@ class WakeupSignalTests(unittest.TestCase):
             1/0
 
         signal.signal(signal.SIGALRM, handler)
-        r, w = os.pipe()
+        r, w = os.pipe_socket() if os.sys.platform == 'OpenVMS' else os.pipe()
         os.set_blocking(r, False)
 
         # Set wakeup_fd a read-only file descriptor to trigger the error
@@ -300,7 +307,7 @@ class WakeupSignalTests(unittest.TestCase):
         os.close(r)
         os.close(w)
         """
-        r, w = os.pipe()
+        r, w = os.pipe_socket() if os.sys.platform == 'OpenVMS' else os.pipe()
         try:
             os.write(r, b'x')
         except OSError:
@@ -616,7 +623,7 @@ class SiginterruptTest(unittest.TestCase):
             import sys
 
             interrupt = %r
-            r, w = os.pipe()
+            r, w = os.pipe_socket() if os.sys.platform == 'OpenVMS' else os.pipe()
 
             def handler(signum, frame):
                 1 / 0
@@ -738,6 +745,7 @@ class ItimerTest(unittest.TestCase):
     # Issue 3864, unknown if this affects earlier versions of freebsd also
     @unittest.skipIf(sys.platform in ('netbsd5',),
         'itimer not reliable (does not mix well with threading) on some BSDs.')
+    @unittest.skipUnless(hasattr(signal, 'SIGVTALRM'), 'SIGVTALRM required')
     def test_itimer_virtual(self):
         self.itimer = signal.ITIMER_VIRTUAL
         signal.signal(signal.SIGVTALRM, self.sig_vtalrm)
@@ -758,6 +766,7 @@ class ItimerTest(unittest.TestCase):
         # and the handler should have been called
         self.assertEqual(self.hndl_called, True)
 
+    @unittest.skipUnless(hasattr(signal, 'SIGPROF'), 'SIGPROF required')
     def test_itimer_prof(self):
         self.itimer = signal.ITIMER_PROF
         signal.signal(signal.SIGPROF, self.sig_prof)
@@ -778,6 +787,7 @@ class ItimerTest(unittest.TestCase):
         # and the handler should have been called
         self.assertEqual(self.hndl_called, True)
 
+    @unittest.skipIf(sys.platform == 'OpenVMS', "OpenVMS fails one microsecond timer")
     def test_setitimer_tiny(self):
         # bpo-30807: C setitimer() takes a microsecond-resolution interval.
         # Check that float -> timeval conversion doesn't round
@@ -1174,6 +1184,7 @@ class StressTest(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(signal, "setitimer"),
                          "test needs setitimer()")
+    @unittest.skipUnless(hasattr(signal, 'SIGPROF'), 'SIGPROF required')
     def test_stress_delivery_dependent(self):
         """
         This test uses dependent signal handlers.

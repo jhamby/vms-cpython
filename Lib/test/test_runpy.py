@@ -760,6 +760,7 @@ class TestExit(unittest.TestCase):
     EXPECTED_CODE = (
         STATUS_CONTROL_C_EXIT
         if sys.platform == "win32"
+        else 84 if (sys.platform == 'OpenVMS')  # %SYSTEM-F-CONTROLC === 84 posix error code
         else -signal.SIGINT
     )
     @staticmethod

@@ -13375,6 +13375,10 @@ os_get_terminal_size_impl(PyObject *module, int fd)
      * the ioctl below will fail returning EBADF. This is what we want.
      */
 
+#ifdef __VMS		/* Hardcoded for now */
+    lines = 80;
+    columns = 24;
+#else
 #ifdef TERMSIZE_USE_IOCTL
     {
         struct winsize w;
@@ -13413,6 +13417,7 @@ os_get_terminal_size_impl(PyObject *module, int fd)
         lines = csbi.srWindow.Bottom - csbi.srWindow.Top + 1;
     }
 #endif /* TERMSIZE_USE_CONIO */
+#endif /* __VMS */
 
     PyObject *TerminalSizeType = get_posix_state(module)->TerminalSizeType;
     termsize = PyStructSequence_New((PyTypeObject *)TerminalSizeType);

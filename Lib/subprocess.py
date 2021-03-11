@@ -514,7 +514,16 @@ def run(*popenargs,
         kwargs['stdout'] = PIPE
         kwargs['stderr'] = PIPE
 
-    with Popen(*popenargs, **kwargs) as process:
+    if (sys.platform == 'OpenVMS'):
+        try:
+            kwargs['shell'] = False
+            process = Popen(*popenargs, **kwargs)
+        except OSError:
+            kwargs['shell'] = True
+            process = Popen(*popenargs, **kwargs)
+    else:
+        process = Popen(*popenargs, **kwargs)
+    with process:
         try:
             stdout, stderr = process.communicate(input, timeout=timeout)
         except TimeoutExpired as exc:

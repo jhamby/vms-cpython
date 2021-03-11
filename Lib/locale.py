@@ -498,6 +498,10 @@ def _parse_localename(localename):
         # On macOS "LC_CTYPE=UTF-8" is a valid locale setting
         # for getting UTF-8 handling for text.
         return None, 'UTF-8'
+    if (sys.platform == 'OpenVMS'):
+        # The calling program should make no assumptions about the format
+        # or length of the returned string
+        return localename
     raise ValueError('unknown locale: %s' % localename)
 
 def _build_localename(localetuple):

@@ -860,6 +860,7 @@ class SqliteOnConflictTests(unittest.TestCase):
         self.cu.close()
         self.cx.close()
 
+    @unittest.skipIf(sys.platform == 'OpenVMS', 'OpenVMS <OR ROLLBACK> does not work')
     def test_on_conflict_rollback_with_explicit_transaction(self):
         self.cx.isolation_level = None  # autocommit mode
         self.cu = self.cx.cursor()
@@ -891,6 +892,7 @@ class SqliteOnConflictTests(unittest.TestCase):
         # Expect the first two inserts to work, third to do nothing.
         self.assertEqual(self.cu.fetchall(), [('abort_test', None), (None, 'foo',)])
 
+    @unittest.skipIf(sys.platform == 'OpenVMS', 'OpenVMS <OR ROLLBACK> does not work')
     def test_on_conflict_rollback_without_transaction(self):
         # Start of implicit transaction
         self.cu.execute("INSERT INTO test(name) VALUES ('abort_test')")

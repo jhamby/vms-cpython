@@ -1299,7 +1299,7 @@ class PosixTester(unittest.TestCase):
         finally:
             posix.close(f)
 
-    @unittest.skipUnless(os.mkfifo in os.supports_dir_fd, "test needs dir_fd support in os.mkfifo()")
+    @unittest.skipUnless(hasattr(os, 'mkfifo') and os.mkfifo in os.supports_dir_fd, "test needs dir_fd support in os.mkfifo()")
     def test_mkfifo_dir_fd(self):
         os_helper.unlink(os_helper.TESTFN)
         f = posix.open(posix.getcwd(), posix.O_RDONLY)
@@ -1424,8 +1424,11 @@ class PosixTester(unittest.TestCase):
         # check presence of major RTLD_* constants
         posix.RTLD_LAZY
         posix.RTLD_NOW
-        posix.RTLD_GLOBAL
-        posix.RTLD_LOCAL
+        if (sys.platform == 'OpenVMS'):
+            pass
+        else:
+            posix.RTLD_GLOBAL
+            posix.RTLD_LOCAL
 
     @unittest.skipUnless(hasattr(os, 'SEEK_HOLE'),
                          "test needs an OS that reports file holes")

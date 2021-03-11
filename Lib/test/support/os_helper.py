@@ -458,6 +458,8 @@ def create_empty_file(filename):
 def fs_is_case_insensitive(directory):
     """Detects if the file system for the specified directory
     is case-insensitive."""
+    if (sys.platform == 'OpenVMS'):
+        return True
     import tempfile
     with tempfile.NamedTemporaryFile(dir=directory) as base:
         base_path = base.name
