@@ -830,6 +830,8 @@ class LargeMmapTests(unittest.TestCase):
             f.seek(num_zeroes)
             f.write(tail)
             f.flush()
+            if (sys.platform == 'OpenVMS'):
+                os.fsync(f.fileno())
         except (OSError, OverflowError, ValueError):
             try:
                 f.close()

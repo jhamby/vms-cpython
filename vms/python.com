@@ -19,11 +19,11 @@ $ vms_py_pat = prj_ptt + ".modules.vms...]"
 $ rdb_py_pat = prj_ptt + ".modules.rdb...]"
 $ vms_pat = prj_ptt + ".vms]"
 $ dyn_pat = prj_ptt + ".out.'CONFIG'.lib-dynload...]"
-$ @'com_pat'Python3^.10^.def.com
+$ @'com_pat'Python^.def.com
 $
 $ pipe delete/tree python$root:[000000...]*.*;* | copy SYS$INPUT nl:
 $
-$ backup 'bld_pat'python3^.10.exe python$root:[bin]
+$ backup 'bld_pat'python.exe python$root:[bin]
 $
 $ backup 'inc_pat'*.h python$root:[include]
 $ backup 'cpy_pat'*.h python$root:[include.cpython]

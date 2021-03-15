@@ -1176,6 +1176,12 @@ class TestCopy(BaseTest, unittest.TestCase):
                 os.link(src, dst)
             except PermissionError as e:
                 self.skipTest('os.link(): %s' % e)
+            except OSError as e:
+                # OpenVMS might return 'not implemented'
+                if sys.platform == 'OpenVMS' and e.errno == errno.ENOSYS:
+                    self.skipTest('os.link(): %s' % e)
+                else:
+                    raise e
             self.assertRaises(shutil.SameFileError, shutil.copyfile, src, dst)
             with open(src, 'r') as f:
                 self.assertEqual(f.read(), 'cheddar')

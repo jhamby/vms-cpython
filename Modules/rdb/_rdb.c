@@ -1364,11 +1364,21 @@ PyMODINIT_FUNC PyInit__rdb(void)
     PyModule_AddIntConstant(m, "SQLCODE_SIGNAL_SQLSTATE", SQLCODE_SIGNAL_SQLSTATE);
     PyModule_AddIntConstant(m, "SQLCODE_NORETSTMT", SQLCODE_NORETSTMT);
     PyModule_AddIntConstant(m, "SQLCODE_INVSUBSTRLEN", SQLCODE_INVSUBSTRLEN);
+    #ifdef SQLCODE_INV_INTERVAL
     PyModule_AddIntConstant(m, "SQLCODE_INV_INTERVAL", SQLCODE_INV_INTERVAL);
+    #endif
+    #ifdef SQLCODE_INV_FRACSEC
     PyModule_AddIntConstant(m, "SQLCODE_INV_FRACSEC", SQLCODE_INV_FRACSEC);
+    #endif
+    #ifdef SQLCODE_INV_INTLEAD
     PyModule_AddIntConstant(m, "SQLCODE_INV_INTLEAD", SQLCODE_INV_INTLEAD);
+    #endif
+    #ifdef SQLCODE_INC_CSET
     PyModule_AddIntConstant(m, "SQLCODE_INC_CSET", SQLCODE_INC_CSET);
+    #endif
+    #ifdef SQLCODE_DATA_CVT_ERROR
     PyModule_AddIntConstant(m, "SQLCODE_DATA_CVT_ERROR", SQLCODE_DATA_CVT_ERROR);
+    #endif
     PyModule_AddIntConstant(m, "SQLCODE_SVPTBADLOC", SQLCODE_SVPTBADLOC);
     PyModule_AddIntConstant(m, "ACC_K_TERMLEN", 84);
     return m;

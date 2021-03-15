@@ -861,11 +861,13 @@ class CommandLineTestsBase:
         self.assertTrue(os.path.isfile(allowed_bc))
         self.assertFalse(os.path.isfile(prohibited_bc))
 
+    @unittest.skipIf(sys.platform == 'OpenVMS', 'skip testing hardlinks on OpenVMS')
     def test_hardlink_bad_args(self):
         # Bad arguments combination, hardlink deduplication make sense
         # only for more than one optimization level
         self.assertRunNotOK(self.directory, "-o 1", "--hardlink-dupes")
 
+    @unittest.skipIf(sys.platform == 'OpenVMS', 'skip testing hardlinks on OpenVMS')
     def test_hardlink(self):
         # 'a = 0' code produces the same bytecode for the 3 optimization
         # levels. All three .pyc files must have the same inode (hardlinks).
@@ -902,7 +904,7 @@ class CommandLineTestsNoSourceEpoch(CommandLineTestsBase,
     pass
 
 
-
+@unittest.skipIf(sys.platform == 'OpenVMS', 'skip testing hardlinks on OpenVMS')
 class HardlinkDedupTestsBase:
     # Test hardlink_dupes parameter of compileall.compile_dir()
 

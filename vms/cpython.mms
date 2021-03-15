@@ -50,7 +50,6 @@ $(CC_DEFINES), -
 _USE_STD_STAT, -                ! COMMON
 _POSIX_EXIT, -
 __STDC_FORMAT_MACROS, -
-_POSIX_SEMAPHORES, -
 _LARGEFILE, -
 _SOCKADDR_LEN, -
 __SIGNED_INT_TIME_T, -
@@ -159,11 +158,8 @@ CC_GETPATH_CFLAGS = $(CC_QUALIFIERS)/DEFINE=("Py_BUILD_CORE",$(GETPATH_DEFINES))
     $(LINK)$(LINK_FLAGS)/SHARE=python$build_out:[$(DYNLOAD_DIR)]$(NOTDIR $(MMS$TARGET_NAME)).exe $(MMS$SOURCE_LIST),[.vms.opt]$(NOTDIR $(MMS$TARGET_NAME)).opt/OPT
 
 ##########################################################################
-TARGET : [.$(OUT_DIR)]python3^.10.exe [.$(OUT_DIR)]_testembed.exe LIB_DYNLOAD
+TARGET : [.$(OUT_DIR)]python.exe [.$(OUT_DIR)]_testembed.exe LIB_DYNLOAD
     ! TARGET BUILT
-
-CLEAN :
-    del/tree [.$(OUT_DIR)...]*.*;*
 
 pyconfig.h : [.vms]pyconfig.h
     copy [.vms]pyconfig.h []
@@ -748,12 +744,12 @@ $(PYTHON_HEADERS)
 
 ############################################################################
 # Library
-[.$(OUT_DIR)]libpython3^.10.olb : [.$(OUT_DIR)]libpython3^.10.olb($(LIBRARY_OBJS))
+[.$(OUT_DIR)]LIBPYTHON.OLB : [.$(OUT_DIR)]LIBPYTHON.OLB($(LIBRARY_OBJS))
     continue
 
 ############################################################################
 # Shared library
-[.$(OUT_DIR)]python$shr.exe : [.$(OUT_DIR)]libpython3^.10.olb
+[.$(OUT_DIR)]python$shr.exe : [.$(OUT_DIR)]LIBPYTHON.OLB
     $(LINK)$(LINK_FLAGS)/SHARE=python$build_out:[000000]$(NOTDIR $(MMS$TARGET_NAME)).exe [.vms.opt]$(PYTHON$SHR_OPT).opt/OPT
 
 ############################################################################
@@ -832,10 +828,13 @@ LIBDYNLOAD_VMS = -
 [.$(OUT_DIR).$(DYNLOAD_DIR)]_lib.exe -
 [.$(OUT_DIR).$(DYNLOAD_DIR)]_ile3.exe -
 [.$(OUT_DIR).$(DYNLOAD_DIR)]_sys.exe -
-[.$(OUT_DIR).$(DYNLOAD_DIR)]_dtr.exe -
 [.$(OUT_DIR).$(DYNLOAD_DIR)]_rdb.exe
 ! [.$(OUT_DIR).$(DYNLOAD_DIR)]_rec.exe
 
+.IFDEF BUILD_DTR
+LIBDYNLOAD_VMS = $(LIBDYNLOAD_VMS) -
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_dtr.exe
+.ENDIF
 
 LIBDYNLOAD = -
 $(LIBDYNLOAD_VMS) -
@@ -1706,6 +1705,11 @@ DECIMAL_HEADERS = -
 [.$(OBJ_DIR).vms]vms_crtl_init.obc : [.vms]vms_crtl_init.c
 [.$(OBJ_DIR).Programs]python.obc : [.Programs]python.c $(PYTHON_HEADERS)
 
-[.$(OUT_DIR)]python3^.10.exe : [.$(OBJ_DIR).Programs]python.obc [.$(OBJ_DIR).vms]vms_crtl_init.obc [.$(OUT_DIR)]python$shr.exe
+[.$(OUT_DIR)]python.exe : [.$(OBJ_DIR).Programs]python.obc [.$(OBJ_DIR).vms]vms_crtl_init.obc [.$(OUT_DIR)]python$shr.exe
    @ pipe create/dir $(DIR $(MMS$TARGET)) | copy SYS$INPUT nl:
     $(LINK)$(LINK_FLAGS)/THREADS/EXECUTABLE=python$build_out:[000000]$(NOTDIR $(MMS$TARGET_NAME)).exe [.$(OBJ_DIR).vms]vms_crtl_init.obc,$(MMS$SOURCE),[.vms.opt]$(NOTDIR $(MMS$TARGET_NAME)).opt/OPT
+
+############################################################################
+CLEAN :
+    del/tree [.$(OUT_DIR)...]*.*;*
+

@@ -1700,11 +1700,7 @@
 #define MAP_ANONYMOUS 0x10
 #endif
 
-#if __CRTL_VER > 80400000
-#define HAVE_ROUND 1
-#else
 #define round py_round
-#endif
 
 #ifndef INT32_MIN
 #define INT32_MIN __INT32_MIN

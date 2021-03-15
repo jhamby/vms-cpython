@@ -29,6 +29,7 @@ class GroupDatabaseTestCase(unittest.TestCase):
         for e in entries:
             self.check_value(e)
 
+    @unittest.skipIf(sys.platform == 'OpenVMS', 'might fail with KeyError')
     def test_values_extended(self):
         entries = grp.getgrall()
         if len(entries) > 1000:  # Huge group file (NIS?) -- skip the rest

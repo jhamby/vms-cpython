@@ -246,6 +246,7 @@ class GenericTest:
     def test_samefile_on_symlink(self):
         self._test_samefile_on_link_func(os.symlink)
 
+    @unittest.skipIf(sys.platform == 'OpenVMS', 'OSError: [Errno 76] function not implemented')
     def test_samefile_on_link(self):
         try:
             self._test_samefile_on_link_func(os.link)
@@ -288,6 +289,7 @@ class GenericTest:
     def test_samestat_on_symlink(self):
         self._test_samestat_on_link_func(os.symlink)
 
+    @unittest.skipIf(sys.platform == 'OpenVMS', 'OSError: [Errno 76] function not implemented')
     def test_samestat_on_link(self):
         try:
             self._test_samestat_on_link_func(os.link)

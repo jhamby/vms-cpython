@@ -40,6 +40,8 @@ class LargeFileTest:
             f.seek(size)
             f.write(b'a')
             f.flush()
+            if (sys.platform == 'OpenVMS'):
+                os.fsync(f.fileno())
             self.assertEqual(os.fstat(f.fileno())[stat.ST_SIZE], size+1)
 
     @classmethod
