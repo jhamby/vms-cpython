@@ -33,6 +33,21 @@ from test import support
 from test.support import os_helper
 from test.support.os_helper import TESTFN, FakePath
 
+if (sys.platform == 'OpenVMS'):
+    import _sys
+    import _ile3
+    import _jpidef
+    import _dscdef
+    import _prvdef
+    def is_system_user():
+        a = _ile3.ile3list()
+        a.append(_jpidef.JPI__CURPRIV, _dscdef.DSC_K_DTYPE_QU)
+        _sys.getjpi(a)
+        if (a[0] & (_prvdef.PRV_M_SYSPRV | _prvdef.PRV_M_BYPASS)):
+            return True
+        else:
+            return False
+
 TESTFN2 = TESTFN + "2"
 MACOS = sys.platform.startswith("darwin")
 AIX = sys.platform[:3] == 'aix'
@@ -303,6 +318,8 @@ class TestRmTree(BaseTest, unittest.TestCase):
     @unittest.skipIf(sys.platform[:6] == 'cygwin',
                      "This test can't be run on Cygwin (issue #1071513).")
     @unittest.skipIf(hasattr(os, 'geteuid') and os.geteuid() == 0,
+                     "This test can't be run reliably as root (issue #1076467).")
+    @unittest.skipIf(sys.platform == 'OpenVMS' and is_system_user(), 
                      "This test can't be run reliably as root (issue #1076467).")
     def test_on_error(self):
         self.errorState = 0

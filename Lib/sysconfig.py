@@ -53,6 +53,19 @@ _INSTALL_SCHEMES = {
         },
     }
 
+if (sys.platform == 'OpenVMS'):
+    _INSTALL_SCHEMES |= {
+        'OpenVMS': {
+            'stdlib': '{installed_base}/lib/python{py_version_short}',
+            'platstdlib': '{base}/lib/python{py_version_short}',
+            'purelib': '{base}/lib/python{py_version_short}/site-packages',
+            'platlib': '{base}/lib/python{py_version_short}/site-packages',
+            'include': '{installed_base}/include',
+            'platinclude': '{installed_base}/include',
+            'scripts': '{base}/scripts',
+            'data': '{base}',
+            },
+    }
 
 # NOTE: site.py has copy of this function.
 # Sync it when modify this function.
@@ -208,6 +221,8 @@ def _expand_vars(scheme, vars):
 
 
 def _get_default_scheme():
+    if sys.platform == 'OpenVMS':
+        return sys.platform
     if os.name == 'posix':
         # the default scheme for posix is posix_prefix
         return 'posix_prefix'

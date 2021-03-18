@@ -244,6 +244,7 @@ class BasicTest(BaseTest):
             elif os.path.isdir(fn):
                 rmtree(fn)
 
+    @unittest.skipIf(sys.platform == 'OpenVMS', 'OpenVMS allows files and directories with the same name')
     def test_unoverwritable_fails(self):
         #create a file clashing with directories in the env dir
         for paths in self.ENV_SUBDIRS[:3]:

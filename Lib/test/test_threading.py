@@ -1029,7 +1029,7 @@ class ThreadJoinOnShutdown(BaseTestCase):
 
 class SubinterpThreadingTests(BaseTestCase):
     def pipe(self):
-        r, w = os.pipe()
+        r, w = os.pipe_socket() if sys.platform == 'OpenVMS' else os.pipe()
         self.addCleanup(os.close, r)
         self.addCleanup(os.close, w)
         if hasattr(os, 'set_blocking'):

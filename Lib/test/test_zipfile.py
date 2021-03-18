@@ -601,6 +601,9 @@ class StoredTestsWithSourceFile(AbstractTestsWithSourceFile,
     def test_add_file_before_1980(self):
         # Set atime and mtime to 1970-01-01
         os.utime(TESTFN, (0, 0))
+        if sys.platform == 'OpenVMS':
+            # OpenVMS fails setting time near 1970-01-01, so shift by one day
+            os.utime(TESTFN, (3600*24, 3600*24))
         with zipfile.ZipFile(TESTFN2, "w") as zipfp:
             self.assertRaises(ValueError, zipfp.write, TESTFN)
 

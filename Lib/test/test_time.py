@@ -604,6 +604,7 @@ class _TestStrftimeYear:
     def yearstr(self, y):
         return time.strftime('%Y', (y,) + (0,) * 8)
 
+    @unittest.skipIf(sys.platform == 'OpenVMS', 'OpenVMS %4Y expands by spaces')
     def test_4dyear(self):
         # Check that we can return the zero padded value.
         if self._format == '%04d':
@@ -826,7 +827,10 @@ class CPyTimeTestCase:
                     try:
                         result = pytime_converter(value, time_rnd)
                         expected = expected_func(value)
-                    except Exception:
+                    except Exception as exc:
+                        if sys.platform == 'OpenVMS' and type(exc) == OverflowError and value < 0:
+                            # OpenVMS does not support negative time
+                            continue
                         self.fail("Error on timestamp conversion: %s" % debug_info)
                     self.assertEqual(result,
                                      expected,

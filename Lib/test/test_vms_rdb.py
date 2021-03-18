@@ -11,6 +11,40 @@ import _decc
 
 class BaseTestCase(unittest.TestCase):
 
+    db_data = [
+        [   'Neil Rieck',
+            '20 Water St N',
+            'Kitchener',
+            'Ontario',
+            'N2H5A5',
+            '5195551212',
+            '',
+        ],
+        [   'Steve Kennel',
+            '20 Water St N',
+            'Kitchener',
+            'Ontario',
+            'N2H5A5',
+            '5195551212',
+            '',
+        ],
+        [   'Dave McNeil',
+            '140 Bayfield St',
+            'Barrie',
+            'Ontario',
+            'L4M3B1',
+            '7055551212',
+            '',
+        ],
+        [   'Karim Macklai',
+            '220 Simcoe St',
+            'Toronto',
+            'Ontario',
+            'M5T1T4',
+            '4165551212',
+            '',
+        ],
+    ]
 
     def setUp(self):
         self.dbname = ''
@@ -30,14 +64,14 @@ class BaseTestCase(unittest.TestCase):
     def create_sql_database(self):
         """ tests creating SQL database """
 
-        sql_content = \
+        sql_content_header = \
 '''$!============================================================
 $temp = f$search("{dbname}")
 $if temp .nes. ""
 $then
 $   goto go_out
 $endif
-$sql$
+$mcr sql$
 create database filename {dbname}
         number of users 500
         number of cluster nodes 1;
@@ -56,40 +90,33 @@ commit;
 alter table customer add column postal char(6) after column city;
 alter table customer add column province char(15) after column city;
 commit;
+'''
+        sql_content_record = \
+'''
 insert into customer values(
-        'Neil Rieck',
-        '20 Water St N',
-        'Kitchener',
-        'Ontario',
-        'N2H5A5',
-        '5195551212',
-        '');
-insert into customer values(
-        'Steve Kennel',
-        '20 Water St N',
-        'Kitchener',
-        'Ontario',
-        'N2H5A5',
-        '5195551212',
-        '');
-insert into customer values(
-        'Dave McNeil',
-        '140 Bayfield St',
-        'Barrie',
-        'Ontario',
-        'L4M3B1',
-        '7055551212',
-        '');
+        '{name}',
+        '{addr}',
+        '{city}',
+        '{province}',
+        '{postal}',
+        '{tel1}',
+        '{tel2}');
+'''
+        sql_content_record_with_names = \
+'''
 insert into customer(
         name,address,city,province,postal,tel1,tel2)
         values(
-        'Karim Macklai',
-        '220 Simcoe St',
-        'Toronto',
-        'Ontario',
-        'M5T1T4',
-        '4165551212',
-        '');
+        '{name}',
+        '{addr}',
+        '{city}',
+        '{province}',
+        '{postal}',
+        '{tel1}',
+        '{tel2}');
+'''
+        sql_content_footer = \
+'''
 commit;
 exit
 $go_out:
@@ -99,7 +126,28 @@ $exit
         os.close(fd)
         os.unlink(self.dbname)
         self.dbname_vms = _decc.to_vms(self.dbname)[0]
-        sql_content = sql_content.format(dbname=self.dbname_vms)
+        sql_content = sql_content_header.format(dbname=self.dbname_vms)
+        for data in BaseTestCase.db_data[:-2]:
+            sql_content += sql_content_record.format(
+                name=data[0],
+                addr=data[1],
+                city=data[2],
+                province=data[3],
+                postal=data[4],
+                tel1=data[5],
+                tel2=data[6],
+            )
+        for data in BaseTestCase.db_data[-2:]:
+            sql_content += sql_content_record.format(
+                name=data[0],
+                addr=data[1],
+                city=data[2],
+                province=data[3],
+                postal=data[4],
+                tel1=data[5],
+                tel2=data[6],
+            )
+        sql_content += sql_content_footer
 
         with tempfile.NamedTemporaryFile(suffix=".COM", delete=False) as tmpfile:
             tmpfile.write(sql_content.encode())
@@ -115,30 +163,36 @@ $exit
 
         sqlca = _rdb.sqlca()
         sqlca.attach(self.dbname_vms)
-        self.assertIsNot(sqlca.code, -1, sqlca.message)
+        self.assertNotEqual(sqlca.code, -1, sqlca.message)
 
         sqlca.set_readonly()
-        self.assertIsNot(sqlca.code, -1, sqlca.message)
+        self.assertNotEqual(sqlca.code, -1, sqlca.message)
 
         ch = sqlca.declare_cursor("C001", "select name, address, city from customer")
-        self.assertIsNot(ch, None, sqlca.message)
+        self.assertNotEqual(ch, None, sqlca.message)
 
         fields = ch.fields()
-        self.assertIsNot(fields, None, sqlca.message)
-        self.assertIsNot(len(fields), 3, "must be 3 columns")
+        self.assertNotEqual(fields, None, sqlca.message)
+        self.assertEqual(len(fields), 3, "must be 3 columns")
 
         ch.open_cursor()
-        self.assertIsNot(sqlca.code, -1, sqlca.message)
+        self.assertNotEqual(sqlca.code, -1, sqlca.message)
 
+        pos = 0
         while ch.fetch() == 0:
             data = ch.data()
-            self.assertIsNot(data, None, sqlca.message)
-            self.assertIsNot(len(data), 3, "must be 3 columns")
+            self.assertNotEqual(data, None, sqlca.message)
+            self.assertEqual(len(data), 3, "must be 3 columns")
+            name, addr, city = data
+            self.assertEqual(name.strip(), BaseTestCase.db_data[pos][0])
+            self.assertEqual(addr.strip(), BaseTestCase.db_data[pos][1])
+            self.assertEqual(city.strip(), BaseTestCase.db_data[pos][2])
+            pos += 1
 
-        self.assertIs(sqlca.code, _rdb.SQLCODE_EOS, sqlca.message)
+        self.assertEqual(sqlca.code, _rdb.SQLCODE_EOS, sqlca.message)
 
         ch.close_cursor()
-        self.assertIsNot(sqlca.code, -1, sqlca.message)
+        self.assertNotEqual(sqlca.code, -1, sqlca.message)
 
         ch.release()
         sqlca.detach()

@@ -130,6 +130,9 @@ class TestUnicodeFiles(unittest.TestCase):
         #  Make dir with encoded, chdir with unicode, checkdir with encoded
         #  (or unicode/encoded/unicode, etc
         ext = ".dir"
+        if sys.platform == 'OpenVMS':
+            # .DIR is reserved
+            ext = ".folder"
         self._do_directory(TESTFN_UNICODE+ext, TESTFN_UNICODE+ext)
         # Our directory name that can't use a non-unicode name.
         if TESTFN_UNENCODABLE is not None:

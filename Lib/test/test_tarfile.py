@@ -10,6 +10,8 @@ import unittest
 import unittest.mock
 import tarfile
 
+import errno
+
 from test import support
 from test.support import os_helper
 from test.support import script_helper
@@ -1220,6 +1222,12 @@ class WriteTest(WriteTestBase, unittest.TestCase):
             os.link(target, link)
         except PermissionError as e:
             self.skipTest('os.link(): %s' % e)
+        except OSError as e:
+            # OpenVMS might return 'not implemented'
+            if sys.platform == 'OpenVMS' and e.errno == errno.ENOSYS:
+                self.skipTest('os.link(): %s' % e)
+            else:
+                raise e
         try:
             tar = tarfile.open(tmpname, self.mode)
             try:
@@ -1740,6 +1748,12 @@ class HardlinkTest(unittest.TestCase):
             os.link(self.foo, self.bar)
         except PermissionError as e:
             self.skipTest('os.link(): %s' % e)
+        except OSError as e:
+            # OpenVMS might return 'not implemented'
+            if sys.platform == 'OpenVMS' and e.errno == errno.ENOSYS:
+                self.skipTest('os.link(): %s' % e)
+            else:
+                raise e
 
         self.tar = tarfile.open(tmpname, "w")
         self.tar.add(self.foo)
@@ -2601,6 +2615,8 @@ class Bz2PartialReadTest(Bz2Test, unittest.TestCase):
 
 
 def root_is_uid_gid_0():
+    if sys.platform == 'OpenVMS':
+        return False
     try:
         import pwd, grp
     except ImportError:

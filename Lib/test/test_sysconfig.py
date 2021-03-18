@@ -237,6 +237,8 @@ class TestSysConfig(unittest.TestCase):
         wanted = ['nt', 'posix_home', 'posix_prefix']
         if HAS_USER_BASE:
             wanted.extend(['nt_user', 'osx_framework_user', 'posix_user'])
+        if sys.platform == 'OpenVMS':
+            wanted.extend(['OpenVMS'])
         self.assertEqual(get_scheme_names(), tuple(sorted(wanted)))
 
     @skip_unless_symlink
@@ -325,6 +327,7 @@ class TestSysConfig(unittest.TestCase):
         self.assertEqual(status, 0)
         self.assertEqual(my_platform, test_platform)
 
+    @unittest.skipIf(sys.platform == 'OpenVMS', 'OpenVMS has no source installed')
     def test_srcdir(self):
         # See Issues #15322, #15364.
         srcdir = sysconfig.get_config_var('srcdir')
@@ -401,6 +404,8 @@ class MakefileTests(unittest.TestCase):
 
     @unittest.skipIf(sys.platform.startswith('win'),
                      'Test is not Windows compatible')
+    @unittest.skipIf(sys.platform == 'OpenVMS',
+                     'Test is not OpenVMS compatible')
     def test_get_makefile_filename(self):
         makefile = sysconfig.get_makefile_filename()
         self.assertTrue(os.path.isfile(makefile), makefile)

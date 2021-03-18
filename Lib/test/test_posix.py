@@ -28,6 +28,21 @@ _DUMMY_SYMLINK = os.path.join(tempfile.gettempdir(),
 requires_32b = unittest.skipUnless(sys.maxsize < 2**32,
         'test is only meaningful on 32-bit builds')
 
+if (sys.platform == 'OpenVMS'):
+    import _sys
+    import _ile3
+    import _jpidef
+    import _dscdef
+    import _prvdef
+    def is_system_user():
+        a = _ile3.ile3list()
+        a.append(_jpidef.JPI__CURPRIV, _dscdef.DSC_K_DTYPE_QU)
+        _sys.getjpi(a)
+        if (a[0] & (_prvdef.PRV_M_SYSPRV | _prvdef.PRV_M_BYPASS)):
+            return True
+        else:
+            return False
+
 def _supports_sched():
     if not hasattr(posix, 'sched_getscheduler'):
         return False
@@ -728,6 +743,9 @@ class PosixTester(unittest.TestCase):
             # On VxWorks, root user id is 1 and 0 means no login user:
             # both are super users.
             is_root = (uid in (0, 1))
+        elif sys.platform == 'OpenVMS':
+            if is_system_user():
+                raise unittest.SkipTest("requires non-system user")
         else:
             is_root = (uid == 0)
         if is_root:

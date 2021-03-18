@@ -4,7 +4,11 @@ import unittest
 if sys.platform != 'OpenVMS':
     raise unittest.SkipTest('OpenVMS required')
 
-import _dtr
+try:
+    import _dtr
+except ImportError:
+    raise unittest.SkipTest('_dtr is not built')
+
 import _ssdef
 
 def _show_messages(dab):

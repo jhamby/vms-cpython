@@ -19,6 +19,20 @@ from test.support import os_helper
 from test.support import script_helper
 from test.support import warnings_helper
 
+if (sys.platform == 'OpenVMS'):
+    import _sys
+    import _ile3
+    import _jpidef
+    import _dscdef
+    import _prvdef
+    def is_system_user():
+        a = _ile3.ile3list()
+        a.append(_jpidef.JPI__CURPRIV, _dscdef.DSC_K_DTYPE_QU)
+        _sys.getjpi(a)
+        if (a[0] & (_prvdef.PRV_M_SYSPRV | _prvdef.PRV_M_BYPASS)):
+            return True
+        else:
+            return False
 
 has_textmode = (tempfile._text_openflags != tempfile._bin_openflags)
 has_spawnl = hasattr(os, 'spawnl')
@@ -323,6 +337,7 @@ def _mock_candidate_names(*names):
 
 class TestBadTempdir:
 
+    @unittest.skipIf(sys.platform == 'OpenVMS' and is_system_user(), 'requires non-system user')
     def test_read_only_directory(self):
         with _inside_empty_temp_dir():
             oldmode = mode = os.stat(tempfile.tempdir).st_mode
@@ -337,6 +352,7 @@ class TestBadTempdir:
             finally:
                 os.chmod(tempfile.tempdir, oldmode)
 
+    @unittest.skipIf(sys.platform == 'OpenVMS', 'OpenVMS intermediate nonexistent directories are also created')
     def test_nonexisting_directory(self):
         with _inside_empty_temp_dir():
             tempdir = os.path.join(tempfile.tempdir, 'nonexistent')
@@ -344,6 +360,7 @@ class TestBadTempdir:
                 with self.assertRaises(FileNotFoundError):
                     self.make_temp()
 
+    @unittest.skipIf(sys.platform == 'OpenVMS', 'OpenVMS allows files and directories with the same name')
     def test_non_directory(self):
         with _inside_empty_temp_dir():
             tempdir = os.path.join(tempfile.tempdir, 'file')
@@ -1330,6 +1347,7 @@ class TestTemporaryDirectory(BaseTestCase):
             with open(os.path.join(path, "test%d.txt" % i), "wb") as f:
                 f.write(b"Hello world!")
 
+    @unittest.skipIf(sys.platform == 'OpenVMS', 'OpenVMS intermediate nonexistent directories are also created')
     def test_mkdtemp_failure(self):
         # Check no additional exception if mkdtemp fails
         # Previously would raise AttributeError instead
