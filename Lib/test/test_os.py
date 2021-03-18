@@ -39,6 +39,21 @@ from test.support import threading_helper
 from test.support import warnings_helper
 from platform import win32_is_iot
 
+if (sys.platform == 'OpenVMS'):
+    import _sys
+    import _ile3
+    import _jpidef
+    import _dscdef
+    import _prvdef
+    def is_system_user():
+        a = _ile3.ile3list()
+        a.append(_jpidef.JPI__CURPRIV, _dscdef.DSC_K_DTYPE_QU)
+        _sys.getjpi(a)
+        if (a[0] & (_prvdef.PRV_M_SYSPRV | _prvdef.PRV_M_BYPASS)):
+            return True
+        else:
+            return False
+
 try:
     import resource
 except ImportError:
@@ -1721,6 +1736,8 @@ class ChownFileTests(unittest.TestCase):
         self.assertEqual(uid, uid_2)
 
     @unittest.skipUnless(not root_in_posix and len(all_users) > 1,
+                         "test needs non-root account and more than one user")
+    @unittest.skipIf((sys.platform == 'OpenVMS' and is_system_user()) or len(all_users) < 2,
                          "test needs non-root account and more than one user")
     def test_chown_without_permission(self):
         uid_1, uid_2 = all_users[:2]

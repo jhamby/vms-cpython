@@ -15,6 +15,21 @@ from test.support import import_helper
 from test.support import os_helper
 from test.support.os_helper import TESTFN, FakePath
 
+if (sys.platform == 'OpenVMS'):
+    import _sys
+    import _ile3
+    import _jpidef
+    import _dscdef
+    import _prvdef
+    def is_system_user():
+        a = _ile3.ile3list()
+        a.append(_jpidef.JPI__CURPRIV, _dscdef.DSC_K_DTYPE_QU)
+        _sys.getjpi(a)
+        if (a[0] & (_prvdef.PRV_M_SYSPRV | _prvdef.PRV_M_BYPASS)):
+            return True
+        else:
+            return False
+
 try:
     import grp, pwd
 except ImportError:
@@ -2033,10 +2048,13 @@ class _BasePathTest(object):
         mode = stat.S_IMODE(p.stat().st_mode)  # Default mode.
         p = self.cls(BASE, 'newdirD', 'newdirE')
         if sys.platform == 'OpenVMS':
-            # OpenVMS requires write permission for intermediate directories
-            with self.assertRaises(OSError) as cm:
-                p.mkdir(0o555, parents=True)
-            self.assertEqual(cm.exception.errno, errno.EPERM)
+            if is_system_user():
+                pass    # system can bypass all permissions
+            else:
+                # OpenVMS requires write permission for intermediate directories
+                with self.assertRaises(OSError) as cm:
+                    p.mkdir(0o555, parents=True)
+                self.assertEqual(cm.exception.errno, errno.EPERM)
         else:
             p.mkdir(0o555, parents=True)
             self.assertTrue(p.exists())
