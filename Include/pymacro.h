@@ -81,12 +81,6 @@
 /* Round up size "n" to be a multiple of "a". */
 #define _Py_SIZE_ROUND_UP(n, a) (((size_t)(n) + \
         (size_t)((a) - 1)) & ~(size_t)((a) - 1))
-#ifdef __VMS
-#define _Py_ALIGN_DOWN(p, a) ((void *)((uintptr_t)(void*)(p) & ~(uintptr_t)(void*)((a) - 1)))
-#define _Py_ALIGN_UP(p, a) ((void *)(((uintptr_t)(void*)(p) + \
-        (uintptr_t)(void*)((a) - 1)) & ~(uintptr_t)(void*)((a) - 1)))
-#define _Py_IS_ALIGNED(p, a) (!((uintptr_t)(void*)(p) & (uintptr_t)(void*)((a) - 1)))
-#else
 /* Round pointer "p" down to the closest "a"-aligned address <= "p". */
 #define _Py_ALIGN_DOWN(p, a) ((void *)((uintptr_t)(p) & ~(uintptr_t)((a) - 1)))
 /* Round pointer "p" up to the closest "a"-aligned address >= "p". */
@@ -94,7 +88,6 @@
         (uintptr_t)((a) - 1)) & ~(uintptr_t)((a) - 1)))
 /* Check if pointer "p" is aligned to "a"-bytes boundary. */
 #define _Py_IS_ALIGNED(p, a) (!((uintptr_t)(p) & (uintptr_t)((a) - 1)))
-#endif /* __VMS */
 
 /* Use this for unused arguments in a function definition to silence compiler
  * warnings. Example:

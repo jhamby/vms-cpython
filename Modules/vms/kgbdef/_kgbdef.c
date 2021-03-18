@@ -21,13 +21,13 @@ PyInit__kgbdef(void) {
     if (m == NULL) {
         return NULL;
     }
-    PyModule_AddIntConstant(m, "KGB_M_RESOURCE", 0x1L);
-    PyModule_AddIntConstant(m, "KGB_M_DYNAMIC", 0x2L);
-    PyModule_AddIntConstant(m, "KGB_M_NOACCESS", 0x4L);
-    PyModule_AddIntConstant(m, "KGB_M_SUBSYSTEM", 0x8L);
-    PyModule_AddIntConstant(m, "KGB_M_IMPERSONATE", 0x10L);
-    PyModule_AddIntConstant(m, "KGB_M_HOLDER_HIDDEN", 0x20L);
-    PyModule_AddIntConstant(m, "KGB_M_NAME_HIDDEN", 0x40L);
+    PyModule_AddUnsignedLongConstant(m, "KGB_M_RESOURCE", 0x1UL);
+    PyModule_AddUnsignedLongConstant(m, "KGB_M_DYNAMIC", 0x2UL);
+    PyModule_AddUnsignedLongConstant(m, "KGB_M_NOACCESS", 0x4UL);
+    PyModule_AddUnsignedLongConstant(m, "KGB_M_SUBSYSTEM", 0x8UL);
+    PyModule_AddUnsignedLongConstant(m, "KGB_M_IMPERSONATE", 0x10UL);
+    PyModule_AddUnsignedLongConstant(m, "KGB_M_HOLDER_HIDDEN", 0x20UL);
+    PyModule_AddUnsignedLongConstant(m, "KGB_M_NAME_HIDDEN", 0x40UL);
     PyModule_AddIntConstant(m, "KGB_K_HOLD_RECORD", 16);
     PyModule_AddIntConstant(m, "KGB_K_IDENT_RECORD", 48);
     PyModule_AddIntConstant(m, "KGB_K_LEVEL1", 257);

@@ -62,16 +62,16 @@ PyInit__libdtdef(void) {
     PyModule_AddIntConstant(m, "LIB_K_DELTA_MINUTES_F", 29);
     PyModule_AddIntConstant(m, "LIB_K_DELTA_SECONDS_F", 30);
     PyModule_AddIntConstant(m, "LIB_K_MAX_OPERATION", 31);
-    PyModule_AddIntConstant(m, "LIB_M_TIME_FIELDS", 0x1L);
-    PyModule_AddIntConstant(m, "LIB_M_DATE_FIELDS", 0x2L);
+    PyModule_AddUnsignedLongConstant(m, "LIB_M_TIME_FIELDS", 0x1UL);
+    PyModule_AddUnsignedLongConstant(m, "LIB_M_DATE_FIELDS", 0x2UL);
     PyModule_AddIntConstant(m, "LIB_S_DT_PRINT_FIELDS", 1);
-    PyModule_AddIntConstant(m, "LIB_M_YEAR", 0x1L);
-    PyModule_AddIntConstant(m, "LIB_M_MONTH", 0x2L);
-    PyModule_AddIntConstant(m, "LIB_M_DAY", 0x4L);
-    PyModule_AddIntConstant(m, "LIB_M_HOUR", 0x8L);
-    PyModule_AddIntConstant(m, "LIB_M_MINUTE", 0x10L);
-    PyModule_AddIntConstant(m, "LIB_M_SECOND", 0x20L);
-    PyModule_AddIntConstant(m, "LIB_M_HUNDREDTHS", 0x40L);
+    PyModule_AddUnsignedLongConstant(m, "LIB_M_YEAR", 0x1UL);
+    PyModule_AddUnsignedLongConstant(m, "LIB_M_MONTH", 0x2UL);
+    PyModule_AddUnsignedLongConstant(m, "LIB_M_DAY", 0x4UL);
+    PyModule_AddUnsignedLongConstant(m, "LIB_M_HOUR", 0x8UL);
+    PyModule_AddUnsignedLongConstant(m, "LIB_M_MINUTE", 0x10UL);
+    PyModule_AddUnsignedLongConstant(m, "LIB_M_SECOND", 0x20UL);
+    PyModule_AddUnsignedLongConstant(m, "LIB_M_HUNDREDTHS", 0x40UL);
     PyModule_AddIntConstant(m, "LIB_S_DT_DEFAULT_FIELDS", 1);
     return m;
 }

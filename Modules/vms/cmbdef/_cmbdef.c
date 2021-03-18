@@ -21,8 +21,8 @@ PyInit__cmbdef(void) {
     if (m == NULL) {
         return NULL;
     }
-    PyModule_AddIntConstant(m, "CMB_M_READONLY",  0x1L);
-    PyModule_AddIntConstant(m, "CMB_M_WRITEONLY",  0x2L);
+    PyModule_AddUnsignedLongConstant(m, "CMB_M_READONLY",  0x1UL);
+    PyModule_AddUnsignedLongConstant(m, "CMB_M_WRITEONLY",  0x2UL);
     PyModule_AddIntConstant(m, "CMB_S_CMBDEF",  4);
     return m;
 }

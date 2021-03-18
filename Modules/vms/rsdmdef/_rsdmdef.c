@@ -27,9 +27,9 @@ PyInit__rsdmdef(void) {
     PyModule_AddIntConstant(m, "RSDM__LEAVE", 4);
     PyModule_AddIntConstant(m, "RSDM_K_SYSTEM_RSDM_ID", 1);
     PyModule_AddIntConstant(m, "RSDM_K_PROCESS_RSDM_ID", 2);
-    PyModule_AddIntConstant(m, "RSDM_M_READ", 0x1L);
-    PyModule_AddIntConstant(m, "RSDM_M_WRITE", 0x2L);
-    PyModule_AddIntConstant(m, "RSDM_M_LOCK", 0x4L);
+    PyModule_AddUnsignedLongConstant(m, "RSDM_M_READ", 0x1UL);
+    PyModule_AddUnsignedLongConstant(m, "RSDM_M_WRITE", 0x2UL);
+    PyModule_AddUnsignedLongConstant(m, "RSDM_M_LOCK", 0x4UL);
     PyModule_AddIntConstant(m, "RSDM_S_RSDMBITS", 4);
    return m;
 }

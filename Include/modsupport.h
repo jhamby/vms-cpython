@@ -146,6 +146,7 @@ PyAPI_FUNC(int) PyModule_AddObjectRef(PyObject *mod, const char *name, PyObject 
 PyAPI_FUNC(int) PyModule_AddObject(PyObject *mod, const char *, PyObject *value);
 
 PyAPI_FUNC(int) PyModule_AddIntConstant(PyObject *, const char *, long);
+PyAPI_FUNC(int) PyModule_AddUnsignedLongConstant(PyObject *, const char *, unsigned long);
 PyAPI_FUNC(int) PyModule_AddUnsignedLongLongConstant(PyObject *, const char *, unsigned long long);
 PyAPI_FUNC(int) PyModule_AddStringConstant(PyObject *, const char *, const char *);
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03090000

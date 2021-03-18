@@ -97,11 +97,7 @@ static inline void
 gc_set_refs(PyGC_Head *g, Py_ssize_t refs)
 {
     g->_gc_prev = (g->_gc_prev & ~_PyGC_PREV_MASK)
-    #ifdef __VMS
-        | ((uintptr_t)(void*)(refs) << _PyGC_PREV_SHIFT);
-    #else
         | ((uintptr_t)(refs) << _PyGC_PREV_SHIFT);
-    #endif /* __VMS */
 }
 
 static inline void
@@ -109,11 +105,7 @@ gc_reset_refs(PyGC_Head *g, Py_ssize_t refs)
 {
     g->_gc_prev = (g->_gc_prev & _PyGC_PREV_MASK_FINALIZED)
         | PREV_MASK_COLLECTING
-    #ifdef __VMS
-        | ((uintptr_t)(void*)(refs) << _PyGC_PREV_SHIFT);
-    #else
         | ((uintptr_t)(refs) << _PyGC_PREV_SHIFT);
-    #endif /* __VMS */
 }
 
 static inline void
@@ -1065,7 +1057,7 @@ show_stats_each_generations(GCState *gcstate)
 
     for (int i = 0; i < NUM_GENERATIONS && pos < sizeof(buf); i++) {
         pos += PyOS_snprintf(buf+pos, sizeof(buf)-pos,
-                             " %zd",
+                             " %"PY_FORMAT_SIZE_T"d",
                              gc_list_size(GEN_HEAD(gcstate, i)));
     }
 
@@ -2108,10 +2100,10 @@ _PyGC_DumpShutdownStats(PyThreadState *tstate)
         && gcstate->garbage != NULL && PyList_GET_SIZE(gcstate->garbage) > 0) {
         const char *message;
         if (gcstate->debug & DEBUG_UNCOLLECTABLE)
-            message = "gc: %zd uncollectable objects at " \
+            message = "gc: %"PY_FORMAT_SIZE_T"d uncollectable objects at " \
                 "shutdown";
         else
-            message = "gc: %zd uncollectable objects at " \
+            message = "gc: %"PY_FORMAT_SIZE_T"d uncollectable objects at " \
                 "shutdown; use gc.set_debug(gc.DEBUG_UNCOLLECTABLE) to list them";
         /* PyErr_WarnFormat does too many things and we are at shutdown,
            the warnings module's dependencies (e.g. linecache) may be gone

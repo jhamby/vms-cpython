@@ -1167,7 +1167,8 @@ class ProcessTestCase(BaseTestCase):
                     handles.append(os.open(tmpfile, os.O_WRONLY|os.O_CREAT))
                 except OSError as e:
                     if e.errno != errno.EMFILE:
-                        raise
+                        if sys.platform != 'OpenVMS' or e.errno != errno.EIO:
+                            raise
                     break
             else:
                 self.skipTest("failed to reach the file descriptor limit "
@@ -3620,8 +3621,9 @@ class MiscTests(unittest.TestCase):
         self._test_keyboardinterrupt_no_kill(popen_via_context_manager)
 
     def test_getoutput(self):
-        self.assertEqual(subprocess.getoutput('echo xyzzy'), 'xyzzy')
-        self.assertEqual(subprocess.getstatusoutput('echo xyzzy'),
+        cmd = 'write sys$output "xyzzy"' if sys.platform == 'OpenVMS' else 'echo xyzzy'
+        self.assertEqual(subprocess.getoutput(cmd), 'xyzzy')
+        self.assertEqual(subprocess.getstatusoutput(cmd),
                          (0, 'xyzzy'))
 
         # we use mkdtemp in the next line to create an empty directory
@@ -3632,7 +3634,7 @@ class MiscTests(unittest.TestCase):
             dir = tempfile.mkdtemp()
             name = os.path.join(dir, "foo")
             status, output = subprocess.getstatusoutput(
-                ("type " if mswindows else "cat ") + name)
+                ("type " if mswindows or sys.platform == 'OpenVMS' else "cat ") + name)
             self.assertNotEqual(status, 0)
         finally:
             if dir is not None:

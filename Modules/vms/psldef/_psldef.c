@@ -21,9 +21,9 @@ PyInit__psldef(void) {
     if (m == NULL) {
         return NULL;
     }
-    PyModule_AddIntConstant(m, "PSL_M_PRVMOD", 0x3L);
-    PyModule_AddIntConstant(m, "PSL_M_CURMOD", 0x18L);
-    PyModule_AddIntConstant(m, "PSL_M_IPL", 0x1F00L);
+    PyModule_AddUnsignedLongConstant(m, "PSL_M_PRVMOD", 0x3UL);
+    PyModule_AddUnsignedLongConstant(m, "PSL_M_CURMOD", 0x18UL);
+    PyModule_AddUnsignedLongConstant(m, "PSL_M_IPL", 0x1F00UL);
     PyModule_AddIntConstant(m, "PSL_V_MAX_PS_REG_BIT", 13);
     PyModule_AddIntConstant(m, "PSL_C_KERNEL", 0);
     PyModule_AddIntConstant(m, "PSL_C_EXEC", 1);

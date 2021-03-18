@@ -21,16 +21,16 @@ PyInit__stsdef(void) {
     if (m == NULL) {
         return NULL;
     }
-    PyModule_AddIntConstant(m, "STS_M_SEVERITY", 0x7L);
-    PyModule_AddIntConstant(m, "STS_M_COND_ID", 0xFFFFFF8L);
-    PyModule_AddIntConstant(m, "STS_M_CONTROL", 0xF0000000L);
-    PyModule_AddIntConstant(m, "STS_M_SUCCESS", 0x1L);
-    PyModule_AddIntConstant(m, "STS_M_MSG_NO", 0xFFF8L);
-    PyModule_AddIntConstant(m, "STS_M_CODE", 0x7FF8L);
-    PyModule_AddIntConstant(m, "STS_M_FAC_SP", 0x8000L);
-    PyModule_AddIntConstant(m, "STS_M_CUST_DEF", 0x8000000L);
-    PyModule_AddIntConstant(m, "STS_M_INHIB_MSG", 0x10000000L);
-    PyModule_AddIntConstant(m, "STS_M_FAC_NO", 0xFFF0000L);
+    PyModule_AddUnsignedLongConstant(m, "STS_M_SEVERITY", 0x7UL);
+    PyModule_AddUnsignedLongConstant(m, "STS_M_COND_ID", 0xFFFFFF8UL);
+    PyModule_AddUnsignedLongConstant(m, "STS_M_CONTROL", 0xF0000000UL);
+    PyModule_AddUnsignedLongConstant(m, "STS_M_SUCCESS", 0x1UL);
+    PyModule_AddUnsignedLongConstant(m, "STS_M_MSG_NO", 0xFFF8UL);
+    PyModule_AddUnsignedLongConstant(m, "STS_M_CODE", 0x7FF8UL);
+    PyModule_AddUnsignedLongConstant(m, "STS_M_FAC_SP", 0x8000UL);
+    PyModule_AddUnsignedLongConstant(m, "STS_M_CUST_DEF", 0x8000000UL);
+    PyModule_AddUnsignedLongConstant(m, "STS_M_INHIB_MSG", 0x10000000UL);
+    PyModule_AddUnsignedLongConstant(m, "STS_M_FAC_NO", 0xFFF0000UL);
     PyModule_AddIntConstant(m, "STS_K_WARNING", 0);
     PyModule_AddIntConstant(m, "STS_K_SUCCESS", 1);
     PyModule_AddIntConstant(m, "STS_K_ERROR", 2);

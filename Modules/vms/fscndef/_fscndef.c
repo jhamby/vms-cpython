@@ -21,16 +21,16 @@ PyInit__fscndef(void) {
     if (m == NULL) {
         return NULL;
     }
-    PyModule_AddIntConstant(m, "FSCN_M_NODE", 0x1L);
-    PyModule_AddIntConstant(m, "FSCN_M_DEVICE", 0x2L);
-    PyModule_AddIntConstant(m, "FSCN_M_ROOT", 0x4L);
-    PyModule_AddIntConstant(m, "FSCN_M_DIRECTORY", 0x8L);
-    PyModule_AddIntConstant(m, "FSCN_M_NAME", 0x10L);
-    PyModule_AddIntConstant(m, "FSCN_M_TYPE", 0x20L);
-    PyModule_AddIntConstant(m, "FSCN_M_VERSION", 0x40L);
-    PyModule_AddIntConstant(m, "FSCN_M_NODE_PRIMARY", 0x80L);
-    PyModule_AddIntConstant(m, "FSCN_M_NODE_ACS", 0x100L);
-    PyModule_AddIntConstant(m, "FSCN_M_NODE_SECONDARY", 0x200L);
+    PyModule_AddUnsignedLongConstant(m, "FSCN_M_NODE", 0x1UL);
+    PyModule_AddUnsignedLongConstant(m, "FSCN_M_DEVICE", 0x2UL);
+    PyModule_AddUnsignedLongConstant(m, "FSCN_M_ROOT", 0x4UL);
+    PyModule_AddUnsignedLongConstant(m, "FSCN_M_DIRECTORY", 0x8UL);
+    PyModule_AddUnsignedLongConstant(m, "FSCN_M_NAME", 0x10UL);
+    PyModule_AddUnsignedLongConstant(m, "FSCN_M_TYPE", 0x20UL);
+    PyModule_AddUnsignedLongConstant(m, "FSCN_M_VERSION", 0x40UL);
+    PyModule_AddUnsignedLongConstant(m, "FSCN_M_NODE_PRIMARY", 0x80UL);
+    PyModule_AddUnsignedLongConstant(m, "FSCN_M_NODE_ACS", 0x100UL);
+    PyModule_AddUnsignedLongConstant(m, "FSCN_M_NODE_SECONDARY", 0x200UL);
     PyModule_AddIntConstant(m, "FSCN_S_FLDFLAGS", 4);
     PyModule_AddIntConstant(m, "FSCN__FILESPEC", 1);
     PyModule_AddIntConstant(m, "FSCN__NODE", 2);

@@ -33,7 +33,7 @@ PyInit__iccdef(void) {
     PyModule_AddIntConstant(m, "ICC_C_transceive_len", 20);
     PyModule_AddIntConstant(m, "ICC_C_MAX_ASSOC_LEN", 31);
     PyModule_AddIntConstant(m, "ICC_C_MAX_CONN_DATA_LEN", 1000);
-    PyModule_AddIntConstant(m, "ICC_M_Synch_Mode", 0x1L);
+    PyModule_AddUnsignedLongConstant(m, "ICC_M_Synch_Mode", 0x1UL);
     PyModule_AddIntConstant(m, "ICC_S_ICC_CONNECTION_FLAGS", 1);
     PyModule_AddIntConstant(m, "ICC_C_EV_CONNECT", 0);
     PyModule_AddIntConstant(m, "ICC_C_EV_DISCONNECT", 1);

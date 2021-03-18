@@ -1241,6 +1241,7 @@ PyCMethod_New=PROCEDURE-
 ! Module modsupport
 SYMBOL_VECTOR=(-
 PyModule_AddIntConstant=PROCEDURE,-
+PyModule_AddUnsignedLon3pv5qpe$=PROCEDURE,-
 PyModule_AddUnsignedLon049bkp0$=PROCEDURE,-
 PyModule_AddObject=PROCEDURE,-
 PyModule_AddObjectRef=PROCEDURE,-
@@ -2168,10 +2169,7 @@ _Py_union_type_or=PROCEDURE-
 )
 ! Module vms_poll_select_hack
 SYMBOL_VECTOR=(-
-g_vms_poll=PROCEDURE,-
 g_vms_select=PROCEDURE,-
-py_g_vms_buffer_data=PROCEDURE,-
-py_g_vms_select=PROCEDURE,-
 read_pipe_bytes=PROCEDURE-
 )
 ! Module vms_smg_readline

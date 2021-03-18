@@ -21,10 +21,10 @@ PyInit__libfisdef(void) {
     if (m == NULL) {
         return NULL;
     }
-    PyModule_AddIntConstant(m, "LIB_M_FIS_PARANOID", 0x1L);
-    PyModule_AddIntConstant(m, "LIB_M_FIS_NOTRANSLOG", 0x8L);
-    PyModule_AddIntConstant(m, "LIB_M_FIS_MIXEDCASE", 0x10L);
-    PyModule_AddIntConstant(m, "LIB_M_FIS_TV_AV", 0x20L);
+    PyModule_AddUnsignedLongConstant(m, "LIB_M_FIS_PARANOID", 0x1UL);
+    PyModule_AddUnsignedLongConstant(m, "LIB_M_FIS_NOTRANSLOG", 0x8UL);
+    PyModule_AddUnsignedLongConstant(m, "LIB_M_FIS_MIXEDCASE", 0x10UL);
+    PyModule_AddUnsignedLongConstant(m, "LIB_M_FIS_TV_AV", 0x20UL);
     PyModule_AddIntConstant(m, "LIB_S_LIB_FIS_FLAGS", 1);
     return m;
 }

@@ -21,9 +21,9 @@ PyInit__ossdef(void) {
     if (m == NULL) {
         return NULL;
     }
-    PyModule_AddIntConstant(m, "OSS_M_WLOCK", 0x1L);
-    PyModule_AddIntConstant(m, "OSS_M_RELCTX", 0x2L);
-    PyModule_AddIntConstant(m, "OSS_M_LOCAL", 0x4L);
+    PyModule_AddUnsignedLongConstant(m, "OSS_M_WLOCK", 0x1UL);
+    PyModule_AddUnsignedLongConstant(m, "OSS_M_RELCTX", 0x2UL);
+    PyModule_AddUnsignedLongConstant(m, "OSS_M_LOCAL", 0x4UL);
     PyModule_AddIntConstant(m, "OSS_S_OSSDEF", 1);
     PyModule_AddIntConstant(m, "OSS__ACCESS_NAMES", 1);
     PyModule_AddIntConstant(m, "OSS__ACCESS_NAMES_LENGTH", 2);

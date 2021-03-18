@@ -21,20 +21,20 @@ PyInit__lnmdef(void) {
     if (m == NULL) {
         return NULL;
     }
-    PyModule_AddIntConstant(m, "LNM_M_NO_ALIAS", 0x1L);
-    PyModule_AddIntConstant(m, "LNM_M_CONFINE", 0x2L);
-    PyModule_AddIntConstant(m, "LNM_M_CRELOG", 0x4L);
-    PyModule_AddIntConstant(m, "LNM_M_TABLE", 0x8L);
-    PyModule_AddIntConstant(m, "LNM_M_CONCEALED", 0x100L);
-    PyModule_AddIntConstant(m, "LNM_M_TERMINAL", 0x200L);
-    PyModule_AddIntConstant(m, "LNM_M_EXISTS", 0x400L);
-    PyModule_AddIntConstant(m, "LNM_M_SHAREABLE", 0x10000L);
-    PyModule_AddIntConstant(m, "LNM_M_CLUSTERWIDE", 0x20000L);
-    PyModule_AddIntConstant(m, "LNM_M_DCL_REQUEST", 0x40000L);
-    PyModule_AddIntConstant(m, "LNM_M_CREATE_IF", 0x1000000L);
-    PyModule_AddIntConstant(m, "LNM_M_CASE_BLIND", 0x2000000L);
-    PyModule_AddIntConstant(m, "LNM_M_INTERLOCKED", 0x4000000L);
-    PyModule_AddIntConstant(m, "LNM_M_LOCAL_ACTION", 0x8000000L);
+    PyModule_AddUnsignedLongConstant(m, "LNM_M_NO_ALIAS", 0x1UL);
+    PyModule_AddUnsignedLongConstant(m, "LNM_M_CONFINE", 0x2UL);
+    PyModule_AddUnsignedLongConstant(m, "LNM_M_CRELOG", 0x4UL);
+    PyModule_AddUnsignedLongConstant(m, "LNM_M_TABLE", 0x8UL);
+    PyModule_AddUnsignedLongConstant(m, "LNM_M_CONCEALED", 0x100UL);
+    PyModule_AddUnsignedLongConstant(m, "LNM_M_TERMINAL", 0x200UL);
+    PyModule_AddUnsignedLongConstant(m, "LNM_M_EXISTS", 0x400UL);
+    PyModule_AddUnsignedLongConstant(m, "LNM_M_SHAREABLE", 0x10000UL);
+    PyModule_AddUnsignedLongConstant(m, "LNM_M_CLUSTERWIDE", 0x20000UL);
+    PyModule_AddUnsignedLongConstant(m, "LNM_M_DCL_REQUEST", 0x40000UL);
+    PyModule_AddUnsignedLongConstant(m, "LNM_M_CREATE_IF", 0x1000000UL);
+    PyModule_AddUnsignedLongConstant(m, "LNM_M_CASE_BLIND", 0x2000000UL);
+    PyModule_AddUnsignedLongConstant(m, "LNM_M_INTERLOCKED", 0x4000000UL);
+    PyModule_AddUnsignedLongConstant(m, "LNM_M_LOCAL_ACTION", 0x8000000UL);
     PyModule_AddIntConstant(m, "LNM_S_LNMDEF", 4);
     PyModule_AddIntConstant(m, "LNM_C_TABNAMLEN", 31);
     PyModule_AddIntConstant(m, "LNM_C_NAMLENGTH", 255);

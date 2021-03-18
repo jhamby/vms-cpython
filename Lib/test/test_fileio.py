@@ -373,7 +373,7 @@ class OtherFileTests:
             self.assertEqual(f.isatty(), False)
             f.close()
 
-            if sys.platform != "win32":
+            if sys.platform != "win32" and sys.platform != 'OpenVMS':
                 try:
                     f = self.FileIO("/dev/tty", "a")
                 except OSError:

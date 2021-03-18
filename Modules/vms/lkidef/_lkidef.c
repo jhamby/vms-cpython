@@ -30,7 +30,7 @@ PyInit__lkidef(void) {
     PyModule_AddIntConstant(m, "LKI_S_RQLENGTH", 8);
     PyModule_AddIntConstant(m, "LKI_S_GRSTART", 8);
     PyModule_AddIntConstant(m, "LKI_S_GRLENGTH", 8);
-    PyModule_AddIntConstant(m, "LKI_M_SYSNAM", 0x80000000L);
+    PyModule_AddUnsignedLongConstant(m, "LKI_M_SYSNAM", 0x80000000UL);
     PyModule_AddIntConstant(m, "LKI_S_NAMSPACE", 4);
     PyModule_AddIntConstant(m, "LKI_S_STATEF", 3);
     PyModule_AddIntConstant(m, "LKIUSR_K_LENGTH", 20);

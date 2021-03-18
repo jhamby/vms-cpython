@@ -29,6 +29,20 @@ from test.support import threading_helper
 from test.test_importlib.util import uncache
 from types import ModuleType
 
+if (sys.platform == 'OpenVMS'):
+    import _sys
+    import _ile3
+    import _jpidef
+    import _dscdef
+    import _prvdef
+    def is_system_user():
+        a = _ile3.ile3list()
+        a.append(_jpidef.JPI__CURPRIV, _dscdef.DSC_K_DTYPE_QU)
+        _sys.getjpi(a)
+        if (a[0] & (_prvdef.PRV_M_SYSPRV | _prvdef.PRV_M_BYPASS)):
+            return True
+        else:
+            return False
 
 skip_if_dont_write_bytecode = unittest.skipIf(
         sys.dont_write_bytecode,
@@ -871,6 +885,7 @@ class PycacheTests(unittest.TestCase):
                          "test meaningful only on posix systems")
     @unittest.skipIf(hasattr(os, 'geteuid') and os.geteuid() == 0,
             "due to varying filesystem permission semantics (issue #11956)")
+    @unittest.skipIf(sys.platform == 'OpenVMS' and is_system_user(), 'required non-system user')
     @skip_if_dont_write_bytecode
     def test_unwritable_directory(self):
         # When the umask causes the new __pycache__ directory to be

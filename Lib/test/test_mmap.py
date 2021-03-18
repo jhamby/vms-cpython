@@ -840,6 +840,7 @@ class LargeMmapTests(unittest.TestCase):
             raise unittest.SkipTest("filesystem does not have largefile support")
         return f
 
+    @unittest.skipIf(sys.platform == 'OpenVMS', 'OpenVMS currently does not support 64bit offset in mmap()')
     def test_large_offset(self):
         with self._make_test_file(0x14FFFFFFF, b" ") as f:
             with mmap.mmap(f.fileno(), 0, offset=0x140000000, access=mmap.ACCESS_READ) as m:

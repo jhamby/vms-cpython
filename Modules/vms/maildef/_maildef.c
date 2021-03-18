@@ -319,15 +319,15 @@ PyInit__maildef(void) {
     PyModule_AddIntConstant(m, "MAIL__CC", 2);
     PyModule_AddIntConstant(m, "MAIL__SPARE1", 3);
     PyModule_AddIntConstant(m, "MAIL__SPARE2", 4);
-    PyModule_AddIntConstant(m, "MAIL_M_NEWMSG", 0x1L);
-    PyModule_AddIntConstant(m, "MAIL_M_REPLIED", 0x2L);
-    PyModule_AddIntConstant(m, "MAIL_M_DWMAIL", 0x4L);
-    PyModule_AddIntConstant(m, "MAIL_M_EXTMSG", 0x8L);
-    PyModule_AddIntConstant(m, "MAIL_M_EXTFNF", 0x10L);
-    PyModule_AddIntConstant(m, "MAIL_M_NOTRANS", 0x20L);
-    PyModule_AddIntConstant(m, "MAIL_M_EXTNSTD", 0x40L);
-    PyModule_AddIntConstant(m, "MAIL_M_MARKED", 0x80L);
-    PyModule_AddIntConstant(m, "MAIL_M_RECMODE", 0x100L);
+    PyModule_AddUnsignedLongConstant(m, "MAIL_M_NEWMSG", 0x1UL);
+    PyModule_AddUnsignedLongConstant(m, "MAIL_M_REPLIED", 0x2UL);
+    PyModule_AddUnsignedLongConstant(m, "MAIL_M_DWMAIL", 0x4UL);
+    PyModule_AddUnsignedLongConstant(m, "MAIL_M_EXTMSG", 0x8UL);
+    PyModule_AddUnsignedLongConstant(m, "MAIL_M_EXTFNF", 0x10UL);
+    PyModule_AddUnsignedLongConstant(m, "MAIL_M_NOTRANS", 0x20UL);
+    PyModule_AddUnsignedLongConstant(m, "MAIL_M_EXTNSTD", 0x40UL);
+    PyModule_AddUnsignedLongConstant(m, "MAIL_M_MARKED", 0x80UL);
+    PyModule_AddUnsignedLongConstant(m, "MAIL_M_RECMODE", 0x100UL);
     PyModule_AddIntConstant(m, "MAIL_S_FLAGSDEF", 2);
     return m;
 }

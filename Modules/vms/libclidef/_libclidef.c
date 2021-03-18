@@ -23,8 +23,8 @@ PyInit__libclidef(void) {
     }
     PyModule_AddIntConstant(m, "LIB_K_CLI_LOCAL_SYM", 1);
     PyModule_AddIntConstant(m, "LIB_K_CLI_GLOBAL_SYM", 2);
-    PyModule_AddIntConstant(m, "LIB_M_CLI_CTRLT", 0x100000L);
-    PyModule_AddIntConstant(m, "LIB_M_CLI_CTRLY", 0x2000000L);
+    PyModule_AddUnsignedLongConstant(m, "LIB_M_CLI_CTRLT", 0x100000UL);
+    PyModule_AddUnsignedLongConstant(m, "LIB_M_CLI_CTRLY", 0x2000000UL);
     PyModule_AddIntConstant(m, "LIB_S_CLI_CTRL_FIELDS", 4);
     return m;
 }

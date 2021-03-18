@@ -12,6 +12,21 @@ import argparse
 
 from io import StringIO
 
+if (sys.platform == 'OpenVMS'):
+    import _sys
+    import _ile3
+    import _jpidef
+    import _dscdef
+    import _prvdef
+    def is_system_user():
+        a = _ile3.ile3list()
+        a.append(_jpidef.JPI__CURPRIV, _dscdef.DSC_K_DTYPE_QU)
+        _sys.getjpi(a)
+        if (a[0] & (_prvdef.PRV_M_SYSPRV | _prvdef.PRV_M_BYPASS)):
+            return True
+        else:
+            return False
+
 from test import support
 from test.support import os_helper
 from unittest import mock
@@ -1658,6 +1673,7 @@ class WFile(object):
 
 @unittest.skipIf(hasattr(os, 'geteuid') and os.geteuid() == 0,
                  "non-root user required")
+@unittest.skipIf(sys.platform == 'OpenVMS' and is_system_user(), 'non-system user required')
 class TestFileTypeW(TempDirMixin, ParserTestCase):
     """Test the FileType option/argument type for writing files"""
 

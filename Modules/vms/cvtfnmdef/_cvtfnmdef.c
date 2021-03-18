@@ -21,9 +21,9 @@ PyInit__cvtfnmdef(void) {
     if (m == NULL) {
         return NULL;
     }
-    PyModule_AddIntConstant(m, "CVTFNM_M_WORD_CHARS",  0x1L);
-    PyModule_AddIntConstant(m, "CVTFNM_M_NO_DELIMITERS",  0x2L);
-    PyModule_AddIntConstant(m, "CVTFNM_M_FORCE_UPCASE",  0x4L);
+    PyModule_AddUnsignedLongConstant(m, "CVTFNM_M_WORD_CHARS",  0x1UL);
+    PyModule_AddUnsignedLongConstant(m, "CVTFNM_M_NO_DELIMITERS",  0x2UL);
+    PyModule_AddUnsignedLongConstant(m, "CVTFNM_M_FORCE_UPCASE",  0x4UL);
     PyModule_AddIntConstant(m, "CVTFNM_S_INOUTFLAGS",  4);
     PyModule_AddIntConstant(m, "CVTFNM_C_RMS_TO_ACPQIO",  1);
     PyModule_AddIntConstant(m, "CVTFNM_C_ACPQIO_TO_RMS",  2);

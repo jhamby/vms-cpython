@@ -50,10 +50,10 @@ PyInit__brkdef(void) {
     PyModule_AddIntConstant(m, "BRK_C_USER14", 45);
     PyModule_AddIntConstant(m, "BRK_C_USER15", 46);
     PyModule_AddIntConstant(m, "BRK_C_USER16", 47);
-    PyModule_AddIntConstant(m, "BRK_M_SCREEN", 0x100L);
-    PyModule_AddIntConstant(m, "BRK_M_BOTTOM", 0x200L);
-    PyModule_AddIntConstant(m, "BRK_M_NOREFRESH", 0x400L);
-    PyModule_AddIntConstant(m, "BRK_M_CLUSTER", 0x800L);
+    PyModule_AddUnsignedLongConstant(m, "BRK_M_SCREEN", 0x100UL);
+    PyModule_AddUnsignedLongConstant(m, "BRK_M_BOTTOM", 0x200UL);
+    PyModule_AddUnsignedLongConstant(m, "BRK_M_NOREFRESH", 0x400UL);
+    PyModule_AddUnsignedLongConstant(m, "BRK_M_CLUSTER", 0x800UL);
     PyModule_AddIntConstant(m, "BRK_S_FLAGS_INPUT", 2);
     PyModule_AddIntConstant(m, "BRK_S_ERASE_LINES", 8);
     return m;
