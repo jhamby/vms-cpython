@@ -32,7 +32,8 @@ GenericAlias = type(list[int])
 
 _names = sys.builtin_module_names
 
-
+if (sys.platform == 'OpenVMS'):
+    import _decc
 
 # Note:  more names are added to __all__ later.
 __all__ = ["altsep", "curdir", "pardir", "sep", "pathsep", "linesep",
@@ -678,6 +679,14 @@ class _Environ(MutableMapping):
             value = self._data[self.encodekey(key)]
         except KeyError:
             # raise KeyError with the original key value
+            if (sys.platform == 'OpenVMS'):
+                try:
+                    value = _decc.getenv(key)
+                    if value != None:
+                        self._data[self.encodekey(key)] = self.encodevalue(value)
+                        return value
+                except:
+                    pass
             raise KeyError(key) from None
         return self.decodevalue(value)
 
@@ -715,12 +724,6 @@ class _Environ(MutableMapping):
 
     def setdefault(self, key, value):
         if key not in self:
-            if (sys.platform == 'OpenVMS'):
-                try:
-                    import _decc
-                    value = _decc.getenv(key, value)
-                except:
-                    pass
             self[key] = value
         return self[key]
 
