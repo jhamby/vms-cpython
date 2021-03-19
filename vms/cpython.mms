@@ -523,6 +523,7 @@ $(PARSER_HEADERS) -
 [.Include.internal]pycore_accu.h -
 [.Include.internal]pycore_atomic.h -
 [.Include.internal]pycore_atomic_funcs.h -
+[.Include.internal]pycore_ast_state.h -
 [.Include.internal]pycore_bitutils.h -
 [.Include.internal]pycore_bytes_methods.h -
 [.Include.internal]pycore_call.h -

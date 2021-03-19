@@ -94,7 +94,8 @@ NOTE: In the interpreter's initialization phase, some globals are currently
 extern "C" {
 #endif
 
-/* Maximum code point of Unicode 6.0: 0x10ffff (1,114,111) */
+// Maximum code point of Unicode 6.0: 0x10ffff (1,114,111).
+// The value must be the same in fileutils.c.
 #define MAX_UNICODE 0x10ffff
 
 #ifdef Py_DEBUG
@@ -1784,8 +1785,8 @@ find_maxchar_surrogates(const wchar_t *begin, const wchar_t *end,
             *maxchar = ch;
             if (*maxchar > MAX_UNICODE) {
                 PyErr_Format(PyExc_ValueError,
-                             "character U+%x is not in range [U+0000; U+10ffff]",
-                             ch);
+                             "character U+%x is not in range [U+0000; U+%x]",
+                             ch, MAX_UNICODE);
                 return -1;
             }
         }
@@ -14089,7 +14090,7 @@ _PyUnicodeWriter_PrepareKindInternal(_PyUnicodeWriter *writer,
     {
     case PyUnicode_1BYTE_KIND: maxchar = 0xff; break;
     case PyUnicode_2BYTE_KIND: maxchar = 0xffff; break;
-    case PyUnicode_4BYTE_KIND: maxchar = 0x10ffff; break;
+    case PyUnicode_4BYTE_KIND: maxchar = MAX_UNICODE; break;
     default:
         Py_UNREACHABLE();
     }
@@ -15657,7 +15658,8 @@ PyTypeObject PyUnicode_Type = {
     0,                            /* tp_setattro */
     0,                            /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
-    Py_TPFLAGS_UNICODE_SUBCLASS,   /* tp_flags */
+        Py_TPFLAGS_UNICODE_SUBCLASS |
+        _Py_TPFLAGS_MATCH_SELF, /* tp_flags */
     unicode_doc,                  /* tp_doc */
     0,                            /* tp_traverse */
     0,                            /* tp_clear */
@@ -15682,7 +15684,7 @@ PyTypeObject PyUnicode_Type = {
 /* Initialize the Unicode implementation */
 
 PyStatus
-_PyUnicode_Init(PyThreadState *tstate)
+_PyUnicode_Init(PyInterpreterState *interp)
 {
     /* XXX - move this array to unicodectype.c ? */
     const Py_UCS2 linebreak[] = {
@@ -15696,12 +15698,12 @@ _PyUnicode_Init(PyThreadState *tstate)
         0x2029, /* PARAGRAPH SEPARATOR */
     };
 
-    struct _Py_unicode_state *state = &tstate->interp->unicode;
+    struct _Py_unicode_state *state = &interp->unicode;
     if (unicode_create_empty_string_singleton(state) < 0) {
         return _PyStatus_NO_MEMORY();
     }
 
-    if (_Py_IsMainInterpreter(tstate)) {
+    if (_Py_IsMainInterpreter(interp)) {
         /* initialize the linebreak bloom filter */
         bloom_linebreak = make_bloom_mask(
             PyUnicode_2BYTE_KIND, linebreak,
@@ -15813,9 +15815,9 @@ PyUnicode_InternFromString(const char *cp)
 
 
 void
-_PyUnicode_ClearInterned(PyThreadState *tstate)
+_PyUnicode_ClearInterned(PyInterpreterState *interp)
 {
-    struct _Py_unicode_state *state = &tstate->interp->unicode;
+    struct _Py_unicode_state *state = &interp->unicode;
     if (state->interned == NULL) {
         return;
     }
@@ -16093,10 +16095,10 @@ error:
 
 
 static PyStatus
-init_stdio_encoding(PyThreadState *tstate)
+init_stdio_encoding(PyInterpreterState *interp)
 {
     /* Update the stdio encoding to the normalized Python codec name. */
-    PyConfig *config = (PyConfig*)_PyInterpreterState_GetConfig(tstate->interp);
+    PyConfig *config = (PyConfig*)_PyInterpreterState_GetConfig(interp);
     if (config_get_codec_name(&config->stdio_encoding) < 0) {
         return _PyStatus_ERR("failed to get the Python codec name "
                              "of the stdio encoding");
@@ -16189,7 +16191,7 @@ _PyUnicode_InitEncodings(PyThreadState *tstate)
         return status;
     }
 
-    return init_stdio_encoding(tstate);
+    return init_stdio_encoding(tstate->interp);
 }
 
 
@@ -16233,9 +16235,9 @@ _PyUnicode_EnableLegacyWindowsFSEncoding(void)
 
 
 void
-_PyUnicode_Fini(PyThreadState *tstate)
+_PyUnicode_Fini(PyInterpreterState *interp)
 {
-    struct _Py_unicode_state *state = &tstate->interp->unicode;
+    struct _Py_unicode_state *state = &interp->unicode;
 
     // _PyUnicode_ClearInterned() must be called before
     assert(state->interned == NULL);
