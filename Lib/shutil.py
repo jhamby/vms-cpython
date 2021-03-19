@@ -11,8 +11,6 @@ import fnmatch
 import collections
 import errno
 
-
-
 try:
     import zlib
     del zlib

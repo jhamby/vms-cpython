@@ -10,7 +10,6 @@ filename = TESTFN
 
 import sys
 
-
 class TestGdbm(unittest.TestCase):
     @staticmethod
     def setUpClass():

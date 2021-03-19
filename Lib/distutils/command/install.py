@@ -20,8 +20,6 @@ from site import USER_SITE
 
 HAS_USER_SITE = (USER_SITE is not None)
 
-
-
 WINDOWS_SCHEME = {
     'purelib': '$base/Lib/site-packages',
     'platlib': '$base/Lib/site-packages',

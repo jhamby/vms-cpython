@@ -51,7 +51,6 @@ if os.name == 'posix':
     })
 
 
-
 class ResourceTracker(object):
 
     def __init__(self):

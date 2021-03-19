@@ -118,8 +118,6 @@ HAVE_GETVALUE = not getattr(_multiprocessing,
 
 WIN32 = (sys.platform == "win32")
 
-
-
 from multiprocessing.connection import wait
 
 def wait_for_handle(handle, timeout):

@@ -16,7 +16,6 @@ from test.support.script_helper import (
 )
 
 
-
 # Debug build?
 Py_DEBUG = hasattr(sys, "gettotalrefcount")
 

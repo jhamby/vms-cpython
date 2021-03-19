@@ -3,8 +3,6 @@ import shutil
 import subprocess
 import sys
 
-
-
 # find_library(name) returns the pathname of a library, or None.
 if os.name == "nt":
 

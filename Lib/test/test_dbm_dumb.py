@@ -17,7 +17,6 @@ _fname = os_helper.TESTFN
 
 import sys
 
-
 def _delete_files():
     for ext in [".dir", ".dat", ".bak"]:
         try:

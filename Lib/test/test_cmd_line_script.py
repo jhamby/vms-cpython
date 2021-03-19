@@ -20,7 +20,6 @@ from test.support.script_helper import (
     make_pkg, make_script, make_zip_pkg, make_zip_script,
     assert_python_ok, assert_python_failure, spawn_python, kill_python)
 
-
 if (sys.platform == 'OpenVMS'):
     import _decc
     def fix_temp(temp_path):

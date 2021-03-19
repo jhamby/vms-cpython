@@ -218,7 +218,7 @@ def open(file, mode="r", buffering=-1, encoding=None, errors=None,
                  (reading and "r" or "") +
                  (writing and "w" or "") +
                  (appending and "a" or "") +
-                 (reopen and "r" or "") +
+                 (reopen and "n" or "") +
                  (updating and "+" or ""),
                  closefd, opener=opener)
     result = raw

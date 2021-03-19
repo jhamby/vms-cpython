@@ -15,7 +15,6 @@ from test.support.os_helper import TESTFN
 from test.support.warnings_helper import check_warnings
 
 
-
 class SysconfigTestCase(support.EnvironGuard, unittest.TestCase):
     def setUp(self):
         super(SysconfigTestCase, self).setUp()

@@ -17,8 +17,6 @@ from distutils.extension import Extension
 from distutils.util import get_platform
 from distutils import log
 
-
-
 from site import USER_BASE
 
 # An extension name is just a dot-separated list of Python NAMEs (ie.

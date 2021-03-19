@@ -11,8 +11,6 @@ from distutils.spawn import spawn
 from distutils.errors import DistutilsExecError
 from distutils.tests import support
 
-
-
 class SpawnTestCase(support.TempdirManager,
                     support.LoggingSilencer,
                     unittest.TestCase):

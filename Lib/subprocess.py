@@ -53,7 +53,6 @@ import contextlib
 from time import monotonic as _time
 import types
 
-
 if (sys.platform == 'OpenVMS'):
     import ctypes
 

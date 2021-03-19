@@ -3400,11 +3400,7 @@ static PPROC FindAddress(void *handle, const char *name, PyObject *type)
        funcname -> _funcname@<n>
        where n is 0, 4, 8, 12, ..., 128
      */
-    #ifndef HAVE_ALLOCA_H
-    mangled_name = malloc(strlen(name) + 1 + 1 + 1 + 3); /* \0 _ @ %d */
-    #else
     mangled_name = alloca(strlen(name) + 1 + 1 + 1 + 3); /* \0 _ @ %d */
-    #endif
     if (!mangled_name)
         return NULL;
     for (i = 0; i < 32; ++i) {
@@ -3413,15 +3409,9 @@ static PPROC FindAddress(void *handle, const char *name, PyObject *type)
         address = (PPROC)GetProcAddress(handle, mangled_name);
         Py_END_ALLOW_THREADS
         if (address) {
-            #ifndef HAVE_ALLOCA_H
-            free(mangled_name);
-            #endif
             return address;
         }
     }
-    #ifndef HAVE_ALLOCA_H
-    free(mangled_name);
-    #endif
     return NULL;
 #endif
 }

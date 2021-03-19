@@ -38,8 +38,6 @@ except ImportError:
 #
 #
 
-
-
 BUFSIZE = 8192
 # A very generous timeout when it comes to local connections...
 CONNECTION_TIMEOUT = 20.

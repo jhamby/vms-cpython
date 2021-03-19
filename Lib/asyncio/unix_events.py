@@ -118,7 +118,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
             signal.signal(sig, _sighandler_noop)
 
             # Set SA_RESTART to limit EINTR occurrences.
-            if not (sys.platform == 'OpenVMS'):
+            if hasattr(signal, 'siginterrupt'): # OpenVMS does not have it
                 signal.siginterrupt(sig, False)
         except OSError as exc:
             del self._signal_handlers[sig]

@@ -6,7 +6,6 @@ import os
 import posixpath
 import re
 import sys
-
 from _collections_abc import Sequence
 from errno import EINVAL, ENOENT, ENOTDIR, EBADF, ELOOP
 if (sys.platform == 'OpenVMS'):

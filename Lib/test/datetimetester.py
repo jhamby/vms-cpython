@@ -37,8 +37,6 @@ import _testcapi
 import _strptime
 #
 
-
-
 pickle_loads = {pickle.loads, pickle._loads}
 
 pickle_choices = [(pickle, pickle, proto)

@@ -35,7 +35,6 @@ import _testinternalcapi
 Py_DEBUG = hasattr(sys, 'gettotalrefcount')
 
 
-
 def decode_stderr(err):
     return err.decode('utf-8', 'replace').replace('\r', '')
 

@@ -29,7 +29,6 @@ from string import Template
 from string import Formatter as StrFormatter
 
 
-
 __all__ = ['BASIC_FORMAT', 'BufferingFormatter', 'CRITICAL', 'DEBUG', 'ERROR',
            'FATAL', 'FileHandler', 'Filter', 'Formatter', 'Handler', 'INFO',
            'LogRecord', 'Logger', 'LoggerAdapter', 'NOTSET', 'NullHandler',

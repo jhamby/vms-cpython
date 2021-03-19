@@ -14,8 +14,6 @@ import os
 import re
 import sys
 
-
-
 from .errors import DistutilsPlatformError
 
 # These are needed in a couple of spots, so just compute them once.

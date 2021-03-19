@@ -372,7 +372,7 @@ vgetargs1_impl(PyObject *compat_args, PyObject *const *stack, Py_ssize_t nargs, 
     if (nargs < min || max < nargs) {
         if (message == NULL)
             PyErr_Format(PyExc_TypeError,
-                         "%.150s%s takes %s %d argument%s (%"PY_FORMAT_SIZE_T"d given)",
+                         "%.150s%s takes %s %d argument%s (%zd given)",
                          fname==NULL ? "function" : fname,
                          fname==NULL ? "" : "()",
                          min==max ? "exactly"
@@ -1179,7 +1179,7 @@ _Py_COMP_DIAG_POP
                     Py_DECREF(s);
                     PyErr_Format(PyExc_ValueError,
                                  "encoded string too long "
-                                 "(%"PY_FORMAT_SIZE_T"d, maximum length %"PY_FORMAT_SIZE_T"d)",
+                                 "(%zd, maximum length %zd)",
                                  (Py_ssize_t)size, (Py_ssize_t)(*psize - 1));
                     RETURN_ERR_OCCURRED;
                 }
@@ -1635,7 +1635,7 @@ vgetargskeywords(PyObject *args, PyObject *kwargs, const char *format,
         /* Adding "keyword" (when nargs == 0) prevents producing wrong error
            messages in some special cases (see bpo-31229). */
         PyErr_Format(PyExc_TypeError,
-                     "%.200s%s takes at most %d %sargument%s (%"PY_FORMAT_SIZE_T"d given)",
+                     "%.200s%s takes at most %d %sargument%s (%zd given)",
                      (fname == NULL) ? "function" : fname,
                      (fname == NULL) ? "" : "()",
                      len,
@@ -1694,7 +1694,7 @@ vgetargskeywords(PyObject *args, PyObject *kwargs, const char *format,
                 else {
                     PyErr_Format(PyExc_TypeError,
                                  "%.200s%s takes %s %d positional argument%s"
-                                 " (%"PY_FORMAT_SIZE_T"d given)",
+                                 " (%zd given)",
                                  (fname == NULL) ? "function" : fname,
                                  (fname == NULL) ? "" : "()",
                                  (min != INT_MAX) ? "at most" : "exactly",
@@ -1779,7 +1779,7 @@ vgetargskeywords(PyObject *args, PyObject *kwargs, const char *format,
     if (skip) {
         PyErr_Format(PyExc_TypeError,
                      "%.200s%s takes %s %d positional argument%s"
-                     " (%"PY_FORMAT_SIZE_T"d given)",
+                     " (%zd given)",
                      (fname == NULL) ? "function" : fname,
                      (fname == NULL) ? "" : "()",
                      (Py_MIN(pos, min) < i) ? "at least" : "exactly",
@@ -2070,7 +2070,7 @@ vgetargskeywordsfast_impl(PyObject *const *args, Py_ssize_t nargs,
         /* Adding "keyword" (when nargs == 0) prevents producing wrong error
            messages in some special cases (see bpo-31229). */
         PyErr_Format(PyExc_TypeError,
-                     "%.200s%s takes at most %d %sargument%s (%"PY_FORMAT_SIZE_T"d given)",
+                     "%.200s%s takes at most %d %sargument%s (%zd given)",
                      (parser->fname == NULL) ? "function" : parser->fname,
                      (parser->fname == NULL) ? "" : "()",
                      len,
@@ -2088,7 +2088,7 @@ vgetargskeywordsfast_impl(PyObject *const *args, Py_ssize_t nargs,
         }
         else {
             PyErr_Format(PyExc_TypeError,
-                         "%.200s%s takes %s %d positional argument%s (%"PY_FORMAT_SIZE_T"d given)",
+                         "%.200s%s takes %s %d positional argument%s (%zd given)",
                          (parser->fname == NULL) ? "function" : parser->fname,
                          (parser->fname == NULL) ? "" : "()",
                          (parser->min < parser->max) ? "at most" : "exactly",
@@ -2148,7 +2148,7 @@ vgetargskeywordsfast_impl(PyObject *const *args, Py_ssize_t nargs,
                 Py_ssize_t min = Py_MIN(pos, parser->min);
                 PyErr_Format(PyExc_TypeError,
                              "%.200s%s takes %s %d positional argument%s"
-                             " (%"PY_FORMAT_SIZE_T"d given)",
+                             " (%zd given)",
                              (parser->fname == NULL) ? "function" : parser->fname,
                              (parser->fname == NULL) ? "" : "()",
                              min < parser->max ? "at least" : "exactly",
@@ -2323,7 +2323,7 @@ _PyArg_UnpackKeywords(PyObject *const *args, Py_ssize_t nargs,
         /* Adding "keyword" (when nargs == 0) prevents producing wrong error
            messages in some special cases (see bpo-31229). */
         PyErr_Format(PyExc_TypeError,
-                     "%.200s%s takes at most %d %sargument%s (%"PY_FORMAT_SIZE_T"d given)",
+                     "%.200s%s takes at most %d %sargument%s (%zd given)",
                      (parser->fname == NULL) ? "function" : parser->fname,
                      (parser->fname == NULL) ? "" : "()",
                      maxargs,
@@ -2341,7 +2341,7 @@ _PyArg_UnpackKeywords(PyObject *const *args, Py_ssize_t nargs,
         }
         else {
             PyErr_Format(PyExc_TypeError,
-                         "%.200s%s takes %s %d positional argument%s (%"PY_FORMAT_SIZE_T"d given)",
+                         "%.200s%s takes %s %d positional argument%s (%zd given)",
                          (parser->fname == NULL) ? "function" : parser->fname,
                          (parser->fname == NULL) ? "" : "()",
                          (minpos < maxpos) ? "at most" : "exactly",
@@ -2354,7 +2354,7 @@ _PyArg_UnpackKeywords(PyObject *const *args, Py_ssize_t nargs,
     if (nargs < minposonly) {
         PyErr_Format(PyExc_TypeError,
                      "%.200s%s takes %s %d positional argument%s"
-                     " (%"PY_FORMAT_SIZE_T"d given)",
+                     " (%zd given)",
                      (parser->fname == NULL) ? "function" : parser->fname,
                      (parser->fname == NULL) ? "" : "()",
                      minposonly < maxpos ? "at least" : "exactly",
@@ -2620,13 +2620,13 @@ _PyArg_CheckPositional(const char *name, Py_ssize_t nargs,
         if (name != NULL)
             PyErr_Format(
                 PyExc_TypeError,
-                "%.200s expected %s%"PY_FORMAT_SIZE_T"d argument%s, got %"PY_FORMAT_SIZE_T"d",
+                "%.200s expected %s%zd argument%s, got %zd",
                 name, (min == max ? "" : "at least "), min, min == 1 ? "" : "s", nargs);
         else
             PyErr_Format(
                 PyExc_TypeError,
-                "unpacked tuple should have %s%"PY_FORMAT_SIZE_T"d element%s,"
-                " but has %"PY_FORMAT_SIZE_T"d",
+                "unpacked tuple should have %s%zd element%s,"
+                " but has %zd",
                 (min == max ? "" : "at least "), min, min == 1 ? "" : "s", nargs);
         return 0;
     }
@@ -2639,13 +2639,13 @@ _PyArg_CheckPositional(const char *name, Py_ssize_t nargs,
         if (name != NULL)
             PyErr_Format(
                 PyExc_TypeError,
-                "%.200s expected %s%"PY_FORMAT_SIZE_T"d argument%s, got %"PY_FORMAT_SIZE_T"d",
+                "%.200s expected %s%zd argument%s, got %zd",
                 name, (min == max ? "" : "at most "), max, max == 1 ? "" : "s", nargs);
         else
             PyErr_Format(
                 PyExc_TypeError,
-                "unpacked tuple should have %s%"PY_FORMAT_SIZE_T"d element%s,"
-                " but has %"PY_FORMAT_SIZE_T"d",
+                "unpacked tuple should have %s%zd element%s,"
+                " but has %zd",
                 (min == max ? "" : "at most "), max, max == 1 ? "" : "s", nargs);
         return 0;
     }

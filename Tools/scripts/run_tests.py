@@ -12,7 +12,6 @@ import sys
 import test.support
 
 
-
 def is_multiprocess_flag(arg):
     return arg.startswith('-j') or arg.startswith('--multiprocess')
 

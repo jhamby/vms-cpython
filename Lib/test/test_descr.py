@@ -21,7 +21,6 @@ except ImportError:
     _testcapi = None
 
 
-
 class OperatorsTest(unittest.TestCase):
 
     def __init__(self, *args, **kwargs):

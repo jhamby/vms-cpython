@@ -740,10 +740,10 @@ class _Processor:
             return 'Alpha' if cpu_number >= 128 else 'VAX'
         except ImportError:
             try:
-                import vms.lib
-                import vms.syidef
-                from vms.ssdef import SS__NORMAL
-                sts, processor, csid = vms.lib.getsyi(vms.syidef.SYI__ARCH_NAME, None)
+                import _lib
+                import _syidef
+                from _ssdef import SS__NORMAL
+                sts, processor, csid = _lib.getsyi(_syidef.SYI__ARCH_NAME, None)
                 if sts == SS__NORMAL:
                     return processor
             except ImportError:

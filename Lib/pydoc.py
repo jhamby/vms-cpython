@@ -76,7 +76,6 @@ from reprlib import Repr
 from traceback import format_exception_only
 
 
-
 # --------------------------------------------------------- common routines
 
 def pathdirs():

@@ -13,7 +13,6 @@ import select
 import sys
 
 
-
 # generic events, that must be mapped to implementation-specific ones
 EVENT_READ = (1 << 0)
 EVENT_WRITE = (1 << 1)

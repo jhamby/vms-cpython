@@ -15,7 +15,6 @@ from distutils.debug import DEBUG
 from distutils import log
 
 
-
 if sys.platform == 'darwin':
     _cfg_target = None
     _cfg_target_split = None

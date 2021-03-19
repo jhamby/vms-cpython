@@ -47,8 +47,6 @@ import struct
 import copy
 import re
 
-
-
 try:
     import pwd
 except ImportError:

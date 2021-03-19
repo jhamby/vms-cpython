@@ -24,7 +24,6 @@ from test.support import bigaddrspacetest, MAX_Py_ssize_t
 from test.support.script_helper import assert_python_failure
 
 
-
 if sys.flags.bytes_warning:
     def check_bytes_warnings(func):
         @functools.wraps(func)
