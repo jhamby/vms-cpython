@@ -281,7 +281,6 @@ _Py_asdl_int_seq_new=PROCEDURE-
 )
 ! Module ast
 SYMBOL_VECTOR=(-
-PyAST_Validate=PROCEDURE,-
 _PyAST_GetDocString=PROCEDURE-
 )
 ! Module ast_opt
@@ -463,8 +462,6 @@ Py_MakePendingCalls=PROCEDURE,-
 Py_SetRecursionLimit=PROCEDURE,-
 _PyEval_AddPendingCall=PROCEDURE,-
 _PyEval_CallTracing=PROCEDURE,-
-_PyEval_EvalCode=PROCEDURE,-
-_PyEval_EvalCodeWithName=PROCEDURE,-
 _PyEval_EvalFrameDefault=PROCEDURE,-
 _PyEval_Fini=PROCEDURE,-
 _PyEval_FiniGIL=PROCEDURE,-

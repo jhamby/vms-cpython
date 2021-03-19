@@ -17217,7 +17217,11 @@ invalid_named_expression_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_named_expression[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "expression ':=' expression"));
+            #ifdef __VMS
+            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION_P ( a , "cannot use assignment expressions with %s" , _PyPegen_get_expr_name ( a ) );
+            #else
             _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "cannot use assignment expressions with %s" , _PyPegen_get_expr_name ( a ) );
+            #endif
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 D(p->level--);
@@ -17270,7 +17274,11 @@ invalid_assignment_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_assignment[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "invalid_ann_assign_target ':' expression"));
+            #ifdef __VMS
+            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION_P ( a , "only single target (not %s) can be annotated" , _PyPegen_get_expr_name ( a ) );
+            #else
             _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "only single target (not %s) can be annotated" , _PyPegen_get_expr_name ( a ) );
+            #endif
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 D(p->level--);
@@ -17426,7 +17434,11 @@ invalid_assignment_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_assignment[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "star_expressions augassign (yield_expr | star_expressions)"));
+            #ifdef __VMS
+            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION_P ( a , "'%s' is an illegal expression for augmented assignment" , _PyPegen_get_expr_name ( a ) );
+            #else
             _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "'%s' is an illegal expression for augmented assignment" , _PyPegen_get_expr_name ( a ) );
+            #endif
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 D(p->level--);

@@ -110,8 +110,6 @@ CC_GETPATH_CFLAGS = $(CC_QUALIFIERS)/DEFINE=("Py_BUILD_CORE",$(GETPATH_DEFINES))
     define kcp  [.Modules._sha3.kcp]
     ! OPENSSL 111
     define openssl ssl111$include:
-    ! SWIG
-    swig :== $swig$root:[bin]swig.exe
     ! SQL
     sqlmod :==  mcr sql$mod
     ! names
@@ -194,7 +192,6 @@ PEGEN_OBJS= -
 [.$(OBJ_DIR).Parser]peg_api.obc
 
 PEGEN_HEADERS= -
-[.Include]parser_interface.h -
 [.Parser]pegen.h -
 [.Parser]string_parser.h
 
@@ -449,19 +446,13 @@ PYTHON_HEADERS= -
 [.Include]namespaceobject.h -
 [.Include]object.h -
 [.Include]objimpl.h -
-[.Include]odictobject.h -
 [.Include]opcode.h -
 [.Include]osdefs.h -
 [.Include]osmodule.h -
 [.Include]patchlevel.h -
-[.Include]picklebufobject.h -
-[.Include]pyarena.h -
 [.Include]pycapsule.h -
-[.Include]pyctype.h -
-[.Include]pydebug.h -
 [.Include]pydtrace.h -
 [.Include]pyerrors.h -
-[.Include]pyfpe.h -
 [.Include]pyframe.h -
 [.Include]pyhash.h -
 [.Include]pylifecycle.h -
@@ -476,7 +467,6 @@ PYTHON_HEADERS= -
 [.Include]pystrtod.h -
 [.Include]pythonrun.h -
 [.Include]pythread.h -
-[.Include]pytime.h -
 [.Include]rangeobject.h -
 [.Include]setobject.h -
 [.Include]sliceobject.h -

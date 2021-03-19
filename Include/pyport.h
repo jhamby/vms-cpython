@@ -103,7 +103,7 @@ typedef intptr_t        Py_intptr_t;
  */
 #ifdef HAVE_PY_SSIZE_T
 
-#elif HAVE_SSIZE_T
+#elif defined(HAVE_SSIZE_T)
 typedef ssize_t         Py_ssize_t;
 #elif SIZEOF_VOID_P == SIZEOF_SIZE_T
 typedef Py_intptr_t     Py_ssize_t;
