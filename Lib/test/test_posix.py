@@ -746,6 +746,7 @@ class PosixTester(unittest.TestCase):
         elif sys.platform == 'OpenVMS':
             if is_system_user():
                 raise unittest.SkipTest("requires non-system user")
+            is_root = False
         else:
             is_root = (uid == 0)
         if is_root:

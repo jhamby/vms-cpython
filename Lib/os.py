@@ -679,14 +679,6 @@ class _Environ(MutableMapping):
             value = self._data[self.encodekey(key)]
         except KeyError:
             # raise KeyError with the original key value
-            if (sys.platform == 'OpenVMS'):
-                try:
-                    value = _decc.getenv(key)
-                    if value != None:
-                        self._data[self.encodekey(key)] = self.encodevalue(value)
-                        return value
-                except:
-                    pass
             raise KeyError(key) from None
         return self.decodevalue(value)
 

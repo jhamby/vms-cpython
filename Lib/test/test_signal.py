@@ -1268,6 +1268,7 @@ class StressTest(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(signal, "SIGUSR1"),
                          "test needs SIGUSR1")
+    @unittest.skipIf(sys.platform == 'OpenVMS', 'OpenVMS crashes on this test')
     def test_stress_modifying_handlers(self):
         # bpo-43406: race condition between trip_signal() and signal.signal
         signum = signal.SIGUSR1
