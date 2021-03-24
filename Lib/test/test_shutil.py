@@ -2580,6 +2580,7 @@ class TestGetTerminalSize(unittest.TestCase):
     @unittest.skipUnless(os.isatty(sys.__stdout__.fileno()), "not on tty")
     @unittest.skipUnless(hasattr(os, 'get_terminal_size'),
                          'need os.get_terminal_size()')
+    @unittest.skipIf(sys.platform == 'OpenVMS', 'OpenVMS has fixed terminal size yet')
     def test_stty_match(self):
         """Check if stty returns the same results ignoring env
 

@@ -3655,7 +3655,6 @@ class ExtendedAttributeTests(unittest.TestCase):
 
 
 @unittest.skipUnless(hasattr(os, 'get_terminal_size'), "requires os.get_terminal_size")
-@unittest.skipIf(sys.platform == 'OpenVMS', 'OpenVMS ')
 class TermsizeTests(unittest.TestCase):
     def test_does_not_crash(self):
         """Check if get_terminal_size() returns a meaningful value.
@@ -3675,6 +3674,7 @@ class TermsizeTests(unittest.TestCase):
         self.assertGreaterEqual(size.columns, 0)
         self.assertGreaterEqual(size.lines, 0)
 
+    @unittest.skipIf(sys.platform == 'OpenVMS', 'OpenVMS has fixed terminal size yet')
     def test_stty_match(self):
         """Check if stty returns the same results
 
