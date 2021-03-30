@@ -2675,7 +2675,7 @@ class AsyncoreEchoServer(threading.Thread):
         def __init__(self, certfile):
             self.certfile = certfile
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.port = socket_helper.bind_port(sock, '127.0.0.1' if sys.platform == 'OpenVMS' else '')
+            self.port = socket_helper.bind_port(sock, '')
             asyncore.dispatcher.__init__(self, sock)
             self.listen(5)
 

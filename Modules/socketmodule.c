@@ -1046,6 +1046,10 @@ setipaddr(const char *name, struct sockaddr *addr_ret, size_t addr_ret_size, int
         hints.ai_family = af;
         hints.ai_socktype = SOCK_DGRAM;         /*dummy*/
         hints.ai_flags = AI_PASSIVE;
+    #ifdef __VMS
+        hints.ai_socktype = SOCK_STREAM;
+        hints.ai_protocol = IPPROTO_TCP;
+    #endif
         Py_BEGIN_ALLOW_THREADS
         error = getaddrinfo(NULL, "0", &hints, &res);
         Py_END_ALLOW_THREADS
@@ -3393,6 +3397,15 @@ sock_getpeername(PySocketSockObject *s, PyObject *Py_UNUSED(ignored))
     Py_BEGIN_ALLOW_THREADS
     res = getpeername(s->sock_fd, SAS2SA(&addrbuf), &addrlen);
     Py_END_ALLOW_THREADS
+#ifdef __VMS
+    // produce an exception when addr is IP4 0.0.0.0
+    if (SAS2SA(&addrbuf)->sa_family == AF_INET &&
+        *(int32_t*)(SAS2SA(&addrbuf)->sa_data + 2) == 0)
+    {
+        errno = 0; // ENOTCONN;
+        res = -1;
+    }
+#endif
     if (res < 0)
         return s->errorhandler();
     return makesockaddr(s->sock_fd, SAS2SA(&addrbuf), addrlen,

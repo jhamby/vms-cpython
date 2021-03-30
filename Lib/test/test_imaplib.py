@@ -78,10 +78,6 @@ class TestImaplib(unittest.TestCase):
 
     def test_imap4_host_default_value(self):
         # Check whether the IMAP4_PORT is truly unavailable.
-        addr = ''
-        if (sys.platform == 'OpenVMS'):
-            # OpenVMS fails on empty address
-            addr = '127.0.0.1'
         with socket.socket() as s:
             try:
                 s.connect(('', imaplib.IMAP4_PORT))

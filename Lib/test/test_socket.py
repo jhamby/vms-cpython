@@ -891,10 +891,7 @@ class GeneralModuleTests(unittest.TestCase):
         # Testing that sendto doesn't mask failures. See #10169.
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.addCleanup(s.close)
-        addr = ''
-        if (sys.platform == 'OpenVMS'):
-            addr = '127.0.0.1'
-        s.bind((addr, 0))
+        s.bind(('', 0))
         sockname = s.getsockname()
         # 2 args
         with self.assertRaises(TypeError) as cm:
@@ -5188,12 +5185,9 @@ class NetworkConnectionAttributesTest(SocketTCPTest, ThreadableTest):
 
     testSourceAddress = _justAccept
     def _testSourceAddress(self):
-        addr = ''
-        if (sys.platform == 'OpenVMS'):
-            addr = '127.0.0.1'
         self.cli = socket.create_connection((HOST, self.port),
                             timeout=support.LOOPBACK_TIMEOUT,
-                            source_address=(addr, self.source_port))
+                            source_address=('', self.source_port))
         self.addCleanup(self.cli.close)
         self.assertEqual(self.cli.getsockname()[1], self.source_port)
         # The port number being used is sufficient to show that the bind()
@@ -6536,10 +6530,7 @@ class CreateServerFunctionalTest(unittest.TestCase):
 
     def test_tcp4(self):
         port = socket_helper.find_unused_port()
-        addr = ''
-        if (sys.platform == 'OpenVMS'):
-            addr = '127.0.0.1'
-        with socket.create_server((addr, port)) as sock:
+        with socket.create_server(("", port)) as sock:
             self.echo_server(sock)
             self.echo_client(("127.0.0.1", port), socket.AF_INET)
 

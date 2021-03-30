@@ -1534,11 +1534,8 @@ class SourceAddressTest(TestCase):
         self.serv = None
 
     def testHTTPConnectionSourceAddress(self):
-        source_address=('', self.source_port)
-        if (os.sys.platform == 'OpenVMS'):
-            source_address=('127.0.0.1', self.source_port)
         self.conn = client.HTTPConnection(HOST, self.port,
-                source_address=source_address)
+                source_address=('', self.source_port))
         self.conn.connect()
         self.assertEqual(self.conn.sock.getsockname()[1], self.source_port)
 

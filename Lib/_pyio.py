@@ -176,10 +176,7 @@ def open(file, mode="r", buffering=-1, encoding=None, errors=None,
     if errors is not None and not isinstance(errors, str):
         raise TypeError("invalid errors: %r" % errors)
     modes = set(mode)
-    allowed_modes = set("axrwb+tU")
-    if (sys.platform == 'OpenVMS'):
-        allowed_modes = set("axrwbn+tU")
-    if modes - allowed_modes or len(mode) > len(modes):
+    if modes - set("axrwb+tU") or len(mode) > len(modes):
         raise ValueError("invalid mode: %r" % mode)
     creating = "x" in modes
     reading = "r" in modes
@@ -188,7 +185,6 @@ def open(file, mode="r", buffering=-1, encoding=None, errors=None,
     updating = "+" in modes
     text = "t" in modes
     binary = "b" in modes
-    reopen = "n" in modes
     if "U" in modes:
         if creating or writing or appending or updating:
             raise ValueError("mode U cannot be combined with 'x', 'w', 'a', or '+'")
@@ -218,7 +214,6 @@ def open(file, mode="r", buffering=-1, encoding=None, errors=None,
                  (reading and "r" or "") +
                  (writing and "w" or "") +
                  (appending and "a" or "") +
-                 (reopen and "n" or "") +
                  (updating and "+" or ""),
                  closefd, opener=opener)
     result = raw
@@ -1519,12 +1514,8 @@ class FileIO(RawIOBase):
 
         if not isinstance(mode, str):
             raise TypeError('invalid mode: %s' % (mode,))
-        if (sys.platform == 'OpenVMS'):
-            if not set(mode) <= set('xrwabn+'):
-                raise ValueError('invalid mode: %s' % (mode,))
-        else:
-            if not set(mode) <= set('xrwab+'):
-                raise ValueError('invalid mode: %s' % (mode,))
+        if not set(mode) <= set('xrwab+'):
+            raise ValueError('invalid mode: %s' % (mode,))
         if sum(c in 'rwax' for c in mode) != 1 or mode.count('+') > 1:
             raise ValueError('Must have exactly one of create/read/write/append '
                              'mode and at most one plus')

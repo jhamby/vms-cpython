@@ -310,10 +310,7 @@ class FTP:
 
     def makeport(self):
         '''Create a new socket and send a PORT command for it.'''
-        if (sys.platform == 'OpenVMS'):
-            sock = socket.create_server(("127.0.0.1", 0), family=self.af, backlog=1)
-        else:
-            sock = socket.create_server(("", 0), family=self.af, backlog=1)
+        sock = socket.create_server(("", 0), family=self.af, backlog=1)
         port = sock.getsockname()[1] # Get proper port
         host = self.sock.getsockname()[0] # Get proper host
         if self.af == socket.AF_INET:

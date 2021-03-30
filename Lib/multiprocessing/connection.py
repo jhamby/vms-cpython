@@ -71,8 +71,6 @@ def arbitrary_address(family):
     Return an arbitrary free address for the given family
     '''
     if family == 'AF_INET':
-        if (sys.platform == 'OpenVMS'):
-            return ('127.0.0.1', 0)
         return ('localhost', 0)
     elif family == 'AF_UNIX':
         # Prefer abstract sockets if possible to avoid problems with the address
