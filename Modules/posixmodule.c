@@ -317,6 +317,7 @@ corresponding Unix manual entries for more information on calls.");
 #  else
 #  ifdef __VMS
      /* OpenVMS */
+#    include "vms/vms_select.h"
 #    define HAVE_EXECV      1
 #    define HAVE_GETEGID    1
 #    define HAVE_GETEUID    1
@@ -9609,8 +9610,6 @@ os_read_impl(PyObject *module, int fd, Py_ssize_t length)
 }
 
 #ifdef __VMS
-extern unsigned long read_pipe_bytes(int fd, char *buf, int size, int* pid_ptr);
-extern int decc$feature_get(const char*, int);
 
 static PyObject *
 os_read_pipe_impl(PyObject *module, int fd)
@@ -9619,7 +9618,7 @@ os_read_pipe_impl(PyObject *module, int fd)
     PyObject *buffer;
     Py_ssize_t length;
 
-    length = decc$feature_get("DECC$PIPE_BUFFER_SIZE", 1);
+    length = 65535;
 
     buffer = PyBytes_FromStringAndSize((char *)NULL, length);
     if (buffer == NULL)
@@ -9627,7 +9626,7 @@ os_read_pipe_impl(PyObject *module, int fd)
 
     int pid = -1;
     Py_BEGIN_ALLOW_THREADS
-    n = read_pipe_bytes(fd, PyBytes_AS_STRING(buffer), length, &pid);
+    n = read_mbx(fd, PyBytes_AS_STRING(buffer), length, &pid);
     Py_END_ALLOW_THREADS
     if (n == -1) {
         Py_DECREF(buffer);

@@ -4,9 +4,10 @@
 #define __NEW_STARLET 1
 
 #include <descrip.h>
+#include <dlfcn.h>
 #include <lib$routines.h>
 #include <starlet.h>
-#include <dlfcn.h>
+#include <unixio.h>
 #include <unixlib.h>
 
 #define ConvertArgToStr(arg, value, size, func_name)            \
@@ -416,6 +417,24 @@ DECC_dlopen_test(
     return PyLong_FromLong(status);
 }
 
+static PyObject*
+DECC_fd_name(
+    PyObject * self,
+    PyObject * args)
+{
+    int fd = 0;
+    if (!PyLong_Check(args)) {
+        _PyArg_BadArgument("fd_name", "args", "long", args);
+        return NULL;
+    }
+    fd = PyLong_AsLong(args);
+    char devicename[256];
+    if (NULL == getname(fd, devicename, sizeof(devicename), 1)) {
+        Py_RETURN_NONE;
+    }
+    return PyUnicode_FromString(devicename);
+}
+
 /********************************************************************
   Module
 */
@@ -439,6 +458,8 @@ static PyMethodDef _module_methods[] = {
         PyDoc_STR("to_vms(unix_path: str, ?allow_wild: boolean, ?no_directory: boolean, ?callback: callable)->[vms_path: str, ...]   to_vms() wrapper")},
     {"dlopen_test", (PyCFunction) DECC_dlopen_test, METH_O,
         PyDoc_STR("dlopen_test(name: str)->status: number   Returns 1 on success")},
+    {"fd_name", (PyCFunction) DECC_fd_name, METH_O,
+        PyDoc_STR("fd_name(fd: int)->name: str   Returns vms name for given fd")},
     {NULL, NULL}
 };
 

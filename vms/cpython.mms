@@ -354,8 +354,9 @@ MODOBJS= -
 # objects that get linked into the Python library
 LIBRARY_OBJS_OMIT_FROZEN= -
 [.$(OBJ_DIR).Modules]getbuildinfo.obc -
-[.$(OBJ_DIR).vms]vms_poll_select_hack.obc -
 [.$(OBJ_DIR).vms]vms_crtl_values.obc -
+[.$(OBJ_DIR).vms]vms_select.obc -
+[.$(OBJ_DIR).vms]vms_spawn_helper.obc -
 $(PARSER_OBJS) -
 $(OBJECT_OBJS) -
 $(PYTHON_OBJS) -
@@ -724,8 +725,9 @@ $(PARSER_HEADERS) -
 [.$(OBJ_DIR).Objects]weakrefobject.obc : [.Objects]weakrefobject.c $(PYTHON_HEADERS)
 
 [.$(OBJ_DIR).Modules]getbuildinfo.obc : [.Modules]getbuildinfo.c $(PYTHON_HEADERS)
-[.$(OBJ_DIR).vms]vms_poll_select_hack.obc : [.vms]vms_poll_select_hack.c $(PYTHON_HEADERS)
 [.$(OBJ_DIR).vms]vms_crtl_values.obc : [.vms]vms_crtl_values.c
+[.$(OBJ_DIR).vms]vms_select.obc : [.vms]vms_select.c [.vms]vms_select.h $(PYTHON_HEADERS)
+[.$(OBJ_DIR).vms]vms_spawn_helper.obc : [.vms]vms_spawn_helper.c [.vms]vms_spawn_helper.h
 
 [.$(OBJ_DIR).Python]frozen.obc : [.Python]frozen.c -
 [.Python]importlib.h -
@@ -1069,7 +1071,7 @@ LIB_DYNLOAD : $(LIBDYNLOAD)
 #resource resource.c	# Jeremy Hylton's rlimit interface
 
 #_posixsubprocess  -DPy_BUILD_CORE_BUILTIN _posixsubprocess.c  # POSIX subprocess module helper
-[.$(OBJ_DIR).Modules]_posixsubprocess.obm : [.Modules]_posixsubprocess.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).Modules]_posixsubprocess.obm : [.Modules]_posixsubprocess.c [.vms]vms_spawn_helper.h $(PYTHON_HEADERS)
 [.$(OUT_DIR).$(DYNLOAD_DIR)]_posixsubprocess.exe : [.$(OBJ_DIR).Modules]_posixsubprocess.obm
 
 # Multimedia modules -- off by default.

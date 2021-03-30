@@ -1044,11 +1044,7 @@ setipaddr(const char *name, struct sockaddr *addr_ret, size_t addr_ret_size, int
         int siz;
         memset(&hints, 0, sizeof(hints));
         hints.ai_family = af;
-    #ifdef __VMS
-        hints.ai_socktype = 0;
-    #else
         hints.ai_socktype = SOCK_DGRAM;         /*dummy*/
-    #endif
         hints.ai_flags = AI_PASSIVE;
         Py_BEGIN_ALLOW_THREADS
         error = getaddrinfo(NULL, "0", &hints, &res);

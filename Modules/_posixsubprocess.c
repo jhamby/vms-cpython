@@ -478,26 +478,62 @@ reset_signal_handlers(const sigset_t *child_sigmask)
 #include <stsdef.h>
 #include <descrip.h>
 #include <lib$routines.h>
+#include <builtins.h>
 
 #include <ffi.h>
 #include "ctypes/ctypes.h"
 
-static void child_complete(int arg) {
-    if (arg) {
-        // arg is a returncode_ast_struct
-        CDataObject *returncode_ast = (CDataObject *)arg;
-        if (returncode_ast->ob_base.ob_refcnt > 1) {
-            // do not call DECREF for the last reference
-            Py_XDECREF(returncode_ast);
+#include "vms/vms_spawn_helper.h"
+#include "vms/vms_select.h"
+
+PyDoc_STRVAR(subprocess_proc_status_doc,
+"proc_status(pid: int, remove = True)\n\
+\n\
+Pop a retcode of a process spawned via lib$spawn.\n\
+\n\
+Returns: tuple (found, status).\n\
+\n\
+");
+
+static PyObject*
+subprocess_proc_status(
+    PyObject *self,
+    PyObject *const *args,
+    Py_ssize_t nargs)
+{
+    if (!_PyArg_CheckPositional("proc_status", nargs, 1, 2)) {
+        return NULL;
+    }
+    if (!PyLong_Check(args[0])) {
+        _PyArg_BadArgument("proc_status", "args[0]", "long", args[0]);
+        return NULL;
+    }
+    int remove = 1;
+    if (nargs > 1 && args[1] != Py_None) {
+        if (args[1] == Py_True) {
+            remove = 1;
+        } else if (args[1] == Py_False) {
+            remove = 0;
+        } else if (PyLong_Check(args[1])) {
+            remove = PyLong_AsLong(args[1]);
         } else {
-            // TODO: decrease reference later
+            _PyArg_BadArgument("proc_status", "args[1]", "bool or long", args[1]);
+            return NULL;
         }
     }
-    return;
+    unsigned int pid = PyLong_AsUnsignedLong(args[0]);
+    int status = -1;
+    int found = (0 == vms_spawn_status(pid, &status, remove));
+    return Py_BuildValue("(Ni)", PyBool_FromLong(found), status);
+}
+
+// set generation on child complete
+static void child_complete(int arg) {
+    vms_spawn_finish((unsigned int *)arg);
 }
 
 static int
-exec_dcl(char *const argv[], int p2cread, int c2pwrite, PyObject* returncode_ast) {
+exec_dcl(char *const argv[], int p2cread, int c2pwrite) {
     int status = -1;
     int pid = -1;
     unsigned char efn = EFN$C_ENF;
@@ -533,7 +569,7 @@ exec_dcl(char *const argv[], int p2cread, int c2pwrite, PyObject* returncode_ast
         ++i;
     }
 
-    char *execute_str = PyMem_Malloc(exec_len + 1);
+    char *execute_str = alloca(exec_len + 1);
 
     i = 1;
     execute_str[0] = 0;
@@ -548,36 +584,28 @@ exec_dcl(char *const argv[], int p2cread, int c2pwrite, PyObject* returncode_ast
     execute.dsc$w_length = strlen(execute_str);
     execute.dsc$a_pointer = (char *)execute_str;
 
-    int *returncode_ast_ref = NULL;
+    unsigned int *ppid, *pfinished;
+    int *pstatus;
 
-    if (returncode_ast) {
-        // keep object
-        Py_XINCREF(returncode_ast);
-        returncode_ast_ref = &((CDataObject *)returncode_ast)->b_value.i;
-    }
+    if (vms_spawn_alloc(&ppid, &pstatus, &pfinished) == 0) {
+        status = lib$spawn(
+            &execute,
+            input_ptr,
+            output_ptr,
+            &flags,
+            NULL,
+            ppid,
+            pstatus,
+            &efn,
+            &child_complete,
+            pfinished);
 
-    status = lib$spawn(
-        &execute,
-        input_ptr,
-        output_ptr,
-        &flags,
-        NULL,
-        &pid,
-        returncode_ast_ref,
-        &efn,
-        &child_complete,
-        returncode_ast);
-
-    if (!$VMS_STATUS_SUCCESS(status)) {
-        pid = -1;
-        if (returncode_ast) {
-            Py_XDECREF(returncode_ast);
+        if ($VMS_STATUS_SUCCESS(status)) {
+            pid = (int)*ppid;
         }
     }
 
-    PyMem_Free(execute_str);
-
-    return (pid);
+    return pid;
 }
 
 static int
@@ -613,8 +641,7 @@ vms_child_exec(char *const exec_array[],
            const void *child_sigmask,
            PyObject *py_fds_to_keep,
            PyObject *preexec_fn,
-           PyObject *preexec_fn_args_tuple,
-           PyObject *returncode_ast)
+           PyObject *preexec_fn_args_tuple)
 {
     int pid = -1;
     int exec_error = 0;
@@ -643,7 +670,7 @@ vms_child_exec(char *const exec_array[],
     decc$set_child_default_dir(cwd);
 
     if (argv && *argv && strcmp(*argv, "DCL") == 0) {
-        pid = exec_dcl(argv, p2cread, c2pwrite, returncode_ast);
+        pid = exec_dcl(argv, p2cread, c2pwrite);
     } else {
         decc$set_child_standard_streams(p2cread, c2pwrite, errwrite);
         pid = vfork();
@@ -929,11 +956,7 @@ do_fork_exec(char *const exec_array[],
              const void *child_sigmask,
              PyObject *py_fds_to_keep,
              PyObject *preexec_fn,
-             PyObject *preexec_fn_args_tuple
-        #ifdef __VMS
-            , PyObject *returncode_ast
-        #endif
-             )
+             PyObject *preexec_fn_args_tuple)
 {
 
     pid_t pid;
@@ -957,8 +980,7 @@ do_fork_exec(char *const exec_array[],
                close_fds, restore_signals, call_setsid,
                call_setgid, gid, call_setgroups, groups_size, groups,
                call_setuid, uid, child_umask, child_sigmask,
-               py_fds_to_keep, preexec_fn, preexec_fn_args_tuple,
-               returncode_ast);
+               py_fds_to_keep, preexec_fn, preexec_fn_args_tuple);
 #else
     {
         pid = fork();
@@ -1020,16 +1042,9 @@ subprocess_fork_exec(PyObject *module, PyObject *args)
     int need_after_fork = 0;
     int saved_errno = 0;
     _posixsubprocessstate *state = get_posixsubprocess_state(module);
-    #ifdef __VMS
-    PyObject *returncode_ast = NULL;
-    #endif
 
     if (!PyArg_ParseTuple(
-        #ifdef __VMS
-            args, "OOpO!OOiiiiiiiiiiOOOiO|O:fork_exec",
-        #else
             args, "OOpO!OOiiiiiiiiiiOOOiO:fork_exec",
-        #endif
             &process_args, &executable_list,
             &close_fds, &PyTuple_Type, &py_fds_to_keep,
             &cwd_obj, &env_list,
@@ -1037,11 +1052,7 @@ subprocess_fork_exec(PyObject *module, PyObject *args)
             &errread, &errwrite, &errpipe_read, &errpipe_write,
             &restore_signals, &call_setsid,
             &gid_object, &groups_list, &uid_object, &child_umask,
-            &preexec_fn
-        #ifdef __VMS
-            , &returncode_ast
-        #endif
-            ))
+            &preexec_fn))
         return NULL;
 
     if ((preexec_fn != Py_None) &&
@@ -1271,11 +1282,7 @@ subprocess_fork_exec(PyObject *module, PyObject *args)
                        close_fds, restore_signals, call_setsid,
                        call_setgid, gid, call_setgroups, num_groups, groups,
                        call_setuid, uid, child_umask, old_sigmask,
-                       py_fds_to_keep, preexec_fn, preexec_fn_args_tuple
-                    #ifdef __VMS
-                       , returncode_ast
-                    #endif
-                       );
+                       py_fds_to_keep, preexec_fn, preexec_fn_args_tuple);
 
     /* Parent (original) process */
     if (pid == -1) {
@@ -1392,6 +1399,9 @@ _posixsubprocess_exec(PyObject *module)
 
 static PyMethodDef module_methods[] = {
     {"fork_exec", subprocess_fork_exec, METH_VARARGS, subprocess_fork_exec_doc},
+#ifdef __VMS
+    {"proc_status", (PyCFunction) subprocess_proc_status, METH_FASTCALL, subprocess_proc_status_doc},
+#endif
     {NULL, NULL}  /* sentinel */
 };
 

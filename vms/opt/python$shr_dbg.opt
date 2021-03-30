@@ -6,6 +6,9 @@ CASE_SENSITIVE=YES
 ! Module Python-ast
 SYMBOL_VECTOR=(-
 vms_set_crtl_values=PROCEDURE,-
+vms_spawn_alloc=PROCEDURE,-
+vms_spawn_finish=PROCEDURE,-
+vms_spawn_status=PROCEDURE,-
 PyAST_Check=PROCEDURE,-
 PyAST_mod2obj=PROCEDURE,-
 PyAST_obj2mod=PROCEDURE,-
@@ -2164,10 +2167,10 @@ SYMBOL_VECTOR=(-
 _Py_Union=PROCEDURE,-
 _Py_union_type_or=PROCEDURE-
 )
-! Module vms_poll_select_hack
+! Module vms_select
 SYMBOL_VECTOR=(-
-g_vms_select=PROCEDURE,-
-read_pipe_bytes=PROCEDURE-
+vms_select=PROCEDURE,-
+read_mbx=PROCEDURE-
 )
 ! Module vms_smg_readline
 SYMBOL_VECTOR=(-

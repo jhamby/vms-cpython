@@ -11,6 +11,10 @@
 #include "Python.h"
 #include "structmember.h"         // PyMemberDef
 
+#ifdef __VMS
+#include "vms/vms_select.h"
+#endif
+
 #ifdef HAVE_SYS_DEVPOLL_H
 #include <sys/resource.h>
 #include <sys/devpoll.h>
@@ -332,8 +336,7 @@ select_select_impl(PyObject *module, PyObject *rlist, PyObject *wlist,
         Py_BEGIN_ALLOW_THREADS
         errno = 0;
     #ifdef __VMS
-        int g_vms_select (int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, struct timeval *timeout);
-        n = g_vms_select(max, &ifdset, &ofdset, &efdset, tvp);
+        n = vms_select(max, &ifdset, &ofdset, &efdset, tvp);
     #else
         n = select(max, &ifdset, &ofdset, &efdset, tvp);
     #endif

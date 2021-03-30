@@ -10,6 +10,10 @@
 extern int winerror_to_errno(int);
 #endif
 
+#ifdef __VMS
+#include "vms/vms_select.h"
+#endif
+
 #ifdef HAVE_LANGINFO_H
 #include <langinfo.h>
 #endif
@@ -1443,6 +1447,11 @@ _Py_open_impl(const char *pathname, int flags, int gil_held)
         Py_DECREF(pathname_obj);
     }
     else {
+#ifdef __VMS
+        if (flags & O_BINARY) {
+            fd = open(pathname, flags & ~O_BINARY, 0, "ctx=bin");
+        } else
+#endif
         fd = open(pathname, flags);
         if (fd < 0)
             return -1;
@@ -1642,8 +1651,6 @@ _Py_fopen_obj(PyObject *path, const char *mode)
 
    Release the GIL to call read(). The caller must hold the GIL. */
 #ifdef __VMS
-extern int decc$feature_get(const char*, int);
-extern unsigned long read_pipe_bytes(int fd, char *buf, int size, int *pid_ptr);
 Py_ssize_t
 _Py_read(int fd, void *buf, size_t count) {
     return _Py_read_pid(fd, buf, count, 0);
@@ -1676,14 +1683,10 @@ _Py_read(int fd, void *buf, size_t count)
         errno = 0;
 #ifdef __VMS
         if (pid) {
-            int mailBoxSize = decc$feature_get("DECC$PIPE_BUFFER_SIZE", 1);
-            if (count > mailBoxSize) {
-                count = mailBoxSize;
-            }
             int writer_pid = 0;
-            n = read_pipe_bytes(fd, buf, count, &writer_pid);
+            n = read_mbx(fd, buf, count, &writer_pid);
             while (n == 0 && pid != writer_pid) {
-                n = read_pipe_bytes(fd, buf, count, &writer_pid);
+                n = read_mbx(fd, buf, count, &writer_pid);
             }
         } else
 #endif
