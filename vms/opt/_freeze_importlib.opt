@@ -109,7 +109,9 @@ python$build_obj:[Modules]getpath.obc
 python$build_obj:[Modules]main.obc
 python$build_obj:[Modules]gcmodule.obc
 python$build_obj:[vms]vms_smg_readline.obc
-python$build_obj:[vms]vms_poll_select_hack.obc
+python$build_obj:[vms]vms_select.obc
+python$build_obj:[vms]vms_read_mbx.obc
+python$build_obj:[vms]vms_spawn_helper.obc
 python$build_obj:[vms]vms_crtl_values.obc
 python$build_obj:[Modules]posixmodule.obb
 python$build_obj:[Modules]_functoolsmodule.obb

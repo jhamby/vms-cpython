@@ -316,7 +316,9 @@ corresponding Unix manual entries for more information on calls.");
 #    define fsync _commit
 #  else
 #  ifdef __VMS
-     /* OpenVMS */
+    #include <iodef.h>
+    #include "vms/vms_read_mbx.h"
+    /* OpenVMS */
 #    define HAVE_EXECV      1
 #    define HAVE_GETEGID    1
 #    define HAVE_GETEUID    1
@@ -9608,68 +9610,6 @@ os_read_impl(PyObject *module, int fd, Py_ssize_t length)
     return buffer;
 }
 
-#ifdef __VMS
-extern unsigned long read_pipe_bytes(int fd, char *buf, int size, int* pid_ptr);
-extern int decc$feature_get(const char*, int);
-
-static PyObject *
-os_read_pipe_impl(PyObject *module, int fd)
-{
-    Py_ssize_t n;
-    PyObject *buffer;
-    Py_ssize_t length;
-
-    length = decc$feature_get("DECC$PIPE_BUFFER_SIZE", 1);
-
-    buffer = PyBytes_FromStringAndSize((char *)NULL, length);
-    if (buffer == NULL)
-        return NULL;
-
-    int pid = -1;
-    Py_BEGIN_ALLOW_THREADS
-    n = read_pipe_bytes(fd, PyBytes_AS_STRING(buffer), length, &pid);
-    Py_END_ALLOW_THREADS
-    if (n == -1) {
-        Py_DECREF(buffer);
-        return NULL;
-    }
-
-    if (n != length)
-        _PyBytes_Resize(&buffer, n);
-
-    return Py_BuildValue("(Ni)", buffer, pid);
-
-}
-
-#define OS_READ_PIPE_METHODDEF    \
-    {"read_pipe", (PyCFunction)(void(*)(void))os_read_pipe, METH_FASTCALL, os_read__doc__},
-
-static PyObject *
-os_read_pipe(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
-{
-    PyObject *return_value = NULL;
-    int fd;
-    Py_ssize_t length;
-
-    if (!_PyArg_CheckPositional("read_pipe", nargs, 1, 1)) {
-        goto exit;
-    }
-    if (PyFloat_Check(args[0])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
-    fd = _PyLong_AsInt(args[0]);
-    if (fd == -1 && PyErr_Occurred()) {
-        goto exit;
-    }
-    return_value = os_read_pipe_impl(module, fd);
-
-exit:
-    return return_value;
-}
-#endif /* __VMS */
-
 #if (defined(HAVE_SENDFILE) && (defined(__FreeBSD__) || defined(__DragonFly__) \
                                 || defined(__APPLE__))) \
     || defined(HAVE_READV) || defined(HAVE_PREADV) || defined (HAVE_PREADV2) \
@@ -10279,7 +10219,7 @@ os_isatty_impl(PyObject *module, int fd)
 #ifdef __VMS
 
 #define OS_PIPE_SOCKET_METHODDEF    \
-    {"pipe_socket", (PyCFunction)(void(*)(void))os_pipe_socket, METH_FASTCALL, os_pipe_socket__doc__},
+    {"pipe_socket", (PyCFunction)os_pipe_socket, METH_NOARGS, os_pipe_socket__doc__},
 
 PyDoc_STRVAR(os_pipe_socket__doc__,
 "pipe_socket($module, /)\n"
@@ -10305,6 +10245,74 @@ os_pipe_socket(PyObject *module, PyObject *Py_UNUSED(ignored))
         return PyErr_SetFromErrno(PyExc_OSError);
 
     return Py_BuildValue("(ii)", fds[0], fds[1]);
+}
+
+#define OS_WRITER_PID_METHODDEF    \
+    {"writer_pid", (PyCFunction)os_writer_pid, METH_O, os_writer_pid__doc__},
+
+PyDoc_STRVAR(os_writer_pid__doc__,
+"writer_pid($module, fd /)\n"
+"--\n"
+"\n"
+"Returns a PID of last writer to MBX");
+
+static PyObject *
+os_writer_pid(
+    PyObject *module,
+    PyObject *args)
+{
+    if (!PyLong_Check(args)) {
+        _PyArg_BadArgument("writer_pid", "args", "long", args);
+        return NULL;
+    }
+    int fd = PyLong_AsLong(args);
+    unsigned int pid = vms_get_writer_pid(fd);
+    return PyLong_FromUnsignedLong(pid);
+}
+
+#define OS_FETCH_MBX_METHODDEF    \
+    {"fetch_output", (PyCFunction) os_fetch_output, METH_FASTCALL, os_fetch_output__doc__},
+
+PyDoc_STRVAR(os_fetch_output__doc__,
+"fetch_output($module, stdout_fd, stderr_fd)\n"
+"--\n"
+"\n"
+"Fetch process output data");
+
+static PyObject*
+os_fetch_output(
+    PyObject *self,
+    PyObject *const *args,
+    Py_ssize_t nargs)
+{
+    if (!_PyArg_CheckPositional("fetch_output", nargs, 2, 2)) {
+        return NULL;
+    }
+    if (!PyLong_Check(args[0])) {
+        _PyArg_BadArgument("fetch_output", "args[0]", "long", args[0]);
+        return NULL;
+    }
+    if (!PyLong_Check(args[1])) {
+        _PyArg_BadArgument("fetch_output", "args[1]", "long", args[1]);
+        return NULL;
+    }
+    int stdout_fd = PyLong_AsLong(args[0]);
+    int stderr_fd = PyLong_AsLong(args[1]);
+    int messages = 0;
+    PyObject *pOut = PyList_New(0);
+    if (!pOut) {
+        return NULL;
+    }
+    PyObject *pErr = PyList_New(0);
+    if (!pErr) {
+        return NULL;
+    }
+
+    Py_BEGIN_ALLOW_THREADS
+    messages = vms_fetch_output(stdout_fd, stderr_fd, pOut, pErr);
+    Py_END_ALLOW_THREADS
+
+    return Py_BuildValue("(NN)", pOut, pErr);
 }
 
 #endif /* __VMS */
@@ -10367,6 +10375,10 @@ os_pipe_impl(PyObject *module)
         Py_BEGIN_ALLOW_THREADS
         res = pipe(fds);
         Py_END_ALLOW_THREADS
+#ifdef __VMS
+        vms_set_target_pid(fds[0], 0);
+        vms_set_target_pid(fds[1], 0);
+#endif
 
         if (res == 0) {
             if (_Py_set_inheritable(fds[0], 0, NULL) < 0) {
@@ -15034,8 +15046,9 @@ static PyMethodDef posix_methods[] = {
     OS_LSEEK_METHODDEF
     OS_READ_METHODDEF
 #ifdef __VMS
-    OS_READ_PIPE_METHODDEF
     OS_PIPE_SOCKET_METHODDEF
+    OS_WRITER_PID_METHODDEF
+    OS_FETCH_MBX_METHODDEF
 #endif
     OS_READV_METHODDEF
     OS_PREAD_METHODDEF
