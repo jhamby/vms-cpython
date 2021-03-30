@@ -1814,15 +1814,15 @@ class Popen(object):
                     fds_to_keep = set(pass_fds)
                     fds_to_keep.add(errpipe_write)
                     self.pid = _posixsubprocess.fork_exec(
-                        args, executable_list,
-                        close_fds, tuple(sorted(map(int, fds_to_keep))),
-                        cwd, env_list,
-                        p2cread, p2cwrite, c2pread, c2pwrite,
-                        errread, errwrite,
-                        errpipe_read, errpipe_write,
-                        restore_signals, start_new_session,
-                        gid, gids, uid, umask,
-                        preexec_fn)
+                            args, executable_list,
+                            close_fds, tuple(sorted(map(int, fds_to_keep))),
+                            cwd, env_list,
+                            p2cread, p2cwrite, c2pread, c2pwrite,
+                            errread, errwrite,
+                            errpipe_read, errpipe_write,
+                            restore_signals, start_new_session,
+                            gid, gids, uid, umask,
+                            preexec_fn)
                     self._child_created = True
                     if (sys.platform == 'OpenVMS'):
                         for pipe in [self.stdout, self.stderr]:
@@ -2086,14 +2086,13 @@ class Popen(object):
                         elif key.fileobj in (self.stdout, self.stderr):
                             if (sys.platform == 'OpenVMS'):
                                 data, pid = os.read_pipe(key.fd)
+                                if not data and self.pid != pid:
+                                    continue
                             else:
                                 data = os.read(key.fd, 32768)
                             if not data:
-                                if (sys.platform == 'OpenVMS') and self.pid != pid:
-                                    continue
-                                else:
-                                    selector.unregister(key.fileobj)
-                                    key.fileobj.close()
+                                selector.unregister(key.fileobj)
+                                key.fileobj.close()
                             self._fileobj2output[key.fileobj].append(data)
 
             self.wait(timeout=self._remaining_time(endtime))

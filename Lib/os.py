@@ -32,9 +32,6 @@ GenericAlias = type(list[int])
 
 _names = sys.builtin_module_names
 
-if (sys.platform == 'OpenVMS'):
-    import _decc
-
 # Note:  more names are added to __all__ later.
 __all__ = ["altsep", "curdir", "pardir", "sep", "pathsep", "linesep",
            "defpath", "name", "path", "devnull", "SEEK_SET", "SEEK_CUR",
