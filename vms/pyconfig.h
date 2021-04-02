@@ -1692,6 +1692,7 @@
 #endif
 
 #define readonly readonly$
+#define _align _align$
 
 #undef O_BINARY
 #define O_BINARY 0100

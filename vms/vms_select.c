@@ -22,6 +22,7 @@
 #include <unixlib.h>
 
 #include "vms/vms_spawn_helper.h"
+#include "vms/vms_select.h"
 
 int vms_channel_lookup(int fd, unsigned short *channel) {
     int status;
@@ -514,7 +515,7 @@ unsigned long read_mbx(int fd, char *buf, int size, int *pid_ptr) {
             } else {
                 nbytes = iosb.iosb$w_bcnt;
                 if (nbytes == 0 ||
-                    (vms_spawn_status(iosb.iosb$l_pid, NULL, 0) == 0 &&
+                    (vms_spawn_status(iosb.iosb$l_pid, NULL, NULL, 0) == 0 &&
                         nbytes < size))
                 {
                     // add EOL if spawned or buffer is empty

@@ -726,7 +726,7 @@ $(PARSER_HEADERS) -
 
 [.$(OBJ_DIR).Modules]getbuildinfo.obc : [.Modules]getbuildinfo.c $(PYTHON_HEADERS)
 [.$(OBJ_DIR).vms]vms_crtl_values.obc : [.vms]vms_crtl_values.c
-[.$(OBJ_DIR).vms]vms_select.obc : [.vms]vms_select.c [.vms]vms_select.h $(PYTHON_HEADERS)
+[.$(OBJ_DIR).vms]vms_select.obc : [.vms]vms_select.c [.vms]vms_select.h [.vms]vms_spawn_helper.h $(PYTHON_HEADERS)
 [.$(OBJ_DIR).vms]vms_spawn_helper.obc : [.vms]vms_spawn_helper.c [.vms]vms_spawn_helper.h
 
 [.$(OBJ_DIR).Python]frozen.obc : [.Python]frozen.c -
