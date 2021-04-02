@@ -1902,8 +1902,10 @@ class Popen(object):
             # refer to anything outside of its local scope.
             if (sys.platform == 'OpenVMS'):
                 # Get return code from AST
-                found, status = _posixsubprocess.proc_status(self.pid, True)
+                found, finished, status = _posixsubprocess.proc_status(self.pid, True)
                 if found:
+                    if not finished:
+                        raise OSError("Process is not finished", errno.EINPROGRESS)
                     def vms_status_convert(code):
                         return {
                             1: 0,   # success

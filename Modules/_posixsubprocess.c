@@ -523,8 +523,9 @@ subprocess_proc_status(
     }
     unsigned int pid = PyLong_AsUnsignedLong(args[0]);
     int status = -1;
-    int found = (0 == vms_spawn_status(pid, &status, remove));
-    return Py_BuildValue("(Ni)", PyBool_FromLong(found), status);
+    unsigned int finished = 0;
+    int found = (0 == vms_spawn_status(pid, &status, &finished, remove));
+    return Py_BuildValue("(NNi)", PyBool_FromLong(found), PyBool_FromLong(finished), status);
 }
 
 // set generation on child complete

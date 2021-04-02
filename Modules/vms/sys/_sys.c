@@ -4,18 +4,19 @@
 
 #define __NEW_STARLET 1
 
+#include <ciadef.h>
+#include <delprcsymdef.h>
 #include <descrip.h>
-#include <starlet.h>
-#include <ssdef.h>
-#include <stsdef.h>
-#include <lib$routines.h>
-#include <iosbdef.h>
 #include <efndef.h>
 #include <gen64def.h>
 #include <iodef.h>
-#include <psldef.h>
-#include <ciadef.h>
+#include <iosbdef.h>
+#include <lib$routines.h>
 #include <opcdef.h>
+#include <psldef.h>
+#include <ssdef.h>
+#include <starlet.h>
+#include <stsdef.h>
 
 #include "modules/vms/ile3/_ile3.h"
 
@@ -1236,6 +1237,50 @@ SYS_forcex(
     return PyLong_FromLong(status);
 }
 
+static PyObject*
+SYS_delprc(
+    PyObject *self,
+    PyObject *const *args,
+    Py_ssize_t nargs)
+{
+    if (!_PyArg_CheckPositional("delprc", nargs, 0, 1)) {
+        return NULL;
+    }
+
+    unsigned int pid = 0, *ppid = NULL;
+    char *prcnam = NULL;
+    Py_ssize_t prcnam_size = 0;
+    if (nargs > 0 && args[0] != Py_None) {
+        if (PyLong_Check(args[0])) {
+            pid = PyLong_AsUnsignedLong(args[0]);
+            ppid = &pid;
+        } else if (PyUnicode_CheckExact(args[0])) {
+            prcnam = (char*)PyUnicode_AsUTF8AndSize(args[0], &prcnam_size);
+        } else if (PyBytes_CheckExact(args[0])) {
+            PyBytes_AsStringAndSize(args[0], &prcnam, &prcnam_size);
+        } else {
+            _PyArg_BadArgument("delprc", "args[0]", "str | bytes | long", args[0]);
+            return NULL;
+        }
+    }
+
+    struct dsc$descriptor_s prcnam_dsc, *pprcnam_dsc = NULL;
+    if (prcnam && prcnam_size) {
+        prcnam_dsc.dsc$w_length = prcnam_size;
+        prcnam_dsc.dsc$b_class = DSC$K_CLASS_S;
+        prcnam_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
+        prcnam_dsc.dsc$a_pointer = prcnam;
+        pprcnam_dsc = &prcnam_dsc;
+    }
+
+    int status = 0;
+    Py_BEGIN_ALLOW_THREADS
+    status = sys$delprc(ppid, pprcnam_dsc, DELPRC$M_NOEXIT);
+    Py_END_ALLOW_THREADS
+
+    return PyLong_FromLong(status);
+}
+
 // unsigned int _rem_ident(unsigned int id)
 static PyObject*
 SYS_rem_ident(
@@ -1792,6 +1837,8 @@ static PyMethodDef _module_methods[] = {
         PyDoc_STR("crelnm(name: str, ?table: str, ?list: ile3list, ?acmode: int, ?attr: int)->status: int   Translates logical name")},
     {"forcex", (PyCFunction) SYS_forcex, METH_FASTCALL,
         PyDoc_STR("forcex(code: int, proc: str | int)->status: int   Forses process exit")},
+    {"delprc", (PyCFunction) SYS_delprc, METH_FASTCALL,
+        PyDoc_STR("delprc(proc: str | int)->status: int   Deletes a process")},
     {"rem_ident", (PyCFunction) SYS_rem_ident, METH_O,
         PyDoc_STR("rem_ident(id: int)->status: int   Removes identifier")},
     {"add_ident", (PyCFunction) SYS_add_ident, METH_FASTCALL,

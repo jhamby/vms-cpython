@@ -318,6 +318,8 @@ corresponding Unix manual entries for more information on calls.");
 #  ifdef __VMS
      /* OpenVMS */
 #    include "vms/vms_select.h"
+#    include "vms/vms_spawn_helper.h"
+#    include <time.h>
 #    define HAVE_EXECV      1
 #    define HAVE_GETEGID    1
 #    define HAVE_GETEUID    1
@@ -8527,6 +8529,37 @@ os_waitpid_impl(PyObject *module, pid_t pid, int options)
     int async_err = 0;
     WAIT_TYPE status;
     WAIT_STATUS_INT(status) = 0;
+
+#ifdef __VMS
+    unsigned int finished = 0;
+    if (pid > 0 && (0 == vms_spawn_status(pid, &status, &finished, 0))) {
+        // the child is spawned by lib$spawn
+        if (finished) {
+            if (status == -1) {
+                return NULL;
+            }
+            // status is set, return (pid, status)
+            return Py_BuildValue("Ni", PyLong_FromPid(pid), WAIT_STATUS_INT(status));
+        }
+        if (options & WNOHANG) {
+            // status is not set, return (0,0)
+            return Py_BuildValue("Ni", PyLong_FromPid(0), 0);
+        }
+        while (finished == 0) {
+            struct timespec delay, remain;
+            delay.tv_sec = 0;
+            delay.tv_nsec = 50000;   // 50 millseconds
+            Py_BEGIN_ALLOW_THREADS
+            nanosleep(&delay, &remain);
+            Py_END_ALLOW_THREADS
+            vms_spawn_status(pid, &status, &finished, 0);
+        }
+        if (status == -1) {
+            return NULL;
+        }
+        return Py_BuildValue("Ni", PyLong_FromPid(pid), WAIT_STATUS_INT(status));
+    }
+#endif
 
     do {
         Py_BEGIN_ALLOW_THREADS

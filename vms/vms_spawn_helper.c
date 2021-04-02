@@ -3,32 +3,33 @@
 #include <builtins.h>
 
 #define MAX_SPAWN 256
-unsigned int    _vms_spawn_pid[MAX_SPAWN];
-int             _vms_spawn_status[MAX_SPAWN];
-unsigned int    _vms_spawn_finished[MAX_SPAWN];
 
-static unsigned long _finished = 1;
-static unsigned long _table_init = 0;   // 0 - uninitialized, 1 - initialization, 2 - initializes
+unsigned int    _pid[MAX_SPAWN];
+int             _status[MAX_SPAWN];
+unsigned int    _finished[MAX_SPAWN];
+
+static unsigned long _finished_counter = 1;
+static unsigned long _initialized = 0;   // 0 - uninitialized, 1 - initialization, 2 - initializes
 
 static int _init_pos(int pos, unsigned int **pppid, int **ppstatus, unsigned int **ppfinished) {
-    _vms_spawn_pid[pos] = -1;
-    _vms_spawn_status[pos] = -1;
-    _vms_spawn_finished[pos] = 0;
-    *pppid = _vms_spawn_pid + pos;
-    *ppstatus = _vms_spawn_status + pos;
-    *ppfinished = _vms_spawn_finished + pos;
+    _pid[pos] = -1;
+    _status[pos] = -1;
+    _finished[pos] = 0;
+    *pppid = _pid + pos;
+    *ppstatus = _status + pos;
+    *ppfinished = _finished + pos;
     return 0;
 }
 
 int vms_spawn_alloc(unsigned int **pppid, int **ppstatus, unsigned int **ppfinished) {
     // init table
-    if (__CMP_SWAP_LONG(&_table_init, 0, 1)) {
-        memset(_vms_spawn_pid, 0, sizeof(_vms_spawn_pid));
-        memset(_vms_spawn_status, -1, sizeof(_vms_spawn_status));
-        memset(_vms_spawn_finished, 0, sizeof(_vms_spawn_finished));
-        ++_table_init;
+    if (__CMP_SWAP_LONG(&_initialized, 0, 1)) {
+        memset(_pid, 0, sizeof(_pid));
+        memset(_status, -1, sizeof(_status));
+        memset(_finished, 0, sizeof(_finished));
+        ++_initialized;
     } else {
-        while(_table_init == 1) {
+        while(_initialized == 1) {
             ;
         }
     }
@@ -36,19 +37,21 @@ int vms_spawn_alloc(unsigned int **pppid, int **ppstatus, unsigned int **ppfinis
     while(1) {
         int pos = -1;
         unsigned int oldest = 0xffffffff;
+        unsigned int oldest_pid = 0;
         for(int i = 0; i < MAX_SPAWN; ++i) {
-            if (__CMP_SWAP_LONG(_vms_spawn_pid + i, 0, -1)) {
+            if (__CMP_SWAP_LONG(_pid + i, 0, -1)) {
                 // found an empty position
                 return _init_pos(i, pppid, ppstatus, ppfinished);
             }
-            if (_vms_spawn_finished[i] == 0) {
+            if (_finished[i] == 0) {
                 // pid is set, process is not finished
                 continue;
             }
             // pid is set, process is finished, so find the oldest
-            if (_vms_spawn_finished[i] < oldest) {
+            if (_finished[i] < oldest && _pid[i] != 0xffffffff) {
                 pos = i;
-                oldest = _vms_spawn_finished[pos];
+                oldest = _finished[pos];
+                oldest_pid = _pid[pos];
             }
         }
         if (pos == -1) {
@@ -56,7 +59,7 @@ int vms_spawn_alloc(unsigned int **pppid, int **ppstatus, unsigned int **ppfinis
             continue;
         }
         // found the oldest finished process, which retcode is not poped, so overwrite it
-        if (__CMP_SWAP_LONG(_vms_spawn_finished + pos, oldest, 0)) {
+        if (__CMP_SWAP_LONG(_pid + pos, oldest_pid, -1)) {
             return _init_pos(pos, pppid, ppstatus, ppfinished);
         }
         // someone beat us here, do another try
@@ -65,15 +68,17 @@ int vms_spawn_alloc(unsigned int **pppid, int **ppstatus, unsigned int **ppfinis
 }
 
 int vms_spawn_finish(unsigned int *pfinished) {
-    if (pfinished >= _vms_spawn_finished && pfinished < _vms_spawn_finished + MAX_SPAWN) {
-        *pfinished = __ATOMIC_INCREMENT_LONG(&_finished);
+    if (pfinished >= _finished && pfinished < _finished + MAX_SPAWN) {
+        *pfinished = __ATOMIC_INCREMENT_LONG(&_finished_counter);
         if (*pfinished == 0) {
             // regenerate generations, from 1 to MAX
             for(int i = 0; i < MAX_SPAWN; ++i) {
-                _vms_spawn_finished[i] = __ATOMIC_INCREMENT_LONG(&_finished);
+                if (_finished[i]) {
+                    _finished[i] = __ATOMIC_INCREMENT_LONG(&_finished_counter);
+                }
             }
             // set current as latest
-            *pfinished = __ATOMIC_INCREMENT_LONG(&_finished);
+            *pfinished = __ATOMIC_INCREMENT_LONG(&_finished_counter);
         }
         return 0;
     }
@@ -82,15 +87,18 @@ int vms_spawn_finish(unsigned int *pfinished) {
 
 /* Returns 0 if PID is found
 */
-int vms_spawn_status(unsigned int pid, int *pstatus, int free) {
+int vms_spawn_status(unsigned int pid, int *pstatus, unsigned int *pfinished, int free) {
     for(int i = 0; i < MAX_SPAWN; ++i) {
-        if (_vms_spawn_pid[i] == pid) {
+        if (_pid[i] == pid) {
             if (pstatus) {
-                *pstatus = _vms_spawn_status[i];
+                *pstatus = _status[i];
+            }
+            if (pfinished) {
+                *pfinished = _finished[i];
             }
             if (free) {
-                _vms_spawn_finished[i] = 0;
-                _vms_spawn_pid[i] = 0;
+                _finished[i] = 0;
+                _pid[i] = 0;
             }
             return 0;
         }
