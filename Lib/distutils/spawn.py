@@ -72,7 +72,13 @@ def spawn(cmd, search_path=1, verbose=0, dry_run=0):
                        MACOSX_DEPLOYMENT_TARGET=cur_target)
 
     try:
-        proc = subprocess.Popen(cmd, env=env, shell=True if sys.platform == 'OpenVMS' else False)
+        if (sys.platform == 'OpenVMS'):
+            try:
+                proc = subprocess.Popen(cmd, env=env, shell=False)
+            except OSError:
+                proc = subprocess.Popen(cmd, env=env, shell=True)
+        else:
+            proc = subprocess.Popen(cmd, env=env)
         proc.wait()
         exitcode = proc.returncode
     except OSError as exc:
