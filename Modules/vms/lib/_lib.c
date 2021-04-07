@@ -740,6 +740,73 @@ LIB_delete_symbol(
     return PyLong_FromLong(status);
 }
 
+unsigned int get_crc_code(
+    char *name,
+    unsigned short len)
+{
+    static const int _crc_table[16] = {
+        0x00000000, 0x1DB71064, 0x3B6E20C8, 0x26D930AC,
+        0x76DC4190, 0x6B6B51F4, 0x4DB26158, 0x5005713C,
+        0xEDB88320, 0xF00F9344, 0xD6D6A3E8, 0xCB61B38C,
+        0x9B64C2B0, 0x86D3D2D4, 0xA00AE278, 0xBDBDF21C
+        };
+
+    struct dsc$descriptor_s crc_stream;
+    unsigned   crc_result  = 0;
+    int       initial_crc = -1;
+
+    crc_stream.dsc$w_length = len;
+    crc_stream.dsc$b_dtype = DSC$K_DTYPE_T;
+    crc_stream.dsc$b_class = DSC$K_CLASS_S;
+    crc_stream.dsc$a_pointer = name;
+
+    crc_result = lib$crc((int *) _crc_table,
+        &initial_crc,
+        &crc_stream);
+
+    return crc_result;
+}
+
+void fill_crc(
+    char *buffer,
+    unsigned short start,
+    unsigned short len,
+    unsigned int crc)
+{
+    static char crc_converter[] = "0123456789abcdefghijklmnopqrstuv";
+    int mask = 0x00000001f;
+    unsigned int temp = crc;
+    unsigned int digit = 0;
+    int i;
+
+    for (i = start + len - 1; i >= start; --i) {
+        digit = temp & mask;
+        buffer[i] = crc_converter[digit];
+        temp = temp >> 5;
+    }
+}
+
+static PyObject*
+LIB_shorten_name(
+    PyObject * self,
+    PyObject * args)
+{
+    char *name = NULL;
+    Py_ssize_t size = 0;
+
+    ConvertArgToStr(args, name, size, "shorten_name");
+
+    if (31 < size && size < 65535) {
+        unsigned int crc = get_crc_code(name, (unsigned short)size);
+        char buffer[32];
+        memmove(buffer, name, 23);
+        fill_crc(buffer, 23, 7, crc);
+        buffer[30] = '$';
+        buffer[31] = 0;
+        return PyUnicode_FromString(buffer);
+    }
+    return PyUnicode_FromString(name);
+}
 
 /********************************************************************
   Module
@@ -774,6 +841,8 @@ static PyMethodDef _module_methods[] = {
         PyDoc_STR("set_symbol(name: str, value: str)->status: number   Sets DCL local symbol")},
     {"delete_symbol", (PyCFunction) LIB_delete_symbol, METH_O,
         PyDoc_STR("delete_symbol(name: str)->status: number   Returns DCL symbol")},
+    {"shorten_name", (PyCFunction) LIB_shorten_name, METH_O,
+        PyDoc_STR("shorten_name(name: str)->short_name: str   Shorten the name for LINK")},
     {NULL, NULL}
 };
 

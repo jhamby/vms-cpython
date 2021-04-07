@@ -28,8 +28,8 @@ from distutils import log
 import subprocess
 
 if sys.platform == 'OpenVMS':
-    import vms.decc
-
+    import _decc
+    import _lib
 
 class OpenVMSCCompiler(CCompiler):
 
@@ -137,12 +137,7 @@ class OpenVMSCCompiler(CCompiler):
                     else:
                         pp_define.append("%s=%s" % macro)
 
-        pp_opts = [ \
-            '/NAMES=(AS_IS,SHORTENED)',
-            '/WARNINGS=WARNINGS=ALL',
-            # '/WARNINGS=ERRORS=IMPLICITFUNC',
-            # '/L_DOUBLE_SIZE=64',    # float128(nan) == inf
-            ]
+        pp_opts = []
         if len(pp_undefine):
             pp_opts.append("/UNDEFINE=(" + ",".join(pp_undefine) + ")")
         if len(pp_define):
@@ -160,11 +155,11 @@ class OpenVMSCCompiler(CCompiler):
     def _get_cc_args(self, pp_opts, debug, before):
         """ Generate C compiler qualifiers
         """
-        cc_args = []
+        cc_args = ["/NAMES=(AS_IS,SHORTENED)"]
         if debug:
-            cc_args.append("/DEBUG/NOOPTIMIZE")
+            cc_args += ["/DEBUG/NOOPTIMIZE", "/WARNINGS=WARNINGS=ALL"]
         else:
-            cc_args.append("/NODEBUG/OPTIMIZE")
+            cc_args += ["/NODEBUG/OPTIMIZE", "/WARNINGS=DISABLE=ALL"]
 
         if before:
             cc_args[:0] = before
@@ -175,12 +170,21 @@ class OpenVMSCCompiler(CCompiler):
         lang = self.detect_language(src)
         if lang == "c++":
             compiler = self.compiler_cxx
+            pp_opts = pp_opts[:]
+            patched_def_opt = '__USE_STD_IOSTREAM'
+            for opt in pp_opts:
+                if opt.startswith('/DEFINE=('):
+                    patched_def_opt = opt[9:-1] + ',' + patched_def_opt
+                    break
+            pp_opts.append(f'/DEFINE=({patched_def_opt})')
         else:
             compiler = self.compiler_c
+            cc_args = cc_args[:]
+            cc_args.append('/ACCEPT=NOVAXC_KEYWORDS')
 
         try:
-            src_vms = vms.decc.to_vms(src, 0, 0)[0]
-            obj_vms = vms.decc.to_vms(obj, 0, 0)[0]
+            src_vms = _decc.to_vms(src, 0, 0)[0]
+            obj_vms = _decc.to_vms(obj, 0, 0)[0]
             cmd_list = compiler + cc_args + pp_opts + extra_postargs + [src_vms, '/OBJECT=' + obj_vms]
             self.spawn(cmd_list)
         except DistutilsExecError as msg:
@@ -195,10 +199,10 @@ class OpenVMSCCompiler(CCompiler):
 
         if self._need_link(objects, output_filename):
             self.mkpath(os.path.dirname(output_filename))
-            output_filename_vms = vms.decc.to_vms(output_filename, 0, 0)[0]
+            output_filename_vms = _decc.to_vms(output_filename, 0, 0)[0]
             self.spawn(self.archiver + ['/CREATE', output_filename_vms])
             for input_name in objects + self.objects:
-                input_name_vms = vms.decc.to_vms(input_name, 0, 0)[0]
+                input_name_vms = _decc.to_vms(input_name, 0, 0)[0]
                 self.spawn(self.archiver + [output_filename_vms, input_name_vms])
         else:
             log.debug("skipping %s (up-to-date)", output_filename)
@@ -228,7 +232,7 @@ class OpenVMSCCompiler(CCompiler):
             opt_lines = []
 
             for obj_file in objects:
-                obj_file_vms = vms.decc.to_vms(obj_file, 0, 0)[0]
+                obj_file_vms = _decc.to_vms(obj_file, 0, 0)[0]
                 opt_lines.append(obj_file_vms)
 
             vms_libraries_set = set()
@@ -245,7 +249,7 @@ class OpenVMSCCompiler(CCompiler):
                         if re.search(r'[:\[\]]', lib_file):
                             lib_file_vms = lib_file
                         else:
-                            lib_file_vms = vms.decc.to_vms(lib_file, 0, 0)[0]
+                            lib_file_vms = _decc.to_vms(lib_file, 0, 0)[0]
                 if not lib_file_vms:
                     # find the library in the library_dirs
                     for lib_dir in library_dirs:
@@ -255,7 +259,7 @@ class OpenVMSCCompiler(CCompiler):
                                 st = os.stat(lib_path)
                                 if not stat.S_ISDIR(st.st_mode):
                                     lib_file_ext = lib_ext
-                                    lib_file_vms = vms.decc.to_vms(lib_path, 0, 0)[0]
+                                    lib_file_vms = _decc.to_vms(lib_path, 0, 0)[0]
                                     break
                             except:
                                 pass
@@ -271,31 +275,11 @@ class OpenVMSCCompiler(CCompiler):
             opt_lines.append('GSMATCH=LEQUAL,1,0')
             opt_lines.append('CASE_SENSITIVE=YES')
 
-            proc_names = dict()
-            try:
-                import _rms
-                from vms.fabdef import FAB_M_GET, FAB_M_SHRGET
-                from vms.rmsdef import RMS__EOF
-                repository = _rms.file('[.CXX_REPOSITORY]CXX$DEMANGLER_DB', fac=FAB_M_GET, shr=FAB_M_SHRGET)
-                while(1):
-                    s, r = repository.fetch()
-                    if r == None or s == RMS__EOF:
-                        break
-                    r = r.decode()
-                    full_name = r[31:]
-                    short_name = r[:31]
-                    proc_names[full_name] = short_name
-                repository.close()
-            except Exception as ex:
-                if verbose:
-                    print(ex)
-                pass
-
             def shorten_name(name):
                 if len(name) <= 31:
                     return name
                 try:
-                    return proc_names[name]
+                    return _lib.shorten_name(name)
                 except:
                     return name[:31]
 
@@ -313,15 +297,15 @@ class OpenVMSCCompiler(CCompiler):
 
             opt_file.write(('\n'.join(opt_lines)).encode())
             opt_file.close()
-            opt_name_vms = vms.decc.to_vms(opt_file.name, 0, 0)[0]
+            opt_name_vms = _decc.to_vms(opt_file.name, 0, 0)[0]
 
             link_output_qualifier = '/EXECUTABLE=' if target_desc == CCompiler.EXECUTABLE else '/SHAREABLE='
-            output_filename_vms = vms.decc.to_vms(output_filename, 0, 0)[0]
+            output_filename_vms = _decc.to_vms(output_filename, 0, 0)[0]
             ld_args = [link_output_qualifier + output_filename_vms, opt_name_vms + "/OPTIONS"]
 
             if debug:
                 map_file, _ = os.path.splitext(output_filename)
-                map_file_vms = vms.decc.to_vms(map_file + '.MAP', 0, 0)[0]
+                map_file_vms = _decc.to_vms(map_file + '.MAP', 0, 0)[0]
                 ld_args[:0] = ['/DEBUG/MAP=' + map_file_vms]
 
             if extra_preargs:
