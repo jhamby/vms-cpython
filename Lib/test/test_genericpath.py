@@ -246,12 +246,17 @@ class GenericTest:
     def test_samefile_on_symlink(self):
         self._test_samefile_on_link_func(os.symlink)
 
-    @unittest.skipIf(sys.platform == 'OpenVMS', 'OSError: [Errno 76] function not implemented')
     def test_samefile_on_link(self):
         try:
             self._test_samefile_on_link_func(os.link)
         except PermissionError as e:
             self.skipTest('os.link(): %s' % e)
+        except OSError as e:
+            # OpenVMS might return 'not implemented'
+            if sys.platform == 'OpenVMS' and e.errno == errno.ENOSYS:
+                self.skipTest('os.link(): %s' % e)
+            else:
+                raise e
 
     def test_samestat(self):
         test_fn1 = os_helper.TESTFN
