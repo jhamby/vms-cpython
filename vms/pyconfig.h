@@ -207,15 +207,15 @@
 
 /* Define to 1 if you have the declaration of `isfinite', and to 0 if you
    don't. */
-#define HAVE_DECL_ISFINITE 1
+#define HAVE_DECL_ISFINITE 0
 
 /* Define to 1 if you have the declaration of `isinf', and to 0 if you don't.
    */
-#undef HAVE_DECL_ISINF
+#define HAVE_DECL_ISINF 0
 
 /* Define to 1 if you have the declaration of `isnan', and to 0 if you don't.
    */
-#define HAVE_DECL_ISNAN 1
+#define HAVE_DECL_ISNAN 0
 
 /* Define to 1 if you have the declaration of `RTLD_DEEPBIND', and to 0 if you
    don't. */
@@ -360,7 +360,7 @@
 #undef HAVE_FEXECVE
 
 /* Define to 1 if you have the `finite' function. */
-#define HAVE_FINITE 1
+#undef HAVE_FINITE
 
 /* Define to 1 if you have the `flock' function. */
 #undef HAVE_FLOCK

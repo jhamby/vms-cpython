@@ -41,7 +41,7 @@ class BaseTestCase(unittest.TestCase):
         DECC.sleep(1)
         diff = time.time() - start
         self.assertGreaterEqual(diff, 1)
-        self.assertLess(diff, 1.01)
+        self.assertLess(diff, 2)
 
     def test_sysconf(self):
         """ try to get PAGESIZE """

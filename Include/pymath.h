@@ -29,11 +29,17 @@ extern double hypot(double, double);
 /* extra declarations */
 #ifndef _MSC_VER
 #ifndef __STDC__
+#if defined(__VMS) && defined(__NAMESPACE_STD)
+namespace std {
+#endif
 extern double fmod (double, double);
 extern double frexp (double, int *);
 extern double ldexp (double, int);
 extern double modf (double, double *);
 extern double pow(double, double);
+#if defined(__VMS) && defined(__NAMESPACE_STD)
+} /* namespace std */
+#endif
 #endif /* __STDC__ */
 #endif /* _MSC_VER */
 
@@ -83,6 +89,41 @@ PyAPI_FUNC(double) _Py_force_double(double);
 PyAPI_FUNC(unsigned short) _Py_get_387controlword(void);
 PyAPI_FUNC(void) _Py_set_387controlword(unsigned short);
 #endif
+#endif
+
+/* Pre-define Py_IS_NAN(X), Py_IS_INFINITY(X) and Py_IS_FINITE(x)
+*/
+#ifdef __VMS
+#   undef Py_IS_NAN
+#   undef Py_IS_INFINITY
+#   undef Py_IS_FINITE
+#ifdef __cplusplus
+extern "C" {
+#endif
+    int fp_classf( float __x );
+    int fp_class( double __x );
+    int fp_classl( long double __x );
+#ifdef __cplusplus
+}
+#endif
+#   define Py_IS_NAN(x)                 \
+        (sizeof(x)==sizeof(float)       \
+            ? fp_classf(x)>>1 == 0      \
+            : sizeof(x)==sizeof(double) \
+                ? fp_class(x)>>1 == 0   \
+                : fp_classl(x)>>1 == 0)
+#   define Py_IS_INFINITY(x)            \
+        (sizeof(x)==sizeof(float)       \
+            ? fp_classf(x)>>1 == 1      \
+            : sizeof(x)==sizeof(double) \
+                ? fp_class(x)>>1 == 1   \
+                : fp_classl(x)>>1 == 1)
+#   define Py_IS_FINITE(x)              \
+        (sizeof(x)==sizeof(float)       \
+            ? fp_classf(x)>>1 > 1       \
+            : sizeof(x)==sizeof(double) \
+                ? fp_class(x)>>1 > 1    \
+                : fp_classl(x)>>1 > 1)
 #endif
 
 /* Py_IS_NAN(X)

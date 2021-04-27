@@ -780,7 +780,7 @@ PyMODINIT_FUNC PyInit__dtr(void)
     PyModule_AddIntConstant(m, "DTR_K_INF_FLD_CNT", DTR$K_INF_FLD_CNT);
     PyModule_AddIntConstant(m, "DTR_K_INF_FLD_LIST", DTR$K_INF_FLD_LIST);
     PyModule_AddIntConstant(m, "DTR_K_INF_FLD_REDEFINES", DTR$K_INF_FLD_REDEFINES);
-    PyModule_AddUnsignedLongConstant(m, "DTR_K_INF_FLD_VIRTUAL", DTR$K_INF_FLD_VIRTUAUL);
+    PyModule_AddIntConstant(m, "DTR_K_INF_FLD_VIRTUAL", DTR$K_INF_FLD_VIRTUAL);
     PyModule_AddIntConstant(m, "DTR_K_INF_FLD_FILLER", DTR$K_INF_FLD_FILLER);
     PyModule_AddIntConstant(m, "DTR_K_INF_FLD_MISSING", DTR$K_INF_FLD_MISSING);
     PyModule_AddIntConstant(m, "DTR_K_INF_FLD_MISSING_TXT", DTR$K_INF_FLD_MISSING_TXT);
