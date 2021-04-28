@@ -36,7 +36,7 @@ PYTHON$SHR_OPT = PYTHON$SHR
 
 DYNLOAD_DIR = lib-dynload
 PLATFORM = OpenVMS
-SOABI = cpython-3a-ia64-openvms
+SOABI = cpython-310-ia64-openvms
 
 CC_QUALIFIERS = -
 $(CC_QUALIFIERS)-
