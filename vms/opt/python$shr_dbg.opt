@@ -590,6 +590,7 @@ _PyContext_NewHamtForTests=PROCEDURE-
 )
 ! Module descrobject
 SYMBOL_VECTOR=(-
+PyDescr_IsData=PROCEDURE,-
 PyDescr_NewClassMethod=PROCEDURE,-
 PyDescr_NewGetSet=PROCEDURE,-
 PyDescr_NewMember=PROCEDURE,-
