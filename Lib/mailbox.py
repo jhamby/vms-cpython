@@ -772,7 +772,7 @@ class _singlefileMailbox(Mailbox):
             self._file.truncate(before)
             raise
         self._file.flush()
-        if (os.sys.platform == 'OpenVMS'):
+        if (sys.platform == 'OpenVMS'):
             try:
                 os.fsync(self._file.fileno())
             except:

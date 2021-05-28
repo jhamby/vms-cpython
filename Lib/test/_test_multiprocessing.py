@@ -5108,7 +5108,7 @@ class TestStartMethod(unittest.TestCase):
             self.fail("failed spawning forkserver or grandchild")
 
 
-@unittest.skipIf(sys.platform == "win32" or (sys.platform == 'OpenVMS'),
+@unittest.skipIf(sys.platform == "win32",
                  "test semantics don't make sense on Windows")
 class TestResourceTracker(unittest.TestCase):
 

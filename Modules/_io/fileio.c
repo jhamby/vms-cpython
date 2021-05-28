@@ -68,17 +68,9 @@ typedef struct {
     unsigned int blksize;
     PyObject *weakreflist;
     PyObject *dict;
-#ifdef __VMS
-    int is_a_pipe;
-    int pid;
-#endif
 } fileio;
 
 PyTypeObject PyFileIO_Type;
-
-#ifdef __VMS
-extern int isapipe(int);
-#endif
 
 _Py_IDENTIFIER(name);
 
@@ -377,9 +369,6 @@ _Py_COMP_DIAG_POP
     if (fd >= 0) {
         self->fd = fd;
         self->closefd = closefd;
-#ifdef __VMS
-        self->is_a_pipe = (isapipe(fd) == 1);
-#endif
     }
     else {
         self->closefd = 1;
@@ -659,11 +648,6 @@ _io_FileIO_readinto_impl(fileio *self, Py_buffer *buffer)
         return err_closed();
     if (!self->readable)
         return err_mode("reading");
-#ifdef __VMS
-    if (self->is_a_pipe) {
-        n = _Py_read_pid(self->fd, buffer->buf, buffer->len, self->pid);
-    } else
-#endif /* __VMS */
     n = _Py_read(self->fd, buffer->buf, buffer->len);
     /* copy errno because PyBuffer_Release() can indirectly modify it */
     err = errno;
@@ -776,14 +760,6 @@ _io_FileIO_readall_impl(fileio *self)
             }
         }
 
-#ifdef __VMS
-        if (self->is_a_pipe) {
-            n = _Py_read_pid(self->fd,
-                        PyBytes_AS_STRING(result) + bytes_read,
-                        bufsize - bytes_read,
-                        self->pid);
-        } else
-#endif
         n = _Py_read(self->fd,
                      PyBytes_AS_STRING(result) + bytes_read,
                      bufsize - bytes_read);
@@ -849,11 +825,6 @@ _io_FileIO_read_impl(fileio *self, Py_ssize_t size)
         return NULL;
     ptr = PyBytes_AS_STRING(bytes);
 
-#ifdef __VMS
-    if (self->is_a_pipe) {
-        n = _Py_read_pid(self->fd, ptr, size, self->pid);
-    } else
-#endif
     n = _Py_read(self->fd, ptr, size);
     if (n == -1) {
         /* copy errno because Py_DECREF() can indirectly modify it */
@@ -1229,10 +1200,6 @@ static PyGetSetDef fileio_getsetlist[] = {
 static PyMemberDef fileio_members[] = {
     {"_blksize", T_UINT, offsetof(fileio, blksize), 0},
     {"_finalizing", T_BOOL, offsetof(fileio, finalizing), 0},
-#ifdef __VMS
-    {"_is_a_pipe", T_BOOL, offsetof(fileio, is_a_pipe), READONLY},
-    {"_pid", T_INT, offsetof(fileio, pid), 0},
-#endif
     {NULL}
 };
 

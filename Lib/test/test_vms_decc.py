@@ -5,9 +5,9 @@ import time
 if sys.platform != 'OpenVMS':
     raise unittest.SkipTest('OpenVMS required')
 
-import vms.decc as DECC
-import vms.lib as LIB
-import vms.syidef as SYIDEF
+import _decc as DECC
+import _lib as LIB
+import _syidef as SYIDEF
 
 class BaseTestCase(unittest.TestCase):
 

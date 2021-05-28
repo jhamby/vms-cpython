@@ -10,6 +10,9 @@ if support.PGO:
 if sys.platform == "win32":
     raise unittest.SkipTest("forkserver is not available on Windows")
 
+if sys.platform == "OpenVMS":
+    raise unittest.SkipTest("forkserver is not available on OpenVMS")
+
 test._test_multiprocessing.install_tests_in_module_dict(globals(), 'forkserver')
 
 if __name__ == '__main__':

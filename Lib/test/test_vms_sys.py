@@ -7,23 +7,23 @@ import threading
 if sys.platform != 'OpenVMS':
     raise unittest.SkipTest('OpenVMS required')
 
-import vms.sys as SYS
-import vms.ile3 as ILE3
-import vms.ssdef as SS
-import vms.jpidef as JPI
-import vms.syidef as SYI
-import vms.iodef as IO
-import vms.lnmdef as LNM
-import vms.dscdef as DSC
-import vms.psldef as PSL
-import vms.dvsdef as DVS
-import vms.dcdef as DC
-import vms.dvidef as DVI
-import vms.lkidef as LKI
-import vms.quidef as QUI
-import vms.jbcmsgdef as JBC
-import vms.rmidef as RMI
-import vms.uaidef as UAI
+import _sys as SYS
+import _ile3 as ILE3
+import _ssdef as SS
+import _jpidef as JPI
+import _syidef as SYI
+import _iodef as IO
+import _lnmdef as LNM
+import _dscdef as DSC
+import _psldef as PSL
+import _dvsdef as DVS
+import _dcdef as DC
+import _dvidef as DVI
+import _lkidef as LKI
+import _quidef as QUI
+import _jbcmsgdef as JBC
+import _rmidef as RMI
+import _uaidef as UAI
 
 class BaseTestCase(unittest.TestCase):
 

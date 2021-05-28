@@ -5,10 +5,10 @@ import os
 if sys.platform != 'OpenVMS':
     raise unittest.SkipTest('OpenVMS required')
 
-import vms.lib as LIB
-import vms.ssdef as SS
-import vms.jpidef as JPI
-import vms.syidef as SYI
+import _lib as LIB
+import _ssdef as SS
+import _jpidef as JPI
+import _syidef as SYI
 
 class BaseTestCase(unittest.TestCase):
 

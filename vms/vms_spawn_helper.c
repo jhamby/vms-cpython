@@ -1,4 +1,4 @@
-#include "vms_spawn_helper.h"
+#include "vms/vms_spawn_helper.h"
 #include <string.h>
 #include <builtins.h>
 
@@ -18,7 +18,7 @@ static int _init_pos(int pos, unsigned int **pppid, int **ppstatus, unsigned int
     *pppid = _pid + pos;
     *ppstatus = _status + pos;
     *ppfinished = _finished + pos;
-    return 0;
+    return pos;
 }
 
 int vms_spawn_alloc(unsigned int **pppid, int **ppstatus, unsigned int **ppfinished) {
@@ -64,11 +64,12 @@ int vms_spawn_alloc(unsigned int **pppid, int **ppstatus, unsigned int **ppfinis
         }
         // someone beat us here, do another try
     }
-    return 1;
+    return -1;
 }
 
 int vms_spawn_finish(unsigned int *pfinished) {
     if (pfinished >= _finished && pfinished < _finished + MAX_SPAWN) {
+        int idx = (pfinished - _finished) / sizeof(*pfinished);
         *pfinished = __ATOMIC_INCREMENT_LONG(&_finished_counter);
         if (*pfinished == 0) {
             // regenerate generations, from 1 to MAX
@@ -80,13 +81,11 @@ int vms_spawn_finish(unsigned int *pfinished) {
             // set current as latest
             *pfinished = __ATOMIC_INCREMENT_LONG(&_finished_counter);
         }
-        return 0;
+        return idx;
     }
-    return 1;
+    return -1;
 }
 
-/* Returns 0 if PID is found
-*/
 int vms_spawn_status(unsigned int pid, int *pstatus, unsigned int *pfinished, int free) {
     for(int i = 0; i < MAX_SPAWN; ++i) {
         if (_pid[i] == pid) {
@@ -100,8 +99,8 @@ int vms_spawn_status(unsigned int pid, int *pstatus, unsigned int *pfinished, in
                 _finished[i] = 0;
                 _pid[i] = 0;
             }
-            return 0;
+            return i;
         }
     }
-    return 1;
+    return -1;
 }

@@ -317,8 +317,8 @@ corresponding Unix manual entries for more information on calls.");
 #  else
 #  ifdef __VMS
      /* OpenVMS */
-#    include "vms/vms_select.h"
 #    include "vms/vms_spawn_helper.h"
+#    include "vms/vms_sleep.h"
 #    include <time.h>
 #    define HAVE_EXECV      1
 #    define HAVE_GETEGID    1
@@ -8532,7 +8532,7 @@ os_waitpid_impl(PyObject *module, pid_t pid, int options)
 
 #ifdef __VMS
     unsigned int finished = 0;
-    if (pid > 0 && (0 == vms_spawn_status(pid, &status, &finished, 0))) {
+    if (pid > 0 && (-1 != vms_spawn_status(pid, &status, &finished, 0))) {
         // the child is spawned by lib$spawn
         if (finished) {
             if (status == -1) {
@@ -8546,11 +8546,8 @@ os_waitpid_impl(PyObject *module, pid_t pid, int options)
             return Py_BuildValue("Ni", PyLong_FromPid(0), 0);
         }
         while (finished == 0) {
-            struct timespec delay, remain;
-            delay.tv_sec = 0;
-            delay.tv_nsec = 50000;   // 50 millseconds
             Py_BEGIN_ALLOW_THREADS
-            nanosleep(&delay, &remain);
+            vms_sleep(100); // 100 microseconds
             Py_END_ALLOW_THREADS
             vms_spawn_status(pid, &status, &finished, 0);
         }
@@ -9642,66 +9639,6 @@ os_read_impl(PyObject *module, int fd, Py_ssize_t length)
     return buffer;
 }
 
-#ifdef __VMS
-
-static PyObject *
-os_read_pipe_impl(PyObject *module, int fd)
-{
-    Py_ssize_t n;
-    PyObject *buffer;
-    Py_ssize_t length;
-
-    length = 65535;
-
-    buffer = PyBytes_FromStringAndSize((char *)NULL, length);
-    if (buffer == NULL)
-        return NULL;
-
-    int pid = -1;
-    Py_BEGIN_ALLOW_THREADS
-    n = read_mbx(fd, PyBytes_AS_STRING(buffer), length, &pid);
-    Py_END_ALLOW_THREADS
-    if (n == -1) {
-        Py_DECREF(buffer);
-        return NULL;
-    }
-
-    if (n != length)
-        _PyBytes_Resize(&buffer, n);
-
-    return Py_BuildValue("(Ni)", buffer, pid);
-
-}
-
-#define OS_READ_PIPE_METHODDEF    \
-    {"read_pipe", (PyCFunction)(void(*)(void))os_read_pipe, METH_FASTCALL, os_read__doc__},
-
-static PyObject *
-os_read_pipe(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
-{
-    PyObject *return_value = NULL;
-    int fd;
-    Py_ssize_t length;
-
-    if (!_PyArg_CheckPositional("read_pipe", nargs, 1, 1)) {
-        goto exit;
-    }
-    if (PyFloat_Check(args[0])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
-    fd = _PyLong_AsInt(args[0]);
-    if (fd == -1 && PyErr_Occurred()) {
-        goto exit;
-    }
-    return_value = os_read_pipe_impl(module, fd);
-
-exit:
-    return return_value;
-}
-#endif /* __VMS */
-
 #if (defined(HAVE_SENDFILE) && (defined(__FreeBSD__) || defined(__DragonFly__) \
                                 || defined(__APPLE__))) \
     || defined(HAVE_READV) || defined(HAVE_PREADV) || defined (HAVE_PREADV2) \
@@ -10318,7 +10255,7 @@ PyDoc_STRVAR(os_pipe_socket__doc__,
 "--\n"
 "\n"
 "Create a pipe using socketpair().\n"
-"No reset inheritance.\n"
+"Leave them inheritable.\n"
 "\n"
 "Returns a tuple of two file descriptors:\n"
 "  (read_fd, write_fd)");
@@ -10335,6 +10272,17 @@ os_pipe_socket(PyObject *module, PyObject *Py_UNUSED(ignored))
 
     if (res != 0)
         return PyErr_SetFromErrno(PyExc_OSError);
+
+    // if (_Py_set_inheritable(fds[0], 0, NULL) < 0) {
+    //     close(fds[0]);
+    //     close(fds[1]);
+    //     return NULL;
+    // }
+    // if (_Py_set_inheritable(fds[1], 0, NULL) < 0) {
+    //     close(fds[0]);
+    //     close(fds[1]);
+    //     return NULL;
+    // }
 
     return Py_BuildValue("(ii)", fds[0], fds[1]);
 }
@@ -15066,7 +15014,6 @@ static PyMethodDef posix_methods[] = {
     OS_LSEEK_METHODDEF
     OS_READ_METHODDEF
 #ifdef __VMS
-    OS_READ_PIPE_METHODDEF
     OS_PIPE_SOCKET_METHODDEF
 #endif
     OS_READV_METHODDEF

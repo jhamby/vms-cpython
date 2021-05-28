@@ -801,10 +801,6 @@ class Popen(object):
                                  "platforms")
         else:
             # POSIX
-            if (sys.platform == 'OpenVMS'):
-                if preexec_fn is not None:
-                    raise ValueError("preexec_fn is not supported on OpenVMS "
-                                    "platforms")
             if pass_fds and not close_fds:
                 warnings.warn("pass_fds overriding close_fds.", RuntimeWarning)
                 close_fds = True
@@ -814,6 +810,11 @@ class Popen(object):
             if creationflags != 0:
                 raise ValueError("creationflags is only supported on Windows "
                                  "platforms")
+            if (sys.platform == 'OpenVMS'):
+                if preexec_fn is not None:
+                    raise ValueError("preexec_fn is not supported on OpenVMS")
+                if pass_fds and shell:
+                    raise ValueError("pass_fds to shell is not supported on OpenVMS")
 
         self.args = args
         self.stdin = None
@@ -1138,36 +1139,13 @@ class Popen(object):
             [self.stdin, self.stdout, self.stderr].count(None) >= 2):
             stdout = None
             stderr = None
-            if (sys.platform == 'OpenVMS'):
-                def read_std(std):
-                    ret_data = []
-                    while True:
-                        data, pid = os.read_pipe(std.fileno())
-                        if not data:
-                            if self.pid != pid:
-                                continue
-                            else:
-                                break
-                        ret_data.append(data)
-                    ret_data = b''.join(ret_data)
-                    if self.text_mode:
-                        ret_data = self._translate_newlines(ret_data,
-                                    std.encoding,
-                                    std.errors)
-                    return ret_data
             if self.stdin:
                 self._stdin_write(input)
             elif self.stdout:
-                if (sys.platform == 'OpenVMS'):
-                    stdout = read_std(self.stdout)
-                else:
-                    stdout = self.stdout.read()
+                stdout = self.stdout.read()
                 self.stdout.close()
             elif self.stderr:
-                if (sys.platform == 'OpenVMS'):
-                    stderr = read_std(self.stderr)
-                else:
-                    stderr = self.stderr.read()
+                stderr = self.stderr.read()
                 self.stderr.close()
             self.wait()
         else:
@@ -1622,7 +1600,7 @@ class Popen(object):
             if stdin is None:
                 pass
             elif stdin == PIPE:
-                p2cread, p2cwrite = os.pipe_socket() if sys.platform == 'OpenVMS' else os.pipe()
+                p2cread, p2cwrite = os.pipe()
                 if self.pipesize > 0 and hasattr(fcntl, "F_SETPIPE_SZ"):
                     fcntl.fcntl(p2cwrite, fcntl.F_SETPIPE_SZ, self.pipesize)
             elif stdin == DEVNULL:
@@ -1738,9 +1716,6 @@ class Popen(object):
                     if self.stderr:
                         self.stderr.close()
                         self.stderr = None
-                        errread = -1
-                        os.close(errwrite)
-                        errwrite = -1
                 else:
                     # On Android the default shell is at '/system/bin/sh'.
                     unix_shell = ('/system/bin/sh' if
@@ -1824,15 +1799,6 @@ class Popen(object):
                             gid, gids, uid, umask,
                             preexec_fn)
                     self._child_created = True
-                    if (sys.platform == 'OpenVMS'):
-                        for pipe in [self.stdout, self.stderr]:
-                            while pipe:
-                                if hasattr(pipe, "_pid"):
-                                    pipe._pid = self.pid
-                                if hasattr(pipe, "raw"):
-                                    pipe = pipe.raw
-                                else:
-                                    break
                 finally:
                     # be sure the FD is closed no matter what
                     os.close(errpipe_write)
@@ -1844,7 +1810,7 @@ class Popen(object):
                 # Wait for exec to fail or succeed; possibly raising an
                 # exception (limited in size)
                 errpipe_data = bytearray()
-                while True:
+                while True and not (sys.platform == 'OpenVMS'):
                     part = os.read(errpipe_read, 50000)
                     errpipe_data += part
                     if not part or len(errpipe_data) > 50000:
@@ -2086,12 +2052,7 @@ class Popen(object):
                                     selector.unregister(key.fileobj)
                                     key.fileobj.close()
                         elif key.fileobj in (self.stdout, self.stderr):
-                            if (sys.platform == 'OpenVMS'):
-                                data, pid = os.read_pipe(key.fd)
-                                if not data and self.pid != pid:
-                                    continue
-                            else:
-                                data = os.read(key.fd, 32768)
+                            data = os.read(key.fd, 32768)
                             if not data:
                                 selector.unregister(key.fileobj)
                                 key.fileobj.close()

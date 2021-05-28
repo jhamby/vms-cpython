@@ -5799,6 +5799,7 @@ _ctypes_add_objects(PyObject *mod)
 /* If RTLD_GLOBAL is not defined (cygwin), set it to the same value as
    RTLD_LOCAL. */
 #if !HAVE_DECL_RTLD_GLOBAL
+#  undef RTLD_GLOBAL
 #  define RTLD_GLOBAL RTLD_LOCAL
 #endif
     MOD_ADD("RTLD_LOCAL", PyLong_FromLong(RTLD_LOCAL));

@@ -11,7 +11,12 @@ extern int winerror_to_errno(int);
 #endif
 
 #ifdef __VMS
-#include "vms/vms_select.h"
+#ifdef _DEBUG
+#  include <builtins.h>
+#endif
+#  include <unixio.h>
+#  include "vms/vms_fd_inherit.h"
+#  include "vms/vms_mbx_util.h"
 #endif
 
 #ifdef HAVE_LANGINFO_H
@@ -1181,6 +1186,29 @@ get_inheritable(int fd, int raise)
     }
 
     return (flags & HANDLE_FLAG_INHERIT);
+#elif defined(__VMS)
+#ifdef _DEBUG
+    char _fd_name_[256];
+    getname(fd, _fd_name_, 1);
+#endif
+    _inherit_query q;
+    q.fd = fd;
+    q.cmd = _INHERIT_QUERY_GET_INHERITABLE;
+    switch (vms_fd_inherit(&q)) {
+        case 0:     // OK
+            if (q.res == -1) {
+                if (raise)
+                    PyErr_SetFromErrno(PyExc_OSError);
+                return -1;
+            }
+            return !(q.res & FD_CLOEXEC);
+        case -5:    // TimeOut
+        default:
+            errno = EVMSERR;
+            if (raise)
+                PyErr_SetFromErrno(PyExc_OSError);
+            return -1;
+    }
 #else
     int flags;
 
@@ -1311,21 +1339,33 @@ set_inheritable(int fd, int inheritable, int raise, int *atomic_flag_works)
 #endif
 
 #ifdef __VMS
+#ifdef _DEBUG
+    char _fd_name_[256];
+    getname(fd, _fd_name_, 1);
+#endif
+    _inherit_query    q;
+    q.fd = fd;
     if (inheritable) {
-        // the only way to set inheritable safely
-        int _dup_ = dup(fd);
-        fd = dup2(_dup_, fd);
-        close(_dup_);
+        q.cmd = _INHERIT_QUERY_SET_INHERITABLE;
+    } else {
+        q.cmd = _INHERIT_QUERY_SET_NON_INHERITABLE;
     }
-    else {
-        res = fcntl(fd, F_SETFD, FD_CLOEXEC);
-        if (res < 0) {
+    switch (vms_fd_inherit(&q)) {
+        case 0:     // OK
+            if (q.res == -1) {
+                if (raise)
+                    PyErr_SetFromErrno(PyExc_OSError);
+                return -1;
+            }
+            return 0;
+        case -5:    // TimeOut
+        default:
+            errno = EVMSERR;
             if (raise)
                 PyErr_SetFromErrno(PyExc_OSError);
             return -1;
-        }
     }
-#else
+#endif
     /* slow-path: fcntl() requires two syscalls */
     flags = fcntl(fd, F_GETFD);
     if (flags < 0) {
@@ -1352,7 +1392,7 @@ set_inheritable(int fd, int inheritable, int raise, int *atomic_flag_works)
             PyErr_SetFromErrno(PyExc_OSError);
         return -1;
     }
-#endif /* __VMS */
+
     return 0;
 #endif
 }
@@ -1650,17 +1690,8 @@ _Py_fopen_obj(PyObject *path, const char *mode)
    (the syscall is not retried).
 
    Release the GIL to call read(). The caller must hold the GIL. */
-#ifdef __VMS
-Py_ssize_t
-_Py_read(int fd, void *buf, size_t count) {
-    return _Py_read_pid(fd, buf, count, 0);
-}
-Py_ssize_t
-_Py_read_pid(int fd, void *buf, size_t count, int pid)
-#else
 Py_ssize_t
 _Py_read(int fd, void *buf, size_t count)
-#endif
 {
     Py_ssize_t n;
     int err;
@@ -1682,12 +1713,14 @@ _Py_read(int fd, void *buf, size_t count)
         Py_BEGIN_ALLOW_THREADS
         errno = 0;
 #ifdef __VMS
-        if (pid) {
-            int writer_pid = 0;
-            n = read_mbx(fd, buf, count, &writer_pid);
-            while (n == 0 && pid != writer_pid) {
-                n = read_mbx(fd, buf, count, &writer_pid);
-            }
+#ifdef _DEBUG
+        char _fd_name_[256];
+        getname(fd, _fd_name_, 1);
+#endif
+        if (isapipe(fd) == 1) {
+            do {
+                n = read_mbx(fd, buf, count);
+            } while(n == -1 && errno == EAGAIN);
         } else
 #endif
 #ifdef MS_WINDOWS
@@ -2149,10 +2182,13 @@ _Py_set_blocking(int fd, int blocking)
 {
 /* bpo-41462: On VxWorks, ioctl(FIONBIO) only works on sockets.
    Use fcntl() instead. */
-#if defined(HAVE_SYS_IOCTL_H) && defined(FIONBIO) && !defined(__VXWORKS__)
+#if defined(HAVE_SYS_IOCTL_H) && defined(FIONBIO) && !defined(__VXWORKS__) || defined(__VMS)
     int arg = !blocking;
     if (ioctl(fd, FIONBIO, &arg) < 0)
+    #ifndef __VMS   // else pass to fcntl
         goto error;
+    #endif
+        ;
 #else
     int flags, res;
 

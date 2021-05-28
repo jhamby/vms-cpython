@@ -172,10 +172,10 @@ class WakeupFDTests(unittest.TestCase):
                           signal.set_wakeup_fd, fd)
 
     def test_set_wakeup_fd_result(self):
-        r1, w1 = os.pipe_socket() if os.sys.platform == 'OpenVMS' else os.pipe()
+        r1, w1 = os.pipe()
         self.addCleanup(os.close, r1)
         self.addCleanup(os.close, w1)
-        r2, w2 = os.pipe_socket() if os.sys.platform == 'OpenVMS' else os.pipe()
+        r2, w2 = os.pipe()
         self.addCleanup(os.close, r2)
         self.addCleanup(os.close, w2)
 
@@ -208,7 +208,7 @@ class WakeupFDTests(unittest.TestCase):
     # function to test if a socket is in non-blocking mode.
     @unittest.skipIf(sys.platform == "win32", "tests specific to POSIX")
     def test_set_wakeup_fd_blocking(self):
-        rfd, wfd = os.pipe_socket() if os.sys.platform == 'OpenVMS' else os.pipe()
+        rfd, wfd = os.pipe()
         self.addCleanup(os.close, rfd)
         self.addCleanup(os.close, wfd)
 
@@ -256,7 +256,7 @@ class WakeupSignalTests(unittest.TestCase):
         {}
 
         signal.signal(signal.SIGALRM, handler)
-        read, write = os.pipe_socket() if os.sys.platform == 'OpenVMS' else os.pipe()
+        read, write = os.pipe()
         os.set_blocking(write, False)
         signal.set_wakeup_fd(write)
 
@@ -286,7 +286,7 @@ class WakeupSignalTests(unittest.TestCase):
             1/0
 
         signal.signal(signal.SIGALRM, handler)
-        r, w = os.pipe_socket() if os.sys.platform == 'OpenVMS' else os.pipe()
+        r, w = os.pipe()
         os.set_blocking(r, False)
 
         # Set wakeup_fd a read-only file descriptor to trigger the error
@@ -308,7 +308,7 @@ class WakeupSignalTests(unittest.TestCase):
         os.close(r)
         os.close(w)
         """
-        r, w = os.pipe_socket() if os.sys.platform == 'OpenVMS' else os.pipe()
+        r, w = os.pipe()
         try:
             os.write(r, b'x')
         except OSError:
@@ -624,7 +624,7 @@ class SiginterruptTest(unittest.TestCase):
             import sys
 
             interrupt = %r
-            r, w = os.pipe_socket() if os.sys.platform == 'OpenVMS' else os.pipe()
+            r, w = os.pipe()
 
             def handler(signum, frame):
                 1 / 0

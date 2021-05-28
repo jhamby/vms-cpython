@@ -7,9 +7,9 @@ if sys.platform != 'OpenVMS':
 
 import struct
 import _rms as RMS
-import vms.fabdef as FABDEF
-import vms.rmsdef as RMSDEF
-import vms.ssdef as SSDEF
+import _fabdef as FABDEF
+import _rmsdef as RMSDEF
+import _ssdef as SSDEF
 
 class BaseTestCase(unittest.TestCase):
 

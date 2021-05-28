@@ -432,22 +432,14 @@ class IOTest(unittest.TestCase):
         # The purpose of this test is to try fileno(), reading, writing and
         # seeking operations with various objects that indicate they do not
         # support these operations.
-        # OpenVMS pipe() is implemented via record-oriented mailboxes
-        # so we should use pipe_socket() instead
 
         def pipe_reader():
-            if (sys.platform == 'OpenVMS'):
-                [r, w] = os.pipe_socket()
-            else:
-                [r, w] = os.pipe()
+            [r, w] = os.pipe()
             os.close(w)  # So that read() is harmless
             return self.FileIO(r, "r")
 
         def pipe_writer():
-            if (sys.platform == 'OpenVMS'):
-                [r, w] = os.pipe_socket()
-            else:
-                [r, w] = os.pipe()
+            [r, w] = os.pipe()
             self.addCleanup(os.close, r)
             # Guarantee that we can write into the pipe without blocking
             thread = threading.Thread(target=os.read, args=(r, 100))

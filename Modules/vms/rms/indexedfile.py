@@ -1,6 +1,6 @@
 import _rms
-import vms.fabdef
-import vms.rmsdef
+import _fabdef
+import _rmsdef
 import struct
 from decimal import Decimal
 
@@ -68,8 +68,8 @@ class IndexedFile:
         if not self._auto:
             f = self._file
         else:
-            acc = vms.fabdef.FAB_M_GET
-            shr = vms.fabdef.FAB_M_SHRPUT + vms.fabdef.FAB_M_SHRGET + vms.fabdef.FAB_M_SHRDEL + vms.fabdef.FAB_M_SHRUPD
+            acc = _fabdef.FAB_M_GET
+            shr = _fabdef.FAB_M_SHRPUT + _fabdef.FAB_M_SHRGET + _fabdef.FAB_M_SHRDEL + _fabdef.FAB_M_SHRUPD
             f = _rms.file(self.filename, fac=acc, shr=shr)
         if keynum is not None:
             f.usekey(keynum)
@@ -78,15 +78,15 @@ class IndexedFile:
         except _rms.error as e:
             if self._auto:
                 f.close()
-            if e.errno == vms.rmsdef.RMS__RNF:
+            if e.errno == _rmsdef.RMS__RNF:
                 return False
             else:
                 raise
         return True
 
     def open(self,
-             acc = vms.fabdef.FAB_M_PUT + vms.fabdef.FAB_M_GET + vms.fabdef.FAB_M_DEL + vms.fabdef.FAB_M_UPD,
-             shr = vms.fabdef.FAB_M_SHRPUT + vms.fabdef.FAB_M_SHRGET + vms.fabdef.FAB_M_SHRDEL + vms.fabdef.FAB_M_SHRUPD,
+             acc = _fabdef.FAB_M_PUT + _fabdef.FAB_M_GET + _fabdef.FAB_M_DEL + _fabdef.FAB_M_UPD,
+             shr = _fabdef.FAB_M_SHRPUT + _fabdef.FAB_M_SHRGET + _fabdef.FAB_M_SHRDEL + _fabdef.FAB_M_SHRUPD,
              fop = 0):
         self._auto = False
         self._status = None
@@ -106,8 +106,8 @@ class IndexedFile:
             f = self._file
         else:
             # add record to the file
-            acc = vms.fabdef.FAB_M_PUT + vms.fabdef.FAB_M_GET + vms.fabdef.FAB_M_DEL + vms.fabdef.FAB_M_UPD
-            shr = vms.fabdef.FAB_M_SHRPUT + vms.fabdef.FAB_M_SHRGET + vms.fabdef.FAB_M_SHRDEL + vms.fabdef.FAB_M_SHRUPD
+            acc = _fabdef.FAB_M_PUT + _fabdef.FAB_M_GET + _fabdef.FAB_M_DEL + _fabdef.FAB_M_UPD
+            shr = _fabdef.FAB_M_SHRPUT + _fabdef.FAB_M_SHRGET + _fabdef.FAB_M_SHRDEL + _fabdef.FAB_M_SHRUPD
             fop = 0
             f = _rms.file(self.filename, fac=acc, shr=shr, fop=fop)
         self._status = None
@@ -126,8 +126,8 @@ class IndexedFile:
         if not self._auto:
             f = self._file
         else:
-            acc = vms.fabdef.FAB_M_GET + vms.fabdef.FAB_M_DEL
-            shr = vms.fabdef.FAB_M_SHRPUT + vms.fabdef.FAB_M_SHRGET + vms.fabdef.FAB_M_SHRDEL + vms.fabdef.FAB_M_SHRUPD
+            acc = _fabdef.FAB_M_GET + _fabdef.FAB_M_DEL
+            shr = _fabdef.FAB_M_SHRPUT + _fabdef.FAB_M_SHRGET + _fabdef.FAB_M_SHRDEL + _fabdef.FAB_M_SHRUPD
             f = _rms.file(self.filename, fac=acc, shr=shr)
         self._status = None
         f.usekey(keynum)
@@ -158,8 +158,8 @@ class IndexedFile:
         if not self._auto:
             f = self._file
         else:
-            acc = vms.fabdef.FAB_M_GET
-            shr = vms.fabdef.FAB_M_SHRPUT + vms.fabdef.FAB_M_SHRGET + vms.fabdef.FAB_M_SHRDEL + vms.fabdef.FAB_M_SHRUPD
+            acc = _fabdef.FAB_M_GET
+            shr = _fabdef.FAB_M_SHRPUT + _fabdef.FAB_M_SHRGET + _fabdef.FAB_M_SHRDEL + _fabdef.FAB_M_SHRUPD
             f = _rms.file(self.filename, fac=acc, shr=shr)
         f.usekey(keynum)
         self._status = None
@@ -173,7 +173,7 @@ class IndexedFile:
         else:
             if self._auto:
                 f.close()
-        if self._status == vms.rmsdef.RMS__RNF:
+        if self._status == _rmsdef.RMS__RNF:
              return None
         return item_class.unpack(r, item_class)
 
@@ -181,8 +181,8 @@ class IndexedFile:
         if not self._auto:
             f = self._file
         else:
-            acc = vms.fabdef.FAB_M_GET + vms.fabdef.FAB_M_UPD
-            shr = vms.fabdef.FAB_M_SHRPUT + vms.fabdef.FAB_M_SHRGET + vms.fabdef.FAB_M_SHRDEL + vms.fabdef.FAB_M_SHRUPD
+            acc = _fabdef.FAB_M_GET + _fabdef.FAB_M_UPD
+            shr = _fabdef.FAB_M_SHRPUT + _fabdef.FAB_M_SHRGET + _fabdef.FAB_M_SHRDEL + _fabdef.FAB_M_SHRUPD
             f = _rms.file(self.filename, fac=acc, shr=shr)
         self._status = None
         f.usekey(self.primary_keynum())
@@ -214,13 +214,13 @@ class IndexedFile:
         if not self._auto:
             f = self._file
         else:
-            acc = vms.fabdef.FAB_M_PUT + vms.fabdef.FAB_M_GET + vms.fabdef.FAB_M_DEL + vms.fabdef.FAB_M_UPD
-            shr = vms.fabdef.FAB_M_SHRPUT + vms.fabdef.FAB_M_SHRGET + vms.fabdef.FAB_M_SHRDEL + vms.fabdef.FAB_M_SHRUPD
+            acc = _fabdef.FAB_M_PUT + _fabdef.FAB_M_GET + _fabdef.FAB_M_DEL + _fabdef.FAB_M_UPD
+            shr = _fabdef.FAB_M_SHRPUT + _fabdef.FAB_M_SHRGET + _fabdef.FAB_M_SHRDEL + _fabdef.FAB_M_SHRUPD
             f = _rms.file(self.filename, fac=acc, shr=shr)
         self._status = None
         f.rewind()
         s = f.find()
-        while(s != vms.rmsdef.RMS__EOF):
+        while(s != _rmsdef.RMS__EOF):
             f.delete()
             s = f.find()
         if self._auto:
@@ -230,8 +230,8 @@ class IndexedFile:
         if not self._auto:
             f = self._file
         else:
-            acc = vms.fabdef.FAB_M_GET
-            shr = vms.fabdef.FAB_M_SHRPUT + vms.fabdef.FAB_M_SHRGET + vms.fabdef.FAB_M_SHRDEL + vms.fabdef.FAB_M_SHRUPD
+            acc = _fabdef.FAB_M_GET
+            shr = _fabdef.FAB_M_SHRPUT + _fabdef.FAB_M_SHRGET + _fabdef.FAB_M_SHRDEL + _fabdef.FAB_M_SHRUPD
             f = _rms.file(self.filename, fac=acc, shr=shr)
         self._status = None
         f.usekey(keynum)
@@ -242,7 +242,7 @@ class IndexedFile:
             except _rms.error as e:
                 if self._auto:
                     f.close()
-                if e.errno == vms.rmsdef.RMS__RNF:
+                if e.errno == _rmsdef.RMS__RNF:
                     return []
                 else:
                     raise

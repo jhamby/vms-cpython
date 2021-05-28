@@ -145,7 +145,7 @@ class BaseContext(object):
         '''Check whether this is a fake forked process in a frozen executable.
         If so then run code specified by commandline and exit.
         '''
-        if sys.platform == 'win32' and getattr(sys, 'frozen', False):
+        if (sys.platform == 'win32' or sys.platform == 'OpenVMS') and getattr(sys, 'frozen', False):
             from .spawn import freeze_support
             freeze_support()
 
@@ -255,6 +255,8 @@ class DefaultContext(BaseContext):
 
     def get_all_start_methods(self):
         if sys.platform == 'win32':
+            return ['spawn']
+        elif sys.platform == 'OpenVMS':
             return ['spawn']
         else:
             methods = ['spawn', 'fork'] if sys.platform == 'darwin' else ['fork', 'spawn']

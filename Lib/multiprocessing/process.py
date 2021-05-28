@@ -398,6 +398,8 @@ class _MainProcess(BaseProcess):
         self._closed = False
         self._config = {'authkey': AuthenticationString(os.urandom(32)),
                         'semprefix': '/mp'}
+        if sys.platform == 'OpenVMS':
+            self._config['semprefix'] = 'sem'
         # Note that some versions of FreeBSD only allow named
         # semaphores to have names of up to 14 characters.  Therefore
         # we choose a short prefix.

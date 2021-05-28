@@ -165,6 +165,8 @@ class ProcessPoolForkMixin(ExecutorMixin):
             self.skipTest("ProcessPoolExecutor unavailable on this system")
         if sys.platform == "win32":
             self.skipTest("require unix system")
+        if sys.platform == "OpenVMS":
+            self.skipTest("require unix system")
         return super().get_context()
 
 
@@ -190,6 +192,8 @@ class ProcessPoolForkserverMixin(ExecutorMixin):
         except NotImplementedError:
             self.skipTest("ProcessPoolExecutor unavailable on this system")
         if sys.platform == "win32":
+            self.skipTest("require unix system")
+        if sys.platform == "OpenVMS":
             self.skipTest("require unix system")
         return super().get_context()
 
@@ -324,6 +328,7 @@ class ExecutorShutdownTest:
         self.assertFalse(err)
         self.assertEqual(out.strip(), b"apple")
 
+    @unittest.skipIf(sys.platform == 'OpenVMS', 'failed, PYT-161')
     def test_submit_after_interpreter_shutdown(self):
         # Test the atexit hook for shutdown of worker threads and processes
         rc, out, err = assert_python_ok('-c', """if 1:

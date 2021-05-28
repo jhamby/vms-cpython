@@ -3,12 +3,21 @@ sys$library:pthread$rtl.exe/SHARE
 GSMATCH=LEQUAL,1,0
 CASE_SENSITIVE=YES
 
+! vms_* like procedures
+SYMBOL_VECTOR=(-
+map_fd_to_child=PROCEDURE,-
+vms_set_crtl_values=PROCEDURE,-
+vms_SMG_Readline=PROCEDURE,-
+vms_select=PROCEDURE,-
+vms_sleep=PROCEDURE,-
+vms_fd_inherit=PROCEDURE,-
+vms_spawn_status=PROCEDURE,-
+vms_spawn_finish=PROCEDURE,-
+vms_spawn_alloc=PROCEDURE-
+)
+
 ! Module Python-ast
 SYMBOL_VECTOR=(-
-vms_set_crtl_values=PROCEDURE,-
-vms_spawn_alloc=PROCEDURE,-
-vms_spawn_finish=PROCEDURE,-
-vms_spawn_status=PROCEDURE,-
 PyAST_Check=PROCEDURE,-
 PyAST_mod2obj=PROCEDURE,-
 PyAST_obj2mod=PROCEDURE,-
@@ -818,7 +827,6 @@ _Py_isabs=PROCEDURE,-
 _Py_open=PROCEDURE,-
 _Py_open_noraise=PROCEDURE,-
 _Py_read=PROCEDURE,-
-_Py_read_pid=PROCEDURE,-
 _Py_set_blocking=PROCEDURE,-
 _Py_set_inheritable=PROCEDURE,-
 _Py_set_inheritable_async_safe=PROCEDURE,-
@@ -2168,15 +2176,7 @@ SYMBOL_VECTOR=(-
 _Py_Union=PROCEDURE,-
 _Py_union_type_or=PROCEDURE-
 )
-! Module vms_select
-SYMBOL_VECTOR=(-
-vms_select=PROCEDURE,-
-read_mbx=PROCEDURE-
-)
-! Module vms_smg_readline
-SYMBOL_VECTOR=(-
-vms_SMG_Readline=PROCEDURE-
-)
+
 ! Module weakrefobject
 SYMBOL_VECTOR=(-
 PyObject_ClearWeakRefs=PROCEDURE,-

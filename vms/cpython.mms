@@ -1,52 +1,15 @@
 ! MMS/EXT/DESCR=Python3.mms/MACRO=("OUTDIR=OUT","CONFIG=DEBUG")
-
-! define output folder
-.IF OUTDIR
-! defined - ok
-.ELSE
-! not defined - define as OUT
-OUTDIR = OUT
-.ENDIF
-
-! check DEBUG or RELEASE
-.IF CONFIG
-! defined - ok
-.ELSE
-! not defined - define as DEBUG
-CONFIG = DEBUG
-.ENDIF
-
-.IF $(CONFIG) .EQ DEBUG
-! debug
-CC_QUALIFIERS = /DEBUG/NOOPTIMIZE/LIST=$(MMS$TARGET_NAME)
-CC_DEFINES = _DEBUG
-OUT_DIR = $(OUTDIR).$(CONFIG)
-OBJ_DIR = $(OUT_DIR).OBJ
-LINK_FLAGS = /DEBUG/MAP=[.$(OUT_DIR)]$(NOTDIR $(MMS$TARGET_NAME))
-PYTHON$SHR_OPT = PYTHON$SHR_DBG
-.ELSE
-! release
-CC_QUALIFIERS = /NODEBUG/OPTIMIZE/NOLIST
-CC_DEFINES = _NDEBUG
-OUT_DIR = $(OUTDIR).$(CONFIG)
-OBJ_DIR = $(OUT_DIR).OBJ
-LINK_FLAGS = /NODEBUG/NOMAP/NOTRACEBACK
-PYTHON$SHR_OPT = PYTHON$SHR
-.ENDIF
-
 DYNLOAD_DIR = lib-dynload
 PLATFORM = OpenVMS
 SOABI = cpython-310-ia64-openvms
 
 CC_QUALIFIERS = -
-$(CC_QUALIFIERS)-
-/NAMES=(AS_IS,SHORTENED)-
-/WARNINGS=(WARNINGS=ALL, DISABLE=(EXTRASEMI))
-!/SHOW=(EXPANSION,INCLUDE)
-!/POINTER_SIZE=64
+/NAMES=(AS_IS,SHORTENED) -
+/WARNINGS=(WARNINGS=ALL, DISABLE=(EXTRASEMI)) -
+/ACCEPT=NOVAXC_KEYWORDS
 
 CC_DEFINES = -
-$(CC_DEFINES), -
+_USE_DUP_INHERIT_, -            ! internal use
 _USE_STD_STAT, -                ! COMMON
 _POSIX_EXIT, -
 __STDC_FORMAT_MACROS, -
@@ -66,6 +29,40 @@ ABIFLAGS="""""", -
 MULTIARCH="""$(SOABI)""", -
 PLATFORM="""$(PLATFORM)""", -
 USE_SSL                         ! SSL
+
+! define output folder
+.IF OUTDIR
+! defined - ok
+.ELSE
+! not defined - define as OUT
+OUTDIR = OUT
+.ENDIF
+
+! check DEBUG or RELEASE
+.IF CONFIG
+! defined - ok
+.ELSE
+! not defined - define as DEBUG
+CONFIG = DEBUG
+.ENDIF
+
+.IF $(CONFIG) .EQ DEBUG
+! debug
+CC_QUALIFIERS = $(CC_QUALIFIERS)/DEBUG/NOOPTIMIZE/LIST=$(MMS$TARGET_NAME)/SHOW=ALL
+CC_DEFINES = $(CC_DEFINES),_DEBUG
+OUT_DIR = $(OUTDIR).$(CONFIG)
+OBJ_DIR = $(OUT_DIR).OBJ
+LINK_FLAGS = /NODEBUG/MAP=[.$(OUT_DIR)]$(NOTDIR $(MMS$TARGET_NAME))/TRACE/DSF=[.$(OUT_DIR)]$(NOTDIR $(MMS$TARGET_NAME)).DSF
+PYTHON$SHR_OPT = PYTHON$SHR_DBG
+.ELSE
+! release
+CC_QUALIFIERS = $(CC_QUALIFIERS)/NODEBUG/OPTIMIZE/NOLIST
+CC_DEFINES = $(CC_DEFINES),_NDEBUG
+OUT_DIR = $(OUTDIR).$(CONFIG)
+OBJ_DIR = $(OUT_DIR).OBJ
+LINK_FLAGS = /NODEBUG/NOMAP/NOTRACEBACK
+PYTHON$SHR_OPT = PYTHON$SHR
+.ENDIF
 
 GETPATH_DEFINES = $(CC_DEFINES),PYTHONPATH="""""",PREFIX="""/usr/local""",EXEC_PREFIX="""/usr/local""",VERSION="""3.10""",VPATH=""""""
 
@@ -357,6 +354,9 @@ LIBRARY_OBJS_OMIT_FROZEN= -
 [.$(OBJ_DIR).vms]vms_crtl_values.obc -
 [.$(OBJ_DIR).vms]vms_select.obc -
 [.$(OBJ_DIR).vms]vms_spawn_helper.obc -
+[.$(OBJ_DIR).vms]vms_sleep.obc -
+[.$(OBJ_DIR).vms]vms_mbx_util.obc -
+[.$(OBJ_DIR).vms]vms_fd_inherit.obc -
 $(PARSER_OBJS) -
 $(OBJECT_OBJS) -
 $(PYTHON_OBJS) -
@@ -726,8 +726,11 @@ $(PARSER_HEADERS) -
 
 [.$(OBJ_DIR).Modules]getbuildinfo.obc : [.Modules]getbuildinfo.c $(PYTHON_HEADERS)
 [.$(OBJ_DIR).vms]vms_crtl_values.obc : [.vms]vms_crtl_values.c
-[.$(OBJ_DIR).vms]vms_select.obc : [.vms]vms_select.c [.vms]vms_select.h [.vms]vms_spawn_helper.h $(PYTHON_HEADERS)
+[.$(OBJ_DIR).vms]vms_select.obc : [.vms]vms_select.c [.vms]vms_select.h [.vms]vms_spawn_helper.h [.vms]vms_sleep.h
 [.$(OBJ_DIR).vms]vms_spawn_helper.obc : [.vms]vms_spawn_helper.c [.vms]vms_spawn_helper.h
+[.$(OBJ_DIR).vms]vms_sleep.obc : [.vms]vms_sleep.c [.vms]vms_sleep.h
+[.$(OBJ_DIR).vms]vms_mbx_util.obc : [.vms]vms_mbx_util.c [.vms]vms_mbx_util.h
+[.$(OBJ_DIR).vms]vms_fd_inherit.obc : [.vms]vms_fd_inherit.c [.vms]vms_fd_inherit.h [.vms]vms_mbx_util.h [.vms]vms_sleep.h
 
 [.$(OBJ_DIR).Python]frozen.obc : [.Python]frozen.c -
 [.Python]importlib.h -
@@ -1478,9 +1481,9 @@ DECIMAL_HEADERS = -
 
 # _multiprocessing
 [.$(OBJ_DIR).Modules._multiprocessing]multiprocessing.obm : [.Modules._multiprocessing]multiprocessing.c [.Modules._multiprocessing]multiprocessing.h $(PYTHON_HEADERS)
-# [.$(OBJ_DIR).Modules._multiprocessing]semaphore.obm : [.Modules._multiprocessing]semaphore.c [.Modules._multiprocessing]multiprocessing.h $(PYTHON_HEADERS)
-# [.$(OUT_DIR).$(DYNLOAD_DIR)]_multiprocessing.exe : [.$(OBJ_DIR).Modules._multiprocessing]multiprocessing.obm,[.$(OBJ_DIR).Modules._multiprocessing]semaphore.obm
-[.$(OUT_DIR).$(DYNLOAD_DIR)]_multiprocessing.exe : [.$(OBJ_DIR).Modules._multiprocessing]multiprocessing.obm
+[.$(OBJ_DIR).Modules._multiprocessing]semaphore.obm : [.Modules._multiprocessing]semaphore.c [.Modules._multiprocessing]multiprocessing.h $(PYTHON_HEADERS)
+[.$(OBJ_DIR).vms]vms_sem_mbx.obm : [.vms]vms_sem_mbx.c [.vms]vms_sem_mbx.h
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_multiprocessing.exe : [.$(OBJ_DIR).Modules._multiprocessing]multiprocessing.obm [.$(OBJ_DIR).vms]vms_sem_mbx.obm [.$(OBJ_DIR).Modules._multiprocessing]semaphore.obm
     @ pipe create/dir $(DIR $(MMS$TARGET)) | copy SYS$INPUT nl:
     $(LINK)$(LINK_FLAGS)/SHARE=python$build_out:[$(DYNLOAD_DIR)]$(NOTDIR $(MMS$TARGET_NAME)).exe $(MMS$SOURCE_LIST),[.vms.opt]$(NOTDIR $(MMS$TARGET_NAME)).opt/OPT
 

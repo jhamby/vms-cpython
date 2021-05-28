@@ -469,22 +469,24 @@ reset_signal_handlers(const sigset_t *child_sigmask)
  * to set things up and call exec().
  *
  */
-#include <processes.h>
-#include <unixlib.h>
-#include <errno.h>
-#include <unixio.h>
-#include <efndef.h>
-#include <clidef.h>
-#include <stsdef.h>
-#include <descrip.h>
-#include <lib$routines.h>
 #include <builtins.h>
+#include <clidef.h>
+#include <descrip.h>
+#include <efndef.h>
+#include <errno.h>
+#include <lib$routines.h>
+#include <processes.h>
+#include <stsdef.h>
+#include <unixio.h>
+#include <unixlib.h>
 
 #include <ffi.h>
 #include "ctypes/ctypes.h"
 
 #include "vms/vms_spawn_helper.h"
-#include "vms/vms_select.h"
+#include "vms/vms_sleep.h"
+#include "vms/vms_fd_inherit.h"
+#include "vms/vms_mbx_util.h"
 
 PyDoc_STRVAR(subprocess_proc_status_doc,
 "proc_status(pid: int, remove = True)\n\
@@ -524,7 +526,7 @@ subprocess_proc_status(
     unsigned int pid = PyLong_AsUnsignedLong(args[0]);
     int status = -1;
     unsigned int finished = 0;
-    int found = (0 == vms_spawn_status(pid, &status, &finished, remove));
+    int found = (-1 != vms_spawn_status(pid, &status, &finished, remove));
     return Py_BuildValue("(NNi)", PyBool_FromLong(found), PyBool_FromLong(finished), status);
 }
 
@@ -563,6 +565,7 @@ exec_dcl(char *const argv[], int p2cread, int c2pwrite) {
         }
     }
 
+    // TODO: enclose each parameter in quotes, tripling existing quotes
     int i = 1;  // skip DCL
     int exec_len = 0;
     while (argv[i]) {
@@ -588,7 +591,7 @@ exec_dcl(char *const argv[], int p2cread, int c2pwrite) {
     unsigned int *ppid, *pfinished;
     int *pstatus;
 
-    if (vms_spawn_alloc(&ppid, &pstatus, &pfinished) == 0) {
+    if (vms_spawn_alloc(&ppid, &pstatus, &pfinished) != -1) {
         status = lib$spawn(
             &execute,
             input_ptr,
@@ -609,95 +612,174 @@ exec_dcl(char *const argv[], int p2cread, int c2pwrite) {
     return pid;
 }
 
-static int
-safe_make_inherit(int fd) {
-    if (fd != -1) {
-        int _dup_ = dup(fd);
-        if (_dup_ != -1) {
-            int retcode = dup2(_dup_, fd);
-            close(_dup_);
-            return retcode;
-        }
+#undef  _VMS_MAKE_INHERITABLE_
+#define _VMS_MAKE_INHERITABLE_(x, flag)                                         \
+    if ((x) != -1) {                                                            \
+        if (_Py_set_inheritable_async_safe((int)(x), flag, NULL) < 0) {         \
+            PyErr_Clear();                                                      \
+            errno = 0;                                                          \
+        }                                                                       \
     }
-    return -1;
+
+static void check_and_change_to_non_inheritable(int fd_num, PyObject *py_fds_to_make_inherit) {
+    _inherit_query q;
+    q.fd = fd_num;
+    q.cmd = _INHERIT_QUERY_GET_INHERITABLE;
+    switch (vms_fd_inherit(&q)) {
+        case 0:     // OK
+            if (q.res != -1 && !(q.res & FD_CLOEXEC)) {
+                PyObject *py_fd_to_make = PyLong_FromLong(fd_num);
+                if (py_fd_to_make) {
+                    PyList_Append(py_fds_to_make_inherit, py_fd_to_make);
+                    Py_DECREF(py_fd_to_make);
+                }
+                q.cmd = _INHERIT_QUERY_SET_NON_INHERITABLE;
+                vms_fd_inherit(&q);
+            }
+            break;
+        case -5:    // TimeOut
+            break;
+        default:
+            break;
+    }
 }
 
-/* OpenVMS fake child_exec
-*/
+static PyObject* make_fds_non_inheritable(
+    PyObject *py_fds_to_keep,
+    int p2cread,
+    int c2pwrite,
+    int errwrite)
+{
+    PyObject *py_tuple_to_keep = py_fds_to_keep;
+    if (p2cread > 0 || c2pwrite > 0 || errwrite > 0) {
+        Py_ssize_t num_fds_to_keep = PyTuple_GET_SIZE(py_fds_to_keep);
+        PyObject *py_list_keep = PyList_New(num_fds_to_keep);
+        for(int i = 0; i < num_fds_to_keep; ++i) {
+            PyObject *item = PyTuple_GET_ITEM(py_fds_to_keep, i);
+            Py_INCREF(item);
+            PyList_SET_ITEM(py_list_keep, i, item);
+        }
+        if (p2cread > 0) {
+            PyObject *item = PyLong_FromLong(p2cread);
+            PyList_Append(py_list_keep, item);
+        }
+        if (c2pwrite > 0) {
+            PyObject *item = PyLong_FromLong(c2pwrite);
+            PyList_Append(py_list_keep, item);
+        }
+        if (errwrite > 0) {
+            PyObject *item = PyLong_FromLong(errwrite);
+            PyList_Append(py_list_keep, item);
+        }
+        PyList_Sort(py_list_keep);
+        py_tuple_to_keep = PyList_AsTuple(py_list_keep);
+        Py_DECREF(py_list_keep);
+    }
+    int start_fd = 3;
+    int end_fd = 256;
+    int len = PyTuple_GET_SIZE(py_tuple_to_keep);
+    PyObject *py_fds_to_make_inherit = PyList_New(0);
+    for (int i = 0; i < len; ++i) {
+        int keep_fd = PyLong_AsUnsignedLong(PyTuple_GET_ITEM(py_tuple_to_keep, i));
+        for (int fd_num = start_fd; fd_num < keep_fd; ++fd_num) {
+            check_and_change_to_non_inheritable(fd_num, py_fds_to_make_inherit);
+        }
+        start_fd = keep_fd + 1;
+    }
+    while (start_fd < end_fd) {
+        check_and_change_to_non_inheritable(start_fd, py_fds_to_make_inherit);
+        ++start_fd;
+    }
+    if (py_tuple_to_keep != py_fds_to_keep) {
+        Py_DECREF(py_tuple_to_keep);
+    }
+    return py_fds_to_make_inherit;
+}
 
-_Py_NO_INLINE static pid_t
-vms_child_exec(char *const exec_array[],
-           char *const argv[],
-           char *const envp[],
-           const char *cwd,
-           int p2cread, int p2cwrite,
-           int c2pread, int c2pwrite,
-           int errread, int errwrite,
-           int errpipe_read, int errpipe_write,
-           int close_fds, int restore_signals,
-           int call_setsid,
-           int call_setgid, gid_t gid,
-           int call_setgroups, size_t groups_size, const gid_t *groups,
-           int call_setuid, uid_t uid, int child_umask,
-           const void *child_sigmask,
-           PyObject *py_fds_to_keep,
-           PyObject *preexec_fn,
-           PyObject *preexec_fn_args_tuple)
+static int
+vms_child_exec(
+    char *const exec_array[],
+    char *const argv[],
+    char *const envp[],
+    const char *cwd,
+    int p2cread, int p2cwrite,
+    int c2pread, int c2pwrite,
+    int errread, int errwrite,
+    int errpipe_read, int errpipe_write,
+    int close_fds, int restore_signals,
+    int call_setsid,
+    int call_setgid, gid_t gid,
+    int call_setgroups, size_t groups_size, const gid_t *groups,
+    int call_setuid, uid_t uid, int child_umask,
+    const void *child_sigmask,
+    PyObject *py_fds_to_keep,
+    PyObject *preexec_fn,
+    PyObject *preexec_fn_args_tuple)
 {
     int pid = -1;
+
+    if (argv && *argv && strcmp(*argv, "DCL") == 0) {
+        pid = exec_dcl(argv, p2cread, c2pwrite);
+        if (pid > 0) {
+            map_fd_to_child(c2pread, -pid);
+            map_fd_to_child(errread, -pid);
+        }
+        return pid;
+    }
+
+    static pthread_mutex_t _child_exec_vfork_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+    pthread_mutex_lock(&_child_exec_vfork_mutex);
+
+    // we should always set CWD, even if it is NULL - to restore default value
+    decc$set_child_default_dir(cwd);
+
     int exec_error = 0;
+    PyObject *py_fds_to_make_inherit = NULL;
 
     if (make_inheritable(py_fds_to_keep, errpipe_write) < 0) {
         goto egress;
     }
 
-    if (p2cwrite != -1)
-        fcntl(p2cwrite, F_SETFD, FD_CLOEXEC);
-    if (c2pread != -1)
-        fcntl(c2pread, F_SETFD, FD_CLOEXEC);
-    if (errread != -1)
-        fcntl(errread, F_SETFD, FD_CLOEXEC);
-    if (errpipe_read != -1)
-        fcntl(errpipe_read, F_SETFD, FD_CLOEXEC);
-    if (errpipe_write != -1)
-        fcntl(errpipe_write, F_SETFD, FD_CLOEXEC);
+    // make the parent ends non-inheritable
+    _VMS_MAKE_INHERITABLE_(p2cwrite, 0);
+    _VMS_MAKE_INHERITABLE_(c2pread, 0);
+    _VMS_MAKE_INHERITABLE_(errread, 0);
+    _VMS_MAKE_INHERITABLE_(errpipe_read, 0);
+    _VMS_MAKE_INHERITABLE_(errpipe_write, 0);
 
-    // make them inherited safely
-    safe_make_inherit(p2cread);
-    safe_make_inherit(c2pwrite);
-    safe_make_inherit(errwrite);
+    // make inherited
+    _VMS_MAKE_INHERITABLE_(p2cread, 1);
+    _VMS_MAKE_INHERITABLE_(c2pwrite, 1);
+    _VMS_MAKE_INHERITABLE_(errwrite, 1);
 
-    // we should always set CWD, even if it is NULL - to restore default value
-    decc$set_child_default_dir(cwd);
+    if (close_fds && py_fds_to_keep && PyTuple_CheckExact(py_fds_to_keep)) {
+        // TODO: see RTLS-187
+        py_fds_to_make_inherit = make_fds_non_inheritable(py_fds_to_keep, p2cread, c2pwrite, errwrite);
+    }
 
-    if (argv && *argv && strcmp(*argv, "DCL") == 0) {
-        pid = exec_dcl(argv, p2cread, c2pwrite);
-    } else {
-        decc$set_child_standard_streams(p2cread, c2pwrite, errwrite);
-        pid = vfork();
-        if (pid == 0) {
-            for (int i = 0; exec_array[i] != NULL; ++i) {
-                const char *executable = exec_array[i];
-                if (envp) {
-                    execve(executable, argv, envp);
-                } else {
-                    execv(executable, argv);
-                }
-                if (errno != ENOENT && errno != ENOTDIR) {
-                    break;
-                }
+    decc$set_child_standard_streams(p2cread, c2pwrite, errwrite);
+    pid = vfork();
+    if (pid == 0) {
+        for (int i = 0; exec_array[i] != NULL; ++i) {
+            const char *executable = exec_array[i];
+            if (envp) {
+                execve(executable, argv, envp);
+            } else {
+                execv(executable, argv);
             }
-            exec_error = errno;
-            if (!exec_error) {
-                exec_error = -1;
+            if (errno != ENOENT && errno != ENOTDIR) {
+                break;
             }
-            exit(EXIT_FAILURE);
         }
+        exec_error = errno;
+        if (!exec_error) {
+            exec_error = -1;
+        }
+        exit(EXIT_FAILURE);
     }
 
 egress:
-    // No report, we are at parent process
-
     // Test if exec() is failed
     if (exec_error) {
         if (pid > 0) {
@@ -707,9 +789,24 @@ egress:
         errno = exec_error;
     }
 
+    if (py_fds_to_make_inherit) {
+        int len = PyList_GET_SIZE(py_fds_to_make_inherit);
+        for (int i = 0; i < len; ++i) {
+            int make_fd_inherit = PyLong_AsUnsignedLong(PyList_GET_ITEM(py_fds_to_make_inherit, i));
+            _VMS_MAKE_INHERITABLE_(make_fd_inherit, 1);
+        }
+        Py_DECREF(py_fds_to_make_inherit);
+    }
+
+    if (pid > 0) {
+        map_fd_to_child(c2pread, pid);
+        map_fd_to_child(errread, pid);
+    }
+
+    pthread_mutex_unlock(&_child_exec_vfork_mutex);
     return pid;
 }
-#else
+#else   /*  not __VMS*/
 /*
  * This function is code executed in the child process immediately after
  * (v)fork to set things up and call exec().

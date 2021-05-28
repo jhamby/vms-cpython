@@ -104,13 +104,13 @@
 #undef HAVE_BROKEN_POLL
 
 /* Define if the Posix semaphores do not work on your system */
-#define HAVE_BROKEN_POSIX_SEMAPHORES
+#undef HAVE_BROKEN_POSIX_SEMAPHORES
 
 /* Define if pthread_sigmask() does not work on your system. */
 #define HAVE_BROKEN_PTHREAD_SIGMASK
 
 /* define to 1 if your sem_getvalue is broken. */
-#define HAVE_BROKEN_SEM_GETVALUE 1
+#undef HAVE_BROKEN_SEM_GETVALUE
 
 /* Define if `unsetenv` does not return an int. */
 #define HAVE_BROKEN_UNSETENV
@@ -893,10 +893,10 @@
 #undef HAVE_SCHED_SETSCHEDULER
 
 /* Define to 1 if you have the `sem_getvalue' function. */
-#undef HAVE_SEM_GETVALUE
+#define HAVE_SEM_GETVALUE 1
 
 /* Define to 1 if you have the `sem_open' function. */
-#undef HAVE_SEM_OPEN
+#define HAVE_SEM_OPEN 1
 
 /* Define to 1 if you have the `sem_timedwait' function. */
 #undef HAVE_SEM_TIMEDWAIT
@@ -1389,7 +1389,7 @@
 #undef PACKAGE_VERSION
 
 /* Define if POSIX semaphores aren't enabled on your system */
-#define POSIX_SEMAPHORES_NOT_ENABLED
+#undef POSIX_SEMAPHORES_NOT_ENABLED
 
 /* Define if pthread_key_t is compatible with int. */
 #define PTHREAD_KEY_T_IS_COMPATIBLE_WITH_INT
@@ -1741,6 +1741,11 @@
 
 #ifndef ULLONG_MAX
 #define ULLONG_MAX __UINT64_MAX
+#endif
+
+#ifdef __cplusplus
+#undef __func__
+#define __func__ __FUNCTION__
 #endif
 
 #endif

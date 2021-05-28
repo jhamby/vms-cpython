@@ -85,8 +85,8 @@ elif (sys.platform == 'OpenVMS'):
         if name == "c":
             return "decc$shr"
         try:
-            import vms.decc
-            if vms.decc.dlopen_test(name):
+            import _decc
+            if _decc.dlopen_test(name):
                 return name
         except:
             pass
