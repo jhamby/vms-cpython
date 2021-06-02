@@ -21,7 +21,6 @@
 #include "vms_mbx_util.h"
 int vms_channel_lookup(int fd, unsigned short *channel);
 int vms_channel_lookup_by_name(char* name, unsigned short *channel);
-int vms_channel_free(unsigned short channel);
 
 unsigned short simple_create_mbx(const char *name, int mbx_size) {
     unsigned short channel = 0;
@@ -35,6 +34,10 @@ unsigned short simple_create_mbx(const char *name, int mbx_size) {
     }
     sys$crembx(0, &channel, mbx_size, 0, 0, PSL$C_USER, pdsc_name, 0, 0);
     return channel;
+}
+
+int simple_free_mbx(unsigned short channel) {
+    return sys$dassgn(channel);
 }
 
 int simple_check_mbx(unsigned short channel) {
@@ -51,6 +54,11 @@ int simple_write_mbx(unsigned short channel, unsigned char *buf, int size) {
     return sys$qiow(EFN$C_ENF, channel, IO$_WRITEVBLK | IO$M_NOW, &iosb, 0, 0, buf, size, 0, 0, 0, 0);
 }
 
+int simple_write_mbx_w(unsigned short channel, unsigned char *buf, int size) {
+    IOSB iosb = {0};
+    return sys$qiow(EFN$C_ENF, channel, IO$_WRITEVBLK, &iosb, 0, 0, buf, size, 0, 0, 0, 0);
+}
+
 int simple_write_mbx_eof(unsigned short channel) {
     IOSB iosb = {0};
     return sys$qiow(EFN$C_ENF, channel, IO$_WRITEOF | IO$M_NOW, &iosb, 0, 0, 0, 0, 0, 0, 0, 0);
@@ -61,7 +69,7 @@ int write_mbx_eof(int fd) {
         unsigned short channel;
         if (vms_channel_lookup(fd, &channel) == 0) {
             simple_write_mbx_eof(channel);
-            vms_channel_free(channel);
+            simple_free_mbx(channel);
             return 0;
         }
     }
@@ -95,7 +103,7 @@ int simple_read_mbx_w_stream(unsigned short channel, unsigned char *buf, int siz
     return -1;
 }
 
-static unsigned __int64 global_timer_reqidt = 1;
+unsigned __int64 global_timer_reqidt = 1;
 
 int simple_read_mbx_timeout(unsigned short channel, unsigned char *buf, int size, int timeout_microseconds) {
     int status;
@@ -133,7 +141,9 @@ int simple_read_mbx_timeout(unsigned short channel, unsigned char *buf, int size
         goto egress;
     }
 
-    timer_reqidt = __ATOMIC_INCREMENT_QUAD(&global_timer_reqidt);
+    while (!timer_reqidt) {
+        timer_reqidt = __ATOMIC_INCREMENT_QUAD(&global_timer_reqidt);
+    }
     status = sys$setimr(timerEfn, &timerOffset, 0, timer_reqidt, 0);
     if (!$VMS_STATUS_SUCCESS(status)) {
         retCode = -5;
@@ -307,4 +317,46 @@ int read_mbx(int fd, char *buf, int size) {
         sys$dassgn(channel);
     }
     return nbytes;
+}
+
+/*  test if name is like _MBA9999(9):
+    returns:
+        -1 error
+        0  not a pipe
+        1  is read end
+        2  is write end
+*/
+int vms_isapipe_by_name(char *name) {
+    if (!name || !*name) {
+        // error
+        return -1;
+    }
+    if (strncmp(name, "_MBA", 4) != 0) {
+        // does not start with _MBA - not a pipe
+        return 0;
+    }
+    char *ptr = name + 4;
+    while(*(ptr++)) {
+        if (*ptr == ':') {
+            // found a semicolon
+            break;
+        }
+        if (*ptr < '0' || *ptr > '9') {
+            // not a number or semicolon - not a pipe
+            return 0;
+        }
+    }
+    if (ptr - name < 8 || ptr - name > 9) {
+        // amount of number must be 4 or 5
+        return 0;
+    }
+    if (strcmp(ptr, ":[].") == 0) {
+        return 1;
+    }
+    return 2;
+}
+
+int vms_isapipe(int fd) {
+    char name[256];
+    return vms_isapipe_by_name(getname(fd, name, 1));
 }

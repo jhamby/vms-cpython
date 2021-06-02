@@ -19,6 +19,7 @@ import random
 import logging
 import subprocess
 import struct
+import sysconfig
 import operator
 import pickle
 import weakref
@@ -5112,6 +5113,7 @@ class TestStartMethod(unittest.TestCase):
                  "test semantics don't make sense on Windows")
 class TestResourceTracker(unittest.TestCase):
 
+    @unittest.skipIf(sys.platform == 'OpenVMS', 'does not work on OpenVMS')
     def test_resource_tracker(self):
         #
         # Check that killing process does not leak named semaphores
@@ -5163,6 +5165,9 @@ class TestResourceTracker(unittest.TestCase):
                 _resource_unlink(name1, rtype)
                 p.terminate()
                 p.wait()
+
+                if rtype == "semaphore" and sysconfig.get_config_var('HAVE_SEM_UNLINK') == 0:
+                    continue
 
                 deadline = time.monotonic() + support.LONG_TIMEOUT
                 while time.monotonic() < deadline:
@@ -5223,10 +5228,12 @@ class TestResourceTracker(unittest.TestCase):
             else:
                 self.assertEqual(len(all_warn), 0)
 
+    @unittest.skipIf(sys.platform == 'OpenVMS', 'does not work on OpenVMS')
     def test_resource_tracker_sigint(self):
         # Catchable signal (ignored by semaphore tracker)
         self.check_resource_tracker_death(signal.SIGINT, False)
 
+    @unittest.skipIf(sys.platform == 'OpenVMS', 'does not work on OpenVMS')
     def test_resource_tracker_sigterm(self):
         # Catchable signal (ignored by semaphore tracker)
         self.check_resource_tracker_death(signal.SIGTERM, False)

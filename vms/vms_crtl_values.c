@@ -1,5 +1,6 @@
 #include <errno.h>
 #include <unixlib.h>
+#include <reentrancy.h>
 
 /*
 ** Sets current value for a feature
@@ -60,4 +61,6 @@ void vms_set_crtl_values(void) {
     }
     // set ("DECC$POSIX_COMPLIANT_PATHNAMES", 1);  // required for realpath(), but getcwd() is failed
     set ("DECC$PIPE_BUFFER_SIZE", 65535);
+
+    decc$set_reentrancy(C$C_MULTITHREAD);
 }

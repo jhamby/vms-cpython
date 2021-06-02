@@ -968,7 +968,7 @@
 #define HAVE_SHM_UNLINK 1
 
 /* Define to 1 if you have the `sigaction' function. */
-#undef HAVE_SIGACTION
+#define HAVE_SIGACTION 1
 
 /* Define to 1 if you have the `sigaltstack' function. */
 #undef HAVE_SIGALTSTACK

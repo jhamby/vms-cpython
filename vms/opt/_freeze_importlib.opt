@@ -141,4 +141,4 @@ python$build_obj:[vms]vms_select.obc
 python$build_obj:[vms]vms_spawn_helper.obc
 python$build_obj:[vms]vms_sleep.obc
 python$build_obj:[vms]vms_mbx_util.obc
-python$build_obj:[vms]vms_fd_inherit.obc
+python$build_obj:[vms]vms_fcntl.obc

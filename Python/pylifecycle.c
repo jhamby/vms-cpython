@@ -2831,7 +2831,11 @@ Py_FdIsInteractive(FILE *fp, const char *filename)
 int
 _Py_FdIsInteractive(FILE *fp, PyObject *filename)
 {
+    #ifdef __VMS
+    if (1 == isatty((int)fileno(fp))) {
+    #else
     if (isatty((int)fileno(fp))) {
+    #endif
         return 1;
     }
     if (!Py_InteractiveFlag) {

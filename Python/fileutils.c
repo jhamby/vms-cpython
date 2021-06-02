@@ -15,7 +15,7 @@ extern int winerror_to_errno(int);
 #  include <builtins.h>
 #endif
 #  include <unixio.h>
-#  include "vms/vms_fd_inherit.h"
+#  include "vms/vms_fcntl.h"
 #  include "vms/vms_mbx_util.h"
 #endif
 
@@ -1188,27 +1188,18 @@ get_inheritable(int fd, int raise)
     return (flags & HANDLE_FLAG_INHERIT);
 #elif defined(__VMS)
 #ifdef _DEBUG
-    char _fd_name_[256];
-    getname(fd, _fd_name_, 1);
+    char fd_name[256];
+    getname(fd, fd_name, 1);
 #endif
-    _inherit_query q;
-    q.fd = fd;
-    q.cmd = _INHERIT_QUERY_GET_INHERITABLE;
-    switch (vms_fd_inherit(&q)) {
-        case 0:     // OK
-            if (q.res == -1) {
-                if (raise)
-                    PyErr_SetFromErrno(PyExc_OSError);
-                return -1;
-            }
-            return !(q.res & FD_CLOEXEC);
-        case -5:    // TimeOut
-        default:
-            errno = EVMSERR;
-            if (raise)
-                PyErr_SetFromErrno(PyExc_OSError);
-            return -1;
+    int flags;
+
+    flags = vms_fcntl(fd, F_GETFD, 0);
+    if (flags == -1) {
+        if (raise)
+            PyErr_SetFromErrno(PyExc_OSError);
+        return -1;
     }
+    return !(flags & FD_CLOEXEC);
 #else
     int flags;
 
@@ -1340,31 +1331,37 @@ set_inheritable(int fd, int inheritable, int raise, int *atomic_flag_works)
 
 #ifdef __VMS
 #ifdef _DEBUG
-    char _fd_name_[256];
-    getname(fd, _fd_name_, 1);
+    char fd_name[256];
+    getname(fd, fd_name, 1);
 #endif
-    _inherit_query    q;
-    q.fd = fd;
+    /* slow-path: fcntl() requires two syscalls */
+    flags = vms_fcntl(fd, F_GETFD, 0);
+    if (flags < 0) {
+        if (raise)
+            PyErr_SetFromErrno(PyExc_OSError);
+        return -1;
+    }
+
     if (inheritable) {
-        q.cmd = _INHERIT_QUERY_SET_INHERITABLE;
-    } else {
-        q.cmd = _INHERIT_QUERY_SET_NON_INHERITABLE;
+        new_flags = flags & ~FD_CLOEXEC;
     }
-    switch (vms_fd_inherit(&q)) {
-        case 0:     // OK
-            if (q.res == -1) {
-                if (raise)
-                    PyErr_SetFromErrno(PyExc_OSError);
-                return -1;
-            }
-            return 0;
-        case -5:    // TimeOut
-        default:
-            errno = EVMSERR;
-            if (raise)
-                PyErr_SetFromErrno(PyExc_OSError);
-            return -1;
+    else {
+        new_flags = flags | FD_CLOEXEC;
     }
+
+    if (new_flags == flags) {
+        /* FD_CLOEXEC flag already set/cleared: nothing to do */
+        return 0;
+    }
+
+    res = vms_fcntl(fd, F_SETFD, new_flags);
+    if (res < 0) {
+        if (raise)
+            PyErr_SetFromErrno(PyExc_OSError);
+        return -1;
+    }
+
+    return 0;
 #endif
     /* slow-path: fcntl() requires two syscalls */
     flags = fcntl(fd, F_GETFD);
@@ -1714,8 +1711,8 @@ _Py_read(int fd, void *buf, size_t count)
         errno = 0;
 #ifdef __VMS
 #ifdef _DEBUG
-        char _fd_name_[256];
-        getname(fd, _fd_name_, 1);
+        char fd_name[256];
+        getname(fd, fd_name, 1);
 #endif
         if (isapipe(fd) == 1) {
             do {
@@ -2118,6 +2115,16 @@ _Py_dup(int fd)
         _Py_BEGIN_SUPPRESS_IPH
         close(fd);
         _Py_END_SUPPRESS_IPH
+        return -1;
+    }
+#elif defined (__VMS)
+    Py_BEGIN_ALLOW_THREADS
+    _Py_BEGIN_SUPPRESS_IPH
+    fd = vms_fcntl(fd, F_DUPFD_CLOEXEC_VMS, 0);
+    _Py_END_SUPPRESS_IPH
+    Py_END_ALLOW_THREADS
+    if (fd < 0) {
+        PyErr_SetFromErrno(PyExc_OSError);
         return -1;
     }
 #elif defined(HAVE_FCNTL_H) && defined(F_DUPFD_CLOEXEC)

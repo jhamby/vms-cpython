@@ -72,6 +72,27 @@
 #define MAX_GROUPS 64
 #endif
 
+#undef _MAKE_INHERIT
+#ifdef __VMS
+#include "vms_fcntl.h"
+#define _IGNORE_FCNTL_BUSY
+#ifndef _IGNORE_FCNTL_BUSY
+#define _MAKE_INHERIT(fd, flg, atomic) vms_fcntl((fd), F_SETFD, (flg) ? 0 : FD_CLOEXEC)
+#else
+inline int _MAKE_INHERIT(fd, flg, atomic) {
+    int ret = vms_fcntl((fd), F_SETFD, (flg) ? 0 : FD_CLOEXEC);
+    if (ret == -1 && errno == EBUSY) {
+        PyErr_Clear();
+        errno = 0;
+        ret = 0;
+    }
+    return ret;
+}
+#endif
+#else
+    _MAKE_INHERIT(fd, flg, atomic) _Py_set_inheritable_async_safe((int)(fd), (flg), (atomic))
+#endif
+
 #define POSIX_CALL(call)   do { if ((call) == -1) goto error; } while (0)
 
 typedef struct {
@@ -215,7 +236,7 @@ make_inheritable(PyObject *py_fds_to_keep, int errpipe_write)
                called. */
             continue;
         }
-        if (_Py_set_inheritable_async_safe((int)fd, 1, NULL) < 0)
+        if (_MAKE_INHERIT((int)fd, 1, NULL) < 0)
             return -1;
     }
     return 0;
@@ -485,7 +506,6 @@ reset_signal_handlers(const sigset_t *child_sigmask)
 
 #include "vms/vms_spawn_helper.h"
 #include "vms/vms_sleep.h"
-#include "vms/vms_fd_inherit.h"
 #include "vms/vms_mbx_util.h"
 
 PyDoc_STRVAR(subprocess_proc_status_doc,
@@ -612,36 +632,22 @@ exec_dcl(char *const argv[], int p2cread, int c2pwrite) {
     return pid;
 }
 
-#undef  _VMS_MAKE_INHERITABLE_
-#define _VMS_MAKE_INHERITABLE_(x, flag)                                         \
-    if ((x) != -1) {                                                            \
-        if (_Py_set_inheritable_async_safe((int)(x), flag, NULL) < 0) {         \
-            PyErr_Clear();                                                      \
-            errno = 0;                                                          \
-        }                                                                       \
-    }
-
 static void check_and_change_to_non_inheritable(int fd_num, PyObject *py_fds_to_make_inherit) {
-    _inherit_query q;
-    q.fd = fd_num;
-    q.cmd = _INHERIT_QUERY_GET_INHERITABLE;
-    switch (vms_fd_inherit(&q)) {
-        case 0:     // OK
-            if (q.res != -1 && !(q.res & FD_CLOEXEC)) {
-                PyObject *py_fd_to_make = PyLong_FromLong(fd_num);
-                if (py_fd_to_make) {
-                    PyList_Append(py_fds_to_make_inherit, py_fd_to_make);
-                    Py_DECREF(py_fd_to_make);
-                }
-                q.cmd = _INHERIT_QUERY_SET_NON_INHERITABLE;
-                vms_fd_inherit(&q);
-            }
-            break;
-        case -5:    // TimeOut
-            break;
-        default:
-            break;
+    int result = vms_fcntl(fd_num, F_GETFD, 0);
+    if (result != -1 && !(result & FD_CLOEXEC)) {
+        PyObject *py_fd_to_make = PyLong_FromLong(fd_num);
+        if (py_fd_to_make) {
+            PyList_Append(py_fds_to_make_inherit, py_fd_to_make);
+            Py_DECREF(py_fd_to_make);
+        }
+        vms_fcntl(fd_num, F_SETFD, result | FD_CLOEXEC);
     }
+#ifdef _IGNORE_FCNTL_BUSY
+    if (errno == EBUSY) {
+        PyErr_Clear();
+        errno = 0;
+    }
+#endif
 }
 
 static PyObject* make_fds_non_inheritable(
@@ -742,16 +748,16 @@ vms_child_exec(
     }
 
     // make the parent ends non-inheritable
-    _VMS_MAKE_INHERITABLE_(p2cwrite, 0);
-    _VMS_MAKE_INHERITABLE_(c2pread, 0);
-    _VMS_MAKE_INHERITABLE_(errread, 0);
-    _VMS_MAKE_INHERITABLE_(errpipe_read, 0);
-    _VMS_MAKE_INHERITABLE_(errpipe_write, 0);
+    if (p2cwrite >= 0 && _MAKE_INHERIT(p2cwrite, 0, 0) < 0) goto egress;
+    if (c2pread >= 0 && _MAKE_INHERIT(c2pread, 0, 0) < 0) goto egress;
+    if (errread >= 0 && _MAKE_INHERIT(errread, 0, 0) < 0) goto egress;
+    if (errpipe_read >= 0 && _MAKE_INHERIT(errpipe_read, 0, 0) < 0) goto egress;
+    if (errpipe_write >= 0 && _MAKE_INHERIT(errpipe_write, 0, 0) < 0) goto egress;
 
     // make inherited
-    _VMS_MAKE_INHERITABLE_(p2cread, 1);
-    _VMS_MAKE_INHERITABLE_(c2pwrite, 1);
-    _VMS_MAKE_INHERITABLE_(errwrite, 1);
+    if (p2cread >= 0 && _MAKE_INHERIT(p2cread, 1, 0) < 0) goto egress;
+    if (c2pwrite >= 0 && _MAKE_INHERIT(c2pwrite, 1, 0) < 0) goto egress;
+    if (errwrite >= 0 && _MAKE_INHERIT(errwrite, 1, 0) < 0) goto egress;
 
     if (close_fds && py_fds_to_keep && PyTuple_CheckExact(py_fds_to_keep)) {
         // TODO: see RTLS-187
@@ -793,7 +799,7 @@ egress:
         int len = PyList_GET_SIZE(py_fds_to_make_inherit);
         for (int i = 0; i < len; ++i) {
             int make_fd_inherit = PyLong_AsUnsignedLong(PyList_GET_ITEM(py_fds_to_make_inherit, i));
-            _VMS_MAKE_INHERITABLE_(make_fd_inherit, 1);
+            _MAKE_INHERIT(make_fd_inherit, 1, 0);   // ignore errors
         }
         Py_DECREF(py_fds_to_make_inherit);
     }

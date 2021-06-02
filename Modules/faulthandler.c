@@ -813,7 +813,9 @@ faulthandler_register(int signum, int chain, _Py_sighandler_t *previous_p)
     /* if the signal is received while the kernel is executing a system
        call, try to restart the system call instead of interrupting it and
        return EINTR. */
+#ifndef __VMS
     action.sa_flags = SA_RESTART;
+#endif
     if (chain) {
         /* do not prevent the signal from being received from within its
            own signal handler */

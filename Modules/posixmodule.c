@@ -319,6 +319,7 @@ corresponding Unix manual entries for more information on calls.");
      /* OpenVMS */
 #    include "vms/vms_spawn_helper.h"
 #    include "vms/vms_sleep.h"
+#    include "vms/vms_fcntl.h"
 #    include <time.h>
 #    define HAVE_EXECV      1
 #    define HAVE_GETEGID    1
@@ -8030,6 +8031,13 @@ os_kill_impl(PyObject *module, pid_t pid, Py_ssize_t signal)
         return NULL;
     }
 #ifndef MS_WINDOWS
+#ifdef __VMS
+    if (pid == getpid()) {
+        if (raise((int)signal) == -1) {
+            return posix_error();
+        }
+    } else
+#endif
     if (kill(pid, (int)signal) == -1)
         return posix_error();
     Py_RETURN_NONE;
@@ -10334,6 +10342,10 @@ os_pipe_impl(PyObject *module)
 
     if (!ok)
         return PyErr_SetFromWindowsErr(0);
+#elif defined(__VMS)
+        Py_BEGIN_ALLOW_THREADS
+        res = vms_pipe_noinherit(fds);
+        Py_END_ALLOW_THREADS
 #else
 
 #ifdef HAVE_PIPE2

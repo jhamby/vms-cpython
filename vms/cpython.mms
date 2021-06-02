@@ -6,10 +6,10 @@ SOABI = cpython-310-ia64-openvms
 CC_QUALIFIERS = -
 /NAMES=(AS_IS,SHORTENED) -
 /WARNINGS=(WARNINGS=ALL, DISABLE=(EXTRASEMI)) -
-/ACCEPT=NOVAXC_KEYWORDS
+/ACCEPT=NOVAXC_KEYWORDS -
+/REENTRANCY=MULTITHREAD
 
 CC_DEFINES = -
-_USE_DUP_INHERIT_, -            ! internal use
 _USE_STD_STAT, -                ! COMMON
 _POSIX_EXIT, -
 __STDC_FORMAT_MACROS, -
@@ -356,7 +356,7 @@ LIBRARY_OBJS_OMIT_FROZEN= -
 [.$(OBJ_DIR).vms]vms_spawn_helper.obc -
 [.$(OBJ_DIR).vms]vms_sleep.obc -
 [.$(OBJ_DIR).vms]vms_mbx_util.obc -
-[.$(OBJ_DIR).vms]vms_fd_inherit.obc -
+[.$(OBJ_DIR).vms]vms_fcntl.obc -
 $(PARSER_OBJS) -
 $(OBJECT_OBJS) -
 $(PYTHON_OBJS) -
@@ -730,7 +730,7 @@ $(PARSER_HEADERS) -
 [.$(OBJ_DIR).vms]vms_spawn_helper.obc : [.vms]vms_spawn_helper.c [.vms]vms_spawn_helper.h
 [.$(OBJ_DIR).vms]vms_sleep.obc : [.vms]vms_sleep.c [.vms]vms_sleep.h
 [.$(OBJ_DIR).vms]vms_mbx_util.obc : [.vms]vms_mbx_util.c [.vms]vms_mbx_util.h
-[.$(OBJ_DIR).vms]vms_fd_inherit.obc : [.vms]vms_fd_inherit.c [.vms]vms_fd_inherit.h [.vms]vms_mbx_util.h [.vms]vms_sleep.h
+[.$(OBJ_DIR).vms]vms_fcntl.obc : [.vms]vms_fcntl.c [.vms]vms_fcntl.h [.vms]vms_mbx_util.h
 
 [.$(OBJ_DIR).Python]frozen.obc : [.Python]frozen.c -
 [.Python]importlib.h -
