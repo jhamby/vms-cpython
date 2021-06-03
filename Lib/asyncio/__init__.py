@@ -38,6 +38,9 @@ __all__ = (base_events.__all__ +
 if sys.platform == 'win32':  # pragma: no cover
     from .windows_events import *
     __all__ += windows_events.__all__
+elif sys.platform == 'OpenVMS':  # pragma: no cover
+    from .openvms_events import *
+    __all__ += openvms_events.__all__
 else:
     from .unix_events import *  # pragma: no cover
     __all__ += unix_events.__all__

@@ -1,4 +1,4 @@
-"""Selector event loop for Unix with signal handling."""
+"""Selector event loop for OpenVMS with signal handling."""
 
 import errno
 import io
@@ -79,7 +79,7 @@ class _OpenVMSSelectorEventLoop(selector_events.BaseSelectorEventLoop):
             self._handle_signal(signum)
 
     def add_signal_handler(self, sig, callback, *args):
-        """Add a handler for a signal.  UNIX only.
+        """Add a handler for a signal.  OpenVMS only.
 
         Raise ValueError if the signal number is invalid or uncatchable.
         Raise RuntimeError if there is a problem setting up the handler.
@@ -135,7 +135,7 @@ class _OpenVMSSelectorEventLoop(selector_events.BaseSelectorEventLoop):
             self._add_callback_signalsafe(handle)
 
     def remove_signal_handler(self, sig):
-        """Remove a handler for a signal.  UNIX only.
+        """Remove a handler for a signal.  OpenVMS only.
 
         Return True if a signal handler was removed, False if not.
         """
@@ -180,11 +180,11 @@ class _OpenVMSSelectorEventLoop(selector_events.BaseSelectorEventLoop):
 
     def _make_read_pipe_transport(self, pipe, protocol, waiter=None,
                                   extra=None):
-        return _UnixReadPipeTransport(self, pipe, protocol, waiter, extra)
+        return _OpenVMSReadPipeTransport(self, pipe, protocol, waiter, extra)
 
     def _make_write_pipe_transport(self, pipe, protocol, waiter=None,
                                    extra=None):
-        return _UnixWritePipeTransport(self, pipe, protocol, waiter, extra)
+        return _OpenVMSWritePipeTransport(self, pipe, protocol, waiter, extra)
 
     async def _make_subprocess_transport(self, protocol, args, shell,
                                          stdin, stdout, stderr, bufsize,
@@ -198,7 +198,7 @@ class _OpenVMSSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                 raise RuntimeError("asyncio.get_child_watcher() is not activated, "
                                    "subprocess support is not installed.")
             waiter = self.create_future()
-            transp = _UnixSubprocessTransport(self, protocol, args, shell,
+            transp = _OpenVMSSubprocessTransport(self, protocol, args, shell,
                                               stdin, stdout, stderr, bufsize,
                                               waiter=waiter, extra=extra,
                                               **kwargs)
@@ -437,7 +437,7 @@ class _OpenVMSSelectorEventLoop(selector_events.BaseSelectorEventLoop):
         fut.add_done_callback(cb)
 
 
-class _UnixReadPipeTransport(transports.ReadTransport):
+class _OpenVMSReadPipeTransport(transports.ReadTransport):
 
     max_size = 256 * 1024  # max bytes we read in one event loop iteration
 
@@ -573,7 +573,7 @@ class _UnixReadPipeTransport(transports.ReadTransport):
             self._loop = None
 
 
-class _UnixWritePipeTransport(transports._FlowControlMixin,
+class _OpenVMSWritePipeTransport(transports._FlowControlMixin,
                               transports.WriteTransport):
 
     def __init__(self, loop, pipe, protocol, waiter=None, extra=None):
@@ -778,7 +778,7 @@ class _UnixWritePipeTransport(transports._FlowControlMixin,
             self._loop = None
 
 
-class _UnixSubprocessTransport(base_subprocess.BaseSubprocessTransport):
+class _OpenVMSSubprocessTransport(base_subprocess.BaseSubprocessTransport):
 
     def _start(self, args, shell, stdin, stdout, stderr, bufsize, **kwargs):
         stdin_w = None
@@ -1407,9 +1407,9 @@ class ThreadedChildWatcher(AbstractChildWatcher):
         self._threads.pop(expected_pid)
 
 
-class _UnixDefaultEventLoopPolicy(events.BaseDefaultEventLoopPolicy):
-    """UNIX event loop policy with a watcher for child processes."""
-    _loop_factory = _UnixSelectorEventLoop
+class _OpenVMSDefaultEventLoopPolicy(events.BaseDefaultEventLoopPolicy):
+    """OpenVMS event loop policy with a watcher for child processes."""
+    _loop_factory = _OpenVMSSelectorEventLoop
 
     def __init__(self):
         super().__init__()
@@ -1457,5 +1457,5 @@ class _UnixDefaultEventLoopPolicy(events.BaseDefaultEventLoopPolicy):
         self._watcher = watcher
 
 
-SelectorEventLoop = _UnixSelectorEventLoop
-DefaultEventLoopPolicy = _UnixDefaultEventLoopPolicy
+SelectorEventLoop = _OpenVMSSelectorEventLoop
+DefaultEventLoopPolicy = _OpenVMSDefaultEventLoopPolicy
