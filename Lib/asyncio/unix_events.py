@@ -1272,7 +1272,8 @@ class MultiLoopChildWatcher(AbstractChildWatcher):
             self._saved_sighandler = signal.SIG_DFL
 
         # Set SA_RESTART to limit EINTR occurrences.
-        signal.siginterrupt(signal.SIGCHLD, False)
+        if hasattr(signal, "siginterrupt"):
+            signal.siginterrupt(signal.SIGCHLD, False)
 
     def _do_waitpid_all(self):
         for pid in list(self._callbacks):

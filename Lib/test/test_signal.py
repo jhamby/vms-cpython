@@ -90,10 +90,7 @@ class PosixTests(unittest.TestCase):
                  "for _ in range(999): time.sleep(0.01)"],
                 stderr=subprocess.PIPE)
         self.assertIn(b"KeyboardInterrupt", process.stderr)
-        if (sys.platform == 'OpenVMS'):
-            self.assertEqual(process.returncode, 84)    # CTRLC
-        else:
-            self.assertEqual(process.returncode, -signal.SIGINT)
+        self.assertEqual(process.returncode, -signal.SIGINT)
         # Caveat: The exit code is insufficient to guarantee we actually died
         # via a signal.  POSIX shells do more than look at the 8 bit value.
         # Writing an automation friendly test of an interactive shell
@@ -741,9 +738,6 @@ class ItimerTest(unittest.TestCase):
         self.itimer = signal.ITIMER_REAL
         signal.setitimer(self.itimer, 1.0)
         signal.pause()
-        if (sys.platform == 'OpenVMS'):
-            if not self.hndl_called:
-                raise unittest.SkipTest('OpenVMS issue with SIGALRM')
         self.assertEqual(self.hndl_called, True)
 
     # Issue 3864, unknown if this affects earlier versions of freebsd also
@@ -1235,6 +1229,8 @@ class StressTest(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(signal, "setitimer"),
                          "test needs setitimer()")
+    @unittest.skipIf(sys.platform == 'OpenVMS', 
+        'The interaction between setitimer and any of alarm, sleep, or usleep is unspecified.')
     def test_stress_delivery_simultaneous(self):
         """
         This test uses simultaneous signal handlers.

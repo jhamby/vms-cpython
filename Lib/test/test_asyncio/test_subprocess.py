@@ -150,6 +150,7 @@ class SubprocessMixin:
         self.assertEqual(exitcode, 0)
         self.assertEqual(stdout, b'some data')
 
+    @unittest.skipIf(sys.platform == 'OpenVMS', 'OpenVMS fails connecting to shell')
     def test_shell(self):
         proc = self.loop.run_until_complete(
             asyncio.create_subprocess_shell('exit 7')
@@ -157,6 +158,7 @@ class SubprocessMixin:
         exitcode = self.loop.run_until_complete(proc.wait())
         self.assertEqual(exitcode, 7)
 
+    @unittest.skipIf(sys.platform == 'OpenVMS', 'OpenVMS fails connecting to shell')
     def test_start_new_session(self):
         # start the new process in a new session
         proc = self.loop.run_until_complete(
@@ -607,6 +609,7 @@ class SubprocessMixin:
 
         self.loop.run_until_complete(execute())
 
+    @unittest.skipIf(sys.platform == 'OpenVMS', 'OpenVMS fails connecting to shell')
     def test_create_subprocess_shell_text_mode_fails(self):
 
         async def execute():

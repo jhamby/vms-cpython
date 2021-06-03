@@ -721,7 +721,8 @@ class FaultHandlerTests(unittest.TestCase):
             regex = expected_traceback(14, 32, regex)
             self.assertRegex(trace, regex)
         else:
-            self.assertEqual(trace, '')
+            if sys.platform != 'OpenVMS': # OpenVMS might print error like "%C-F-SIGUSR1 ..."
+                self.assertEqual(trace, '')
         if unregister:
             self.assertNotEqual(exitcode, 0)
         else:

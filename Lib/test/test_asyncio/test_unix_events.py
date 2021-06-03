@@ -275,6 +275,8 @@ class SelectorEventLoopSignalTests(test_utils.TestCase):
 
 @unittest.skipUnless(hasattr(socket, 'AF_UNIX'),
                      'UNIX Sockets are not supported')
+@unittest.skipIf(sys.platform == 'OpenVMS',
+                     'UNIX Sockets are not supported')
 class SelectorEventLoopUnixSocketTests(test_utils.TestCase):
 
     def setUp(self):

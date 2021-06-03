@@ -1172,6 +1172,7 @@ class ThreadingExceptionTests(BaseTestCase):
         lock = threading.Lock()
         self.assertRaises(RuntimeError, lock.release)
 
+    @unittest.skipIf(sys.platform == 'OpenVMS', 'causes %SYSTEM-F-ACCVIO')
     def test_recursion_limit(self):
         # Issue 9670
         # test that excessive recursion within a non-main thread causes

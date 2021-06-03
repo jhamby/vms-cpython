@@ -151,14 +151,16 @@ class SockSendfileMixin(SendfileBase):
     def reduce_receive_buffer_size(self, sock):
         # Reduce receive socket buffer size to test on relative
         # small data sets.
-        sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, self.BUF_SIZE)
+        if sys.platform != 'OpenVMS': # OpenVMS requires high privileges
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, self.BUF_SIZE)
 
     def reduce_send_buffer_size(self, sock, transport=None):
         # Reduce send socket buffer size to test on relative small data sets.
 
         # On macOS, SO_SNDBUF is reset by connect(). So this method
         # should be called after the socket is connected.
-        sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, self.BUF_SIZE)
+        if sys.platform != 'OpenVMS': # OpenVMS requires high privileges
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, self.BUF_SIZE)
 
         if transport is not None:
             transport.set_write_buffer_limits(high=self.BUF_SIZE)

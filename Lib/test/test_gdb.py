@@ -15,6 +15,9 @@ import unittest
 from test import support
 from test.support import findfile, python_is_optimized
 
+if sys.platform == 'OpenVMS':
+    raise unittest.SkipTest("Not for OpenVMS")
+
 def get_gdb_version():
     try:
         cmd = ["gdb", "-nx", "--version"]

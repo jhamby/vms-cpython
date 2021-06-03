@@ -760,7 +760,6 @@ class TestExit(unittest.TestCase):
     EXPECTED_CODE = (
         STATUS_CONTROL_C_EXIT
         if sys.platform == "win32"
-        else 84 if (sys.platform == 'OpenVMS')  # %SYSTEM-F-CONTROLC === 84 posix error code
         else -signal.SIGINT
     )
     @staticmethod
@@ -784,7 +783,10 @@ class TestExit(unittest.TestCase):
 
     def assertSigInt(self, *args, **kwargs):
         proc = subprocess.run(*args, **kwargs, text=True, stderr=subprocess.PIPE)
-        self.assertTrue(proc.stderr.endswith("\nKeyboardInterrupt\n"))
+        if sys.platform == 'OpenVMS': # OpenVMS might print additional error info
+            self.assertTrue("\nKeyboardInterrupt\n" in proc.stderr)
+        else:
+            self.assertTrue(proc.stderr.endswith("\nKeyboardInterrupt\n"))
         self.assertEqual(proc.returncode, self.EXPECTED_CODE)
 
     def test_pymain_run_file(self):

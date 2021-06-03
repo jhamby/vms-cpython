@@ -290,6 +290,7 @@ class _TestProcess(BaseTestCase):
         from multiprocessing.process import parent_process
         wconn.send([parent_process().pid, parent_process().name])
 
+    @unittest.skipIf(sys.platform == 'OpenVMS', 'OpenVMS terminates all children immediately')
     def test_parent_process(self):
         if self.TYPE == "threads":
             self.skipTest('test not appropriate for {}'.format(self.TYPE))
@@ -5089,6 +5090,8 @@ class TestStartMethod(unittest.TestCase):
     def test_get_all(self):
         methods = multiprocessing.get_all_start_methods()
         if sys.platform == 'win32':
+            self.assertEqual(methods, ['spawn'])
+        elif sys.platform == 'OpenVMS':
             self.assertEqual(methods, ['spawn'])
         else:
             self.assertTrue(methods == ['fork', 'spawn'] or

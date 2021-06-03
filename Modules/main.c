@@ -638,7 +638,12 @@ exit_sigint(void)
     if (PyOS_setsig(SIGINT, SIG_DFL) == SIG_ERR) {
         perror("signal");  /* Impossible in normal environments. */
     } else {
+#ifdef __VMS
+        // OpenVMS kill() might deliver signal too late
+        raise(SIGINT);
+#else
         kill(getpid(), SIGINT);
+#endif
     }
     /* If setting SIG_DFL failed, or kill failed to terminate us,
      * there isn't much else we can do aside from an error code. */

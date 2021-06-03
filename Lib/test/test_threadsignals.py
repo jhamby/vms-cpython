@@ -9,7 +9,7 @@ from test.support import threading_helper
 import _thread as thread
 import time
 
-if (sys.platform[:3] == 'win'):
+if (sys.platform[:3] == 'win') or (sys.platform == 'OpenVMS'):
     raise unittest.SkipTest("Can't test signal on %s" % sys.platform)
 
 process_pid = os.getpid()

@@ -1339,6 +1339,8 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
     def test_create_connection_no_inet_pton(self, m_socket):
         self._test_create_connection_ip_addr(m_socket, False)
 
+    @unittest.skipIf(sys.platform in ('OpenVMS'),
+                    "skip. [Errno 9] service not supported for socktype")
     @patch_socket
     def test_create_connection_service_name(self, m_socket):
         m_socket.getaddrinfo = socket.getaddrinfo

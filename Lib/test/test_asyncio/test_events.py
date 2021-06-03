@@ -1786,6 +1786,7 @@ class SubprocessTestsMixin:
         self.loop.run_until_complete(proto.completed)
         self.check_killed(proto.returncode)
 
+    @unittest.skipIf(sys.platform == 'OpenVMS', 'OpenVMS fails connecting to shell')
     def test_subprocess_shell(self):
         connect = self.loop.subprocess_shell(
                         functools.partial(MySubprocessProtocol, self.loop),
@@ -1802,6 +1803,7 @@ class SubprocessTestsMixin:
         self.assertEqual(proto.data[2], b'')
         transp.close()
 
+    @unittest.skipIf(sys.platform == 'OpenVMS', 'OpenVMS fails connecting to shell')
     def test_subprocess_exitcode(self):
         connect = self.loop.subprocess_shell(
                         functools.partial(MySubprocessProtocol, self.loop),
@@ -1813,6 +1815,7 @@ class SubprocessTestsMixin:
         self.assertEqual(7, proto.returncode)
         transp.close()
 
+    @unittest.skipIf(sys.platform == 'OpenVMS', 'OpenVMS fails connecting to shell')
     def test_subprocess_close_after_finish(self):
         connect = self.loop.subprocess_shell(
                         functools.partial(MySubprocessProtocol, self.loop),
@@ -1930,6 +1933,7 @@ class SubprocessTestsMixin:
         transp.close()
         self.assertEqual(0, proto.returncode)
 
+    @unittest.skipIf(sys.platform == 'OpenVMS', 'OpenVMS fails')
     def test_subprocess_close_client_stream(self):
         prog = os.path.join(os.path.dirname(__file__), 'echo3.py')
 
@@ -1964,6 +1968,7 @@ class SubprocessTestsMixin:
         self.loop.run_until_complete(proto.completed)
         self.check_killed(proto.returncode)
 
+    @unittest.skipIf(sys.platform == 'OpenVMS', 'OpenVMS fails connecting to shell')
     def test_subprocess_wait_no_same_group(self):
         # start the new process in a new session
         connect = self.loop.subprocess_shell(
