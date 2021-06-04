@@ -25,6 +25,7 @@ devnull = '/dev/null'
 import os
 import sys
 import stat
+import errno
 import genericpath
 from genericpath import *
 
@@ -427,8 +428,8 @@ def _joinrealpath(path, rest, strict, seen):
         newpath = join(path, name)
         try:
             st = os.lstat(newpath)
-        except OSError:
-            if strict:
+        except OSError as exc:
+            if strict and not (exc.errno == errno.EPERM and sys.platform == 'OpenVMS'):
                 raise
             is_link = False
         else:
