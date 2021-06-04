@@ -96,7 +96,7 @@ CC_GETPATH_CFLAGS = $(CC_QUALIFIERS)/DEFINE=("Py_BUILD_CORE",$(GETPATH_DEFINES))
     ! #include "clinic/transmogrify.h.h"
     define cpython [.Include.cpython]
     define stringlib [.Objects.stringlib]
-    define clinic [.Objects.clinic],[.Python.clinic],[.Modules.clinic],[.Modules._io.clinic],[.Modules.cjkcodecs.clinic],[.Objects.stringlib.clinic],[.Modules._blake2.clinic],[.Modules._sha3.clinic],[.Modules._multiprocessing.clinic],[.Modules._sqlite.clinic]
+    define clinic [.Objects.clinic],[.Python.clinic],[.Modules.clinic],[.Modules._io.clinic],[.Modules.cjkcodecs.clinic],[.Objects.stringlib.clinic],[.Modules._blake2.clinic],[.Modules._sha3.clinic],[.Modules._multiprocessing.clinic],[.Modules._sqlite.clinic],[.Modules._ssl.clinic]
     define _ssl [.Modules._ssl]
     define ctypes [.Modules._ctypes]
     define modules [.Modules]
@@ -1343,7 +1343,6 @@ EXPAT_HEADERS = -
 
 # sqlite3
 SQL_OBJ_LIST = -
-[.$(OBJ_DIR).Modules._sqlite]cache.obs -
 [.$(OBJ_DIR).Modules._sqlite]connection.obs -
 [.$(OBJ_DIR).Modules._sqlite]cursor.obs -
 [.$(OBJ_DIR).Modules._sqlite]microprotocols.obs -
@@ -1353,7 +1352,6 @@ SQL_OBJ_LIST = -
 [.$(OBJ_DIR).Modules._sqlite]statement.obs -
 [.$(OBJ_DIR).Modules._sqlite]util.obs
 
-[.$(OBJ_DIR).Modules._sqlite]cache.obs : [.Modules._sqlite]cache.c $(PYTHON_HEADERS)
 [.$(OBJ_DIR).Modules._sqlite]connection.obs : [.Modules._sqlite]connection.c $(PYTHON_HEADERS)
 [.$(OBJ_DIR).Modules._sqlite]cursor.obs : [.Modules._sqlite]cursor.c $(PYTHON_HEADERS)
 [.$(OBJ_DIR).Modules._sqlite]microprotocols.obs : [.Modules._sqlite]microprotocols.c $(PYTHON_HEADERS)

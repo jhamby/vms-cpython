@@ -1,5 +1,9 @@
 #include "Python.h"
+#ifdef __VMS
+#include "Modules/_ssl.h"
+#else
 #include "../_ssl.h"
+#endif
 
 #include "openssl/err.h"
 #include "openssl/bio.h"

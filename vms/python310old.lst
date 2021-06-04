@@ -1,10 +1,10 @@
 Librarian I01-42
-Directory of ELF OBJECT library USR_DISK:[VORFOLOMEEV.cpython.OUT.RELEASE]LIBPYTHON.OLB;1 on  4-JUN-2021 08:57:18
-Creation date:   4-JUN-2021 08:07:28      Creator:  Librarian I01-42
-Revision date:   4-JUN-2021 08:55:15      Library format:   6.0
-Number of modules:    146                 Max. key length:  1024
-Other entries:       2131                 Preallocated index blocks:    213
-Recoverable deleted blocks:    10230      Total index blocks used:      268
+Directory of ELF OBJECT library USR_DISK:[VORFOLOMEEV.cpython.OUT.RELEASE]LIBPYTHON.OLB;1 on  4-JUN-2021 09:38:17
+Creation date:   4-JUN-2021 09:14:07      Creator:  Librarian I01-42
+Revision date:   4-JUN-2021 09:19:25      Library format:   6.0
+Number of modules:    145                 Max. key length:  1024
+Other entries:       2111                 Preallocated index blocks:    213
+Recoverable deleted blocks:        0      Total index blocks used:      263
 Max. Number history records:      20      Library history records:       20
 
 Module Python-ast
@@ -130,7 +130,6 @@ Module string_parser
 Module stringio
 Module structmember
 Module structseq
-Module suggestions
 Module symtable
 Module symtablemodule
 Module sysmodule
@@ -154,10 +153,15 @@ Module vms_smg_readline
 Module vms_spawn_helper
 Module weakrefobject
 PyAST_Check
+PyAST_Compile
+PyAST_CompileEx
+PyAST_CompileObject
 PyAST_mod2obj
 PyAST_obj2mod
-PyAiter_Check
-PyAnextAwaitable_New
+PyArena_AddPyObject
+PyArena_Free
+PyArena_Malloc
+PyArena_New
 PyArg_Parse
 PyArg_ParseTuple
 PyArg_ParseTupleAndKeywords
@@ -355,7 +359,6 @@ PyErr_Print
 PyErr_PrintEx
 PyErr_ProgramText
 PyErr_ProgramTextObject
-PyErr_RangedSyntaxLocat34l66ar$
 PyErr_ResourceWarning
 PyErr_Restore
 PyErr_SetExcInfo
@@ -419,7 +422,6 @@ PyExc_ConnectionRefusedError
 PyExc_ConnectionResetError
 PyExc_DeprecationWarning
 PyExc_EOFError
-PyExc_EncodingWarning
 PyExc_EnvironmentError
 PyExc_Exception
 PyExc_FileExistsError
@@ -496,6 +498,8 @@ PyFloat_GetInfo
 PyFloat_GetMax
 PyFloat_GetMin
 PyFloat_Type
+PyFrame_BlockPop
+PyFrame_BlockSetup
 PyFrame_FastToLocals
 PyFrame_FastToLocalsWithError
 PyFrame_GetBack
@@ -520,10 +524,9 @@ PyFunction_SetClosure
 PyFunction_SetDefaults
 PyFunction_SetKwDefaults
 PyFunction_Type
+PyFuture_FromAST
+PyFuture_FromASTObject
 PyGC_Collect
-PyGC_Disable
-PyGC_Enable
-PyGC_IsEnabled
 PyGILState_Check
 PyGILState_Ensure
 PyGILState_GetThisThreadState
@@ -805,7 +808,6 @@ PyObject_GenericGetAttr
 PyObject_GenericGetDict
 PyObject_GenericSetAttr
 PyObject_GenericSetDict
-PyObject_GetAiter
 PyObject_GetArenaAllocator
 PyObject_GetAttr
 PyObject_GetAttrString
@@ -841,6 +843,11 @@ PyObject_Str
 PyObject_Type
 PyObject_VectorcallDict
 PyObject_VectorcallMethod
+PyParser_ASTFromFile
+PyParser_ASTFromFileObject
+PyParser_ASTFromFilename
+PyParser_ASTFromString
+PyParser_ASTFromStringObject
 PyPickleBuffer_FromObject
 PyPickleBuffer_GetBuffer
 PyPickleBuffer_Release
@@ -873,6 +880,7 @@ PyRun_SimpleStringFlags
 PyRun_String
 PyRun_StringFlags
 PySTEntry_Type
+PyST_GetScope
 PySeqIter_New
 PySeqIter_Type
 PySequence_Check
@@ -933,6 +941,9 @@ PyStructSequence_NewType
 PyStructSequence_SetItem
 PyStructSequence_UnnamedField
 PySuper_Type
+PySymtable_Build
+PySymtable_BuildObject
+PySymtable_Free
 PySymtable_Lookup
 PySys_AddAuditHook
 PySys_AddWarnOption
@@ -1036,6 +1047,7 @@ PyUnicodeDecodeError_GetStart
 PyUnicodeDecodeError_SetEnd
 PyUnicodeDecodeError_SetReason
 PyUnicodeDecodeError_SetStart
+PyUnicodeEncodeError_Create
 PyUnicodeEncodeError_Ge2549dvm$
 PyUnicodeEncodeError_GetEnd
 PyUnicodeEncodeError_GetObject
@@ -1050,6 +1062,7 @@ PyUnicodeTranslateError0po7mq2$
 PyUnicodeTranslateError1nfk4sv$
 PyUnicodeTranslateError35n5p4j$
 PyUnicodeTranslateError3uuuc3v$
+PyUnicodeTranslateError_Create
 PyUnicodeTranslateError_GetEnd
 PyUnicodeTranslateError_SetEnd
 PyUnicode_Append
@@ -1100,8 +1113,19 @@ PyUnicode_DecodeUTF7Stateful
 PyUnicode_DecodeUTF8
 PyUnicode_DecodeUTF8Stateful
 PyUnicode_DecodeUnicodeEscape
+PyUnicode_Encode
+PyUnicode_EncodeASCII
+PyUnicode_EncodeCharmap
+PyUnicode_EncodeDecimal
 PyUnicode_EncodeFSDefault
+PyUnicode_EncodeLatin1
 PyUnicode_EncodeLocale
+PyUnicode_EncodeRawUnic0qs46ns$
+PyUnicode_EncodeUTF16
+PyUnicode_EncodeUTF32
+PyUnicode_EncodeUTF7
+PyUnicode_EncodeUTF8
+PyUnicode_EncodeUnicodeEscape
 PyUnicode_FSConverter
 PyUnicode_FSDecoder
 PyUnicode_Fill
@@ -1138,7 +1162,9 @@ PyUnicode_Split
 PyUnicode_Splitlines
 PyUnicode_Substring
 PyUnicode_Tailmatch
+PyUnicode_TransformDeci2bfsl6e$
 PyUnicode_Translate
+PyUnicode_TranslateCharmap
 PyUnicode_Type
 PyUnicode_WriteChar
 PyVectorcall_Call
@@ -1200,11 +1226,7 @@ Py_InitializeEx
 Py_InitializeFromConfig
 Py_InspectFlag
 Py_InteractiveFlag
-Py_Is
-Py_IsFalse
 Py_IsInitialized
-Py_IsNone
-Py_IsTrue
 Py_IsolatedFlag
 Py_LeaveRecursiveCall
 Py_Main
@@ -1226,6 +1248,8 @@ Py_SetProgramName
 Py_SetPythonHome
 Py_SetRecursionLimit
 Py_SetStandardStreamEncoding
+Py_SymtableString
+Py_SymtableStringObject
 Py_UTF8Mode
 Py_UnbufferedStdioFlag
 Py_UniversalNewlineFgets
@@ -1233,96 +1257,16 @@ Py_VaBuildValue
 Py_VerboseFlag
 Py_XNewRef
 Py_hexdigits
-_PyAST_AnnAssign
-_PyAST_Assert
-_PyAST_Assign
-_PyAST_AsyncFor
-_PyAST_AsyncFunctionDef
-_PyAST_AsyncWith
-_PyAST_Attribute
-_PyAST_AugAssign
-_PyAST_Await
-_PyAST_BinOp
-_PyAST_BoolOp
-_PyAST_Break
-_PyAST_Call
-_PyAST_ClassDef
-_PyAST_Compare
-_PyAST_Compile
-_PyAST_Constant
-_PyAST_Continue
-_PyAST_Delete
-_PyAST_Dict
-_PyAST_DictComp
-_PyAST_ExceptHandler
-_PyAST_Expr
 _PyAST_ExprAsUnicode
-_PyAST_Expression
 _PyAST_Fini
-_PyAST_For
-_PyAST_FormattedValue
-_PyAST_FunctionDef
-_PyAST_FunctionType
-_PyAST_GeneratorExp
 _PyAST_GetDocString
-_PyAST_Global
-_PyAST_If
-_PyAST_IfExp
-_PyAST_Import
-_PyAST_ImportFrom
-_PyAST_Interactive
-_PyAST_JoinedStr
-_PyAST_Lambda
-_PyAST_List
-_PyAST_ListComp
-_PyAST_Match
-_PyAST_MatchAs
-_PyAST_MatchClass
-_PyAST_MatchMapping
-_PyAST_MatchOr
-_PyAST_MatchSequence
-_PyAST_MatchSingleton
-_PyAST_MatchStar
-_PyAST_MatchValue
-_PyAST_Module
-_PyAST_Name
-_PyAST_NamedExpr
-_PyAST_Nonlocal
 _PyAST_Optimize
-_PyAST_Pass
-_PyAST_Raise
-_PyAST_Return
-_PyAST_Set
-_PyAST_SetComp
-_PyAST_Slice
-_PyAST_Starred
-_PyAST_Subscript
-_PyAST_Try
-_PyAST_Tuple
-_PyAST_TypeIgnore
-_PyAST_UnaryOp
 _PyAST_Validate
-_PyAST_While
-_PyAST_With
-_PyAST_Yield
-_PyAST_YieldFrom
-_PyAST_alias
-_PyAST_arg
-_PyAST_arguments
-_PyAST_comprehension
-_PyAST_keyword
-_PyAST_match_case
-_PyAST_withitem
 _PyAccu_Accumulate
 _PyAccu_Destroy
 _PyAccu_Finish
 _PyAccu_FinishAsList
 _PyAccu_Init
-_PyAnextAwaitable_Type
-_PyArena_AddPyObject
-_PyArena_Free
-_PyArena_Malloc
-_PyArena_New
 _PyArg_BadArgument
 _PyArg_CheckPositional
 _PyArg_Fini
@@ -1374,15 +1318,10 @@ _PyBytes_Join
 _PyBytes_Resize
 _PyCode_CheckLineNumber
 _PyCode_ConstantKey
-_PyCode_GetCellvars
 _PyCode_GetExtra
-_PyCode_GetFreevars
-_PyCode_GetVarnames
 _PyCode_InitAddressRange
 _PyCode_InitOpcache
-_PyCode_New
 _PyCode_SetExtra
-_PyCode_Validate
 _PyCodecInfo_GetIncreme06rkpfs$
 _PyCodecInfo_GetIncreme30gl7kb$
 _PyCodec_DecodeText
@@ -1411,7 +1350,6 @@ _PyCrossInterpreterData_Lookup
 _PyCrossInterpreterData_Release
 _PyDebugAllocatorStats
 _PyDictKeys_DecRef
-_PyDictKeys_GetVersionF1dv7g5a$
 _PyDictView_Intersect
 _PyDictView_New
 _PyDict_CheckConsistency
@@ -1455,7 +1393,7 @@ _PyErr_FormatFromCause
 _PyErr_FormatFromCauseTstate
 _PyErr_GetExcInfo
 _PyErr_GetTopmostException
-_PyErr_InitTypes
+_PyErr_Init
 _PyErr_NoMemory
 _PyErr_NormalizeException
 _PyErr_Print
@@ -1511,7 +1449,6 @@ _PyFloat_DebugMallocStats
 _PyFloat_Fini
 _PyFloat_FormatAdvancedWriter
 _PyFloat_Init
-_PyFloat_InitTypes
 _PyFloat_Pack2
 _PyFloat_Pack4
 _PyFloat_Pack8
@@ -1522,9 +1459,7 @@ _PyFrame_ClearFreeList
 _PyFrame_DebugMallocStats
 _PyFrame_Fini
 _PyFrame_New_NoTrack
-_PyFrame_TakeLocals
 _PyFunction_Vectorcall
-_PyFuture_FromAST
 _PyGC_CollectNoFail
 _PyGC_Dump
 _PyGC_DumpShutdownStats
@@ -1576,7 +1511,6 @@ _PyIO_str_fileno
 _PyIO_str_flush
 _PyIO_str_getstate
 _PyIO_str_isatty
-_PyIO_str_locale
 _PyIO_str_newlines
 _PyIO_str_nl
 _PyIO_str_peek
@@ -1655,7 +1589,6 @@ _PyLong_FromTime_t
 _PyLong_FromUid
 _PyLong_GCD
 _PyLong_Init
-_PyLong_InitTypes
 _PyLong_Lshift
 _PyLong_New
 _PyLong_NumBits
@@ -1737,10 +1670,6 @@ _PyObject_NextNotImplemented
 _PyObject_RealIsInstance
 _PyObject_RealIsSubclass
 _PyObject_SetAttrId
-_PyObject_VirtualAlloc
-_PyObject_VirtualFree
-_PyParser_ASTFromFile
-_PyParser_ASTFromString
 _PyParser_TokenNames
 _PyPathConfig_AsDict
 _PyPathConfig_Calculate
@@ -1759,13 +1688,12 @@ _PyPegen_arguments_pars2osg7js$
 _PyPegen_augoperator
 _PyPegen_check_barry_as_flufl
 _PyPegen_class_def_decorators
+_PyPegen_clear_memo_statistics
 _PyPegen_cmpop_expr_pair
 _PyPegen_collect_call_seqs
 _PyPegen_concatenate_strings
 _PyPegen_dummy_name
 _PyPegen_empty_arguments
-_PyPegen_ensure_imaginary
-_PyPegen_ensure_real
 _PyPegen_expect_forced_token
 _PyPegen_expect_soft_keyword
 _PyPegen_expect_token
@@ -1777,15 +1705,13 @@ _PyPegen_get_exprs
 _PyPegen_get_invalid_target
 _PyPegen_get_keys
 _PyPegen_get_last_nonnw261olhc$
-_PyPegen_get_pattern_keys
-_PyPegen_get_patterns
+_PyPegen_get_memo_statistics
 _PyPegen_get_values
 _PyPegen_insert_memo
 _PyPegen_interactive_exit
 _PyPegen_is_memoized
 _PyPegen_join_names_with_dot
 _PyPegen_join_sequences
-_PyPegen_key_pattern_pair
 _PyPegen_key_value_pair
 _PyPegen_keyword_or_starred
 _PyPegen_lookahead
@@ -1807,6 +1733,7 @@ _PyPegen_raise_error
 _PyPegen_raise_error_kn1i93eum$
 _PyPegen_run_parser
 _PyPegen_run_parser_fro1fbkkbp$
+_PyPegen_run_parser_from_file
 _PyPegen_run_parser_from_string
 _PyPegen_seq_append_to_end
 _PyPegen_seq_count_dots
@@ -1814,11 +1741,9 @@ _PyPegen_seq_delete_sta39r5p1s$
 _PyPegen_seq_extract_st1kl91q8$
 _PyPegen_seq_flatten
 _PyPegen_seq_insert_in_front
-_PyPegen_seq_last_item
 _PyPegen_set_expr_context
 _PyPegen_singleton_seq
 _PyPegen_slash_with_default
-_PyPegen_soft_keyword_token
 _PyPegen_star_etc
 _PyPegen_string_token
 _PyPegen_update_memo
@@ -1841,7 +1766,6 @@ _PyRuntimeState_Fini
 _PyRuntimeState_Init
 _PyRuntime_Finalize
 _PyRuntime_Initialize
-_PyST_GetScope
 _PySequence_BytesToCharpArray
 _PySequence_IterSearch
 _PySet_Dummy
@@ -1855,9 +1779,6 @@ _PySlice_GetLongIndices
 _PyStack_AsDict
 _PyState_AddModule
 _PyStructSequence_Init
-_PyStructSequence_InitType
-_PySymtable_Build
-_PySymtable_Free
 _PySys_Audit
 _PySys_ClearAuditHooks
 _PySys_Create
@@ -1873,9 +1794,7 @@ _PyThreadState_DeleteCurrent
 _PyThreadState_DeleteExcept
 _PyThreadState_GetDict
 _PyThreadState_Init
-_PyThreadState_PopLocals
 _PyThreadState_Prealloc
-_PyThreadState_PushLocals
 _PyThreadState_Swap
 _PyThreadState_UncheckedGet
 _PyThread_CurrentExceptions
@@ -1979,7 +1898,6 @@ _PyUnicode_FromASCII
 _PyUnicode_FromId
 _PyUnicode_Init
 _PyUnicode_InitEncodings
-_PyUnicode_InitTypes
 _PyUnicode_InsertThousa3dqn1s5$
 _PyUnicode_IsAlpha
 _PyUnicode_IsCaseIgnorable
@@ -2026,20 +1944,39 @@ _PyWideStringList_Check1etephj$
 _PyWideStringList_Clear
 _PyWideStringList_Copy
 _PyWideStringList_Extend
+_Py_AnnAssign
+_Py_Assert
+_Py_Assign
+_Py_AsyncFor
+_Py_AsyncFunctionDef
+_Py_AsyncWith
+_Py_Attribute
+_Py_AugAssign
+_Py_Await
+_Py_BinOp
+_Py_BoolOp
+_Py_Break
 _Py_BreakPoint
 _Py_BuildValue_SizeT
+_Py_Call
 _Py_CheckFunctionResult
 _Py_CheckRecursiveCall
 _Py_CheckSlotResult
+_Py_ClassDef
 _Py_ClearArgcArgv
 _Py_ClearFileSystemEncoding
 _Py_ClearStandardStreamEncoding
 _Py_CoerceLegacyLocale
+_Py_Compare
+_Py_Constant
+_Py_Continue
 _Py_Dealloc
-_Py_DecRef
 _Py_DecodeLocaleEx
 _Py_DecodeUTF8Ex
 _Py_DecodeUTF8_surrogateescape
+_Py_Delete
+_Py_Dict
+_Py_DictComp
 _Py_DisplaySourceLine
 _Py_DumpASCII
 _Py_DumpDecimal
@@ -2052,6 +1989,9 @@ _Py_EllipsisObject
 _Py_EncodeLocaleEx
 _Py_EncodeLocaleRaw
 _Py_EncodeUTF8Ex
+_Py_ExceptHandler
+_Py_Expr
+_Py_Expression
 _Py_FalseStruct
 _Py_FatalErrorFormat
 _Py_FatalErrorFunc
@@ -2059,7 +1999,12 @@ _Py_FatalError_TstateNULL
 _Py_FdIsInteractive
 _Py_FindEnvConfigValue
 _Py_FinishPendingCalls
+_Py_For
+_Py_FormattedValue
 _Py_FreeCharPArray
+_Py_FunctionDef
+_Py_FunctionType
+_Py_GeneratorExp
 _Py_GetAllocatedBlocks
 _Py_GetConfig
 _Py_GetConfigsAsDict
@@ -2070,6 +2015,7 @@ _Py_GetLocaleEncoding
 _Py_GetLocaleEncodingObject
 _Py_GetLocaleconvNumeric
 _Py_Gid_Converter
+_Py_Global
 _Py_HandleSystemExit
 _Py_HasFileSystemDefaul1d82ugm$
 _Py_HashBytes
@@ -2079,48 +2025,80 @@ _Py_HashPointerRaw
 _Py_HashRandomization_Fini
 _Py_HashRandomization_Init
 _Py_HashSecret
-_Py_IncRef
+_Py_If
+_Py_IfExp
+_Py_Import
+_Py_ImportFrom
 _Py_InitializeMain
+_Py_Interactive
 _Py_IsCoreInitialized
 _Py_IsFinalizing
 _Py_IsLocaleCoercionTarget
+_Py_JoinedStr
 _Py_KeyedHash
+_Py_Lambda
 _Py_LegacyLocaleDetected
+_Py_List
+_Py_ListComp
 _Py_M__hello
 _Py_M__importlib_bootst3jkv519$
 _Py_M__importlib_bootstrap
 _Py_M__zipimport
 _Py_Mangle
+_Py_Match
+_Py_MatchAs
+_Py_MatchOr
+_Py_Module
+_Py_Name
+_Py_NamedExpr
 _Py_NewInterpreter
 _Py_NewReference
 _Py_NoneStruct
+_Py_Nonlocal
 _Py_NotImplementedStruct
-_Py_Offer_Suggestions
 _Py_PackageContext
+_Py_Pass
 _Py_PreInitializeFromConfig
 _Py_PreInitializeFromPyArgv
+_Py_Raise
 _Py_ResetForceASCII
 _Py_RestoreSignals
+_Py_Return
+_Py_Set
+_Py_SetComp
 _Py_SetFileSystemEncoding
 _Py_SetLocaleFromEnv
 _Py_SetProgramFullPath
 _Py_Sigset_Converter
+_Py_Slice
 _Py_SourceAsString
+_Py_Starred
+_Py_Subscript
 _Py_SwappedOp
 _Py_SymtableStringObjectFlags
 _Py_TrueStruct
-_Py_UTF8_Edit_Cost
+_Py_Try
+_Py_Tuple
+_Py_TypeIgnore
 _Py_Uid_Converter
+_Py_UnaryOp
 _Py_UnhandledKeyboardInterrupt
 _Py_Union
 _Py_UnionType
 _Py_VaBuildStack
 _Py_VaBuildStack_SizeT
 _Py_VaBuildValue_SizeT
+_Py_While
+_Py_With
+_Py_Yield
+_Py_YieldFrom
 _Py_abspath
 _Py_abstract_hack
 _Py_add_one_to_index_C
 _Py_add_one_to_index_F
+_Py_alias
+_Py_arg
+_Py_arguments
 _Py_ascii_whitespace
 _Py_asdl_alias_seq_new
 _Py_asdl_arg_seq_new
@@ -2134,7 +2112,6 @@ _Py_asdl_int_seq_new
 _Py_asdl_keyword_seq_new
 _Py_asdl_match_case_seq_new
 _Py_asdl_mod_seq_new
-_Py_asdl_pattern_seq_new
 _Py_asdl_stmt_seq_new
 _Py_asdl_type_ignore_seq_new
 _Py_asdl_withitem_seq_new
@@ -2169,6 +2146,7 @@ _Py_c_quot
 _Py_c_sum
 _Py_capitalize__doc__
 _Py_closerange
+_Py_comprehension
 _Py_convert_optional_to_ssize_t
 _Py_count__doc__
 _Py_ctype_table
@@ -2180,7 +2158,6 @@ _Py_dg_freedtoa
 _Py_dg_infinity
 _Py_dg_stdnan
 _Py_dg_strtod
-_Py_dict_lookup
 _Py_dup
 _Py_endswith__doc__
 _Py_find__doc__
@@ -2215,8 +2192,10 @@ _Py_islower__doc__
 _Py_isspace__doc__
 _Py_istitle__doc__
 _Py_isupper__doc__
+_Py_keyword
 _Py_lower__doc__
 _Py_maketrans__doc__
+_Py_match_case
 _Py_normalize_encoding
 _Py_open
 _Py_open_noraise
@@ -2228,7 +2207,6 @@ _Py_rindex__doc__
 _Py_set_blocking
 _Py_set_inheritable
 _Py_set_inheritable_async_safe
-_Py_set_localsplus_info
 _Py_startswith__doc__
 _Py_stat
 _Py_str_to_int
@@ -2244,6 +2222,7 @@ _Py_union_type_or
 _Py_upper__doc__
 _Py_wfopen
 _Py_wgetcwd
+_Py_withitem
 _Py_wreadlink
 _Py_write
 _Py_write_noraise
