@@ -285,7 +285,7 @@ class FileTests(unittest.TestCase):
 
     def fdopen_helper(self, *args):
         fd = os.open(os_helper.TESTFN, os.O_RDONLY)
-        f = os.fdopen(fd, *args)
+        f = os.fdopen(fd, *args, encoding="utf-8")
         f.close()
 
     def test_fdopen(self):
@@ -306,7 +306,7 @@ class FileTests(unittest.TestCase):
 
         os.replace(os_helper.TESTFN, TESTFN2)
         self.assertRaises(FileNotFoundError, os.stat, os_helper.TESTFN)
-        with open(TESTFN2, 'r') as f:
+        with open(TESTFN2, 'r', encoding='utf-8') as f:
             self.assertEqual(f.read(), "1")
 
     def test_open_keywords(self):
@@ -1669,7 +1669,7 @@ class MakedirTests(unittest.TestCase):
     def test_exist_ok_existing_regular_file(self):
         base = os_helper.TESTFN
         path = os.path.join(os_helper.TESTFN, 'dir1')
-        with open(path, 'w') as f:
+        with open(path, 'w', encoding='utf-8') as f:
             f.write('abc')
         self.assertRaises(OSError, os.makedirs, path)
         self.assertRaises(OSError, os.makedirs, path, exist_ok=False)
@@ -2142,7 +2142,7 @@ class Win32ErrorTests(unittest.TestCase):
 
 
 class TestInvalidFD(unittest.TestCase):
-    singles = ["fchdir", "dup", "fdopen", "fdatasync", "fstat",
+    singles = ["fchdir", "dup", "fdatasync", "fstat",
                "fstatvfs", "fsync", "tcgetpgrp", "ttyname"]
     #singles.append("close")
     #We omit close because it doesn't raise an exception on some platforms
@@ -2154,14 +2154,17 @@ class TestInvalidFD(unittest.TestCase):
     for f in singles:
         locals()["test_"+f] = get_single(f)
 
-    def check(self, f, *args):
+    def check(self, f, *args, **kwargs):
         try:
-            f(os_helper.make_bad_fd(), *args)
+            f(os_helper.make_bad_fd(), *args, **kwargs)
         except OSError as e:
             self.assertEqual(e.errno, errno.EBADF)
         else:
             self.fail("%r didn't raise an OSError with a bad file descriptor"
                       % f)
+
+    def test_fdopen(self):
+        self.check(os.fdopen, encoding="utf-8")
 
     @unittest.skipUnless(hasattr(os, 'isatty'), 'test needs os.isatty()')
     def test_isatty(self):
@@ -2266,7 +2269,7 @@ class LinkTests(unittest.TestCase):
                 self.skipTest('os.link(): %s' % e)
             else:
                 raise e
-        with open(file1, "r") as f1, open(file2, "r") as f2:
+        with open(file1, "rb") as f1, open(file2, "rb") as f2:
             self.assertTrue(os.path.sameopenfile(f1.fileno(), f2.fileno()))
 
     def test_link(self):
@@ -3067,7 +3070,7 @@ class SpawnTests(unittest.TestCase):
             code = ('import sys, os; magic = os.environ[%r]; sys.exit(%s)'
                     % (self.key, self.exitcode))
 
-        with open(filename, "w") as fp:
+        with open(filename, "w", encoding="utf-8") as fp:
             fp.write(code)
 
         args = [sys.executable, filename]
@@ -3207,7 +3210,7 @@ class SpawnTests(unittest.TestCase):
         # equal character in the environment variable value
         filename = os_helper.TESTFN
         self.addCleanup(os_helper.unlink, filename)
-        with open(filename, "w") as fp:
+        with open(filename, "w", encoding="utf-8") as fp:
             fp.write('import sys, os\n'
                      'if os.getenv("FRUIT") != "orange=lemon":\n'
                      '    raise AssertionError')

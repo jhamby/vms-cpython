@@ -5533,7 +5533,7 @@ sock_decode_hostname(const char *name)
 #ifdef MS_WINDOWS
     /* Issue #26227: gethostbyaddr() returns a string encoded
      * to the ANSI code page */
-    return PyUnicode_DecodeFSDefault(name);
+    return PyUnicode_DecodeMBCS(name, strlen(name), "surrogatepass");
 #else
     /* Decode from UTF-8 */
     return PyUnicode_FromString(name);
@@ -7951,6 +7951,9 @@ PyInit__socket(void)
 #endif
 #ifdef  IPPROTO_BIP
     PyModule_AddIntMacro(m, IPPROTO_BIP);
+#endif
+#ifdef  IPPROTO_MPTCP
+    PyModule_AddIntMacro(m, IPPROTO_MPTCP);
 #endif
 /**/
 #ifdef  IPPROTO_RAW

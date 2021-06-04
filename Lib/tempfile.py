@@ -544,6 +544,10 @@ def NamedTemporaryFile(mode='w+b', buffering=-1, encoding=None,
     Returns an object with a file-like interface; the name of the file
     is accessible as its 'name' attribute.  The file will be automatically
     deleted when it is closed unless the 'delete' argument is set to False.
+
+    On POSIX, NamedTemporaryFiles cannot be automatically deleted if
+    the creating process is terminated abruptly with a SIGKILL signal.
+    Windows can delete the file even in this case.
     """
 
     prefix, suffix, dir, output_type = _sanitize_params(prefix, suffix, dir)
@@ -554,6 +558,9 @@ def NamedTemporaryFile(mode='w+b', buffering=-1, encoding=None,
     # the file when it is closed.  This is only supported by Windows.
     if _os.name == 'nt' and delete:
         flags |= _os.O_TEMPORARY
+
+    if "b" not in mode:
+        encoding = _io.text_encoding(encoding)
 
     (fd, name) = _mkstemp_inner(dir, prefix, suffix, flags, output_type)
     try:
@@ -594,6 +601,9 @@ else:
         name, and will cease to exist when it is closed.
         """
         global _O_TMPFILE_WORKS
+
+        if "b" not in mode:
+            encoding = _io.text_encoding(encoding)
 
         prefix, suffix, dir, output_type = _sanitize_params(prefix, suffix, dir)
 
@@ -650,6 +660,7 @@ class SpooledTemporaryFile:
         if 'b' in mode:
             self._file = _io.BytesIO()
         else:
+            encoding = _io.text_encoding(encoding)
             self._file = _io.TextIOWrapper(_io.BytesIO(),
                             encoding=encoding, errors=errors,
                             newline=newline)
