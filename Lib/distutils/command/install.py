@@ -489,13 +489,6 @@ class install(Command):
             if val is not None:
                 if os.name == 'posix' or os.name == 'nt':
                     val = os.path.expanduser(val)
-                if (sys.platform == 'OpenVMS'):
-                    # replace real paths by keys from config_vars
-                    for key in ['sys_prefix', 'prefix', 'sys_exec_prefix', 'exec_prefix']:
-                        value = self.config_vars.get(key)
-                        if value and val.startswith(value):
-                            val = '$' + key + val[len(value):]
-                            break
                 val = subst_vars(val, self.config_vars)
                 setattr(self, attr, val)
 

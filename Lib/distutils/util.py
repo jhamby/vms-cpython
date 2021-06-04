@@ -199,6 +199,8 @@ def subst_vars (s, local_vars):
         var_name = match.group(1)
         if var_name in local_vars:
             return str(local_vars[var_name])
+        elif sys.platform == 'OpenVMS':
+            return os.getenv(var_name, var_name)
         else:
             return os.environ[var_name]
 
