@@ -171,15 +171,19 @@ RAISE_ERROR_KNOWN_LOCATION(Parser *p, PyObject *errtype,
 #define EXTRA _start_lineno, _start_col_offset, _end_lineno, _end_col_offset, p->arena
 #ifdef __VMS
 #define RAISE_SYNTAX_ERROR(msg) _PyPegen_raise_error(p, PyExc_SyntaxError, msg)
+#define RAISE_SYNTAX_ERROR_P(msg, ...) _PyPegen_raise_error(p, PyExc_SyntaxError, msg, ##__VA_ARGS__)
 #define RAISE_INDENTATION_ERROR(msg) _PyPegen_raise_error(p, PyExc_IndentationError, msg)
+#define RAISE_INDENTATION_ERROR_P(msg, ...) _PyPegen_raise_error(p, PyExc_IndentationError, msg, ##__VA_ARGS__)
+#define RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, msg) \
+    RAISE_ERROR_KNOWN_LOCATION(p, PyExc_SyntaxError, (a)->lineno, (a)->col_offset, (b)->end_lineno, (b)->end_col_offset, msg)
+#define RAISE_SYNTAX_ERROR_KNOWN_RANGE_P(a, b, msg, ...) \
+    RAISE_ERROR_KNOWN_LOCATION(p, PyExc_SyntaxError, (a)->lineno, (a)->col_offset, (b)->end_lineno, (b)->end_col_offset, msg, ##__VA_ARGS__)
 #define RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, msg) \
-    RAISE_ERROR_KNOWN_LOCATION(p, PyExc_SyntaxError, (a)->lineno, (a)->col_offset, msg)
+    RAISE_ERROR_KNOWN_LOCATION(p, PyExc_SyntaxError, (a)->lineno, (a)->col_offset, (a)->end_lineno, (a)->end_col_offset, msg)
+#define RAISE_SYNTAX_ERROR_KNOWN_LOCATION_P(a, msg, ...) \
+    RAISE_ERROR_KNOWN_LOCATION(p, PyExc_SyntaxError, (a)->lineno, (a)->col_offset, (a)->end_lineno, (a)->end_col_offset, msg, ##__VA_ARGS__)
 #define RAISE_SYNTAX_ERROR_STARTING_FROM(a, msg) \
     RAISE_ERROR_KNOWN_LOCATION(p, PyExc_SyntaxError, (a)->lineno, (a)->col_offset, CURRENT_POS, CURRENT_POS, msg)
-#define RAISE_SYNTAX_ERROR_P(msg, ...) _PyPegen_raise_error(p, PyExc_SyntaxError, msg, ##__VA_ARGS__)
-#define RAISE_INDENTATION_ERROR_P(msg, ...) _PyPegen_raise_error(p, PyExc_IndentationError, msg, ##__VA_ARGS__)
-#define RAISE_SYNTAX_ERROR_KNOWN_LOCATION_P(a, msg, ...) \
-    RAISE_ERROR_KNOWN_LOCATION(p, PyExc_SyntaxError, (a)->lineno, (a)->col_offset, msg, ##__VA_ARGS__)
 #define RAISE_SYNTAX_ERROR_STARTING_FROM_P(a, msg, ...) \
     RAISE_ERROR_KNOWN_LOCATION(p, PyExc_SyntaxError, (a)->lineno, (a)->col_offset, CURRENT_POS, CURRENT_POS, msg, ##__VA_ARGS__)
 #else
@@ -191,6 +195,7 @@ RAISE_ERROR_KNOWN_LOCATION(Parser *p, PyObject *errtype,
     RAISE_ERROR_KNOWN_LOCATION(p, PyExc_SyntaxError, (a)->lineno, (a)->col_offset, (a)->end_lineno, (a)->end_col_offset, msg, ##__VA_ARGS__)
 #define RAISE_SYNTAX_ERROR_STARTING_FROM(a, msg, ...) \
     RAISE_ERROR_KNOWN_LOCATION(p, PyExc_SyntaxError, (a)->lineno, (a)->col_offset, CURRENT_POS, CURRENT_POS, msg, ##__VA_ARGS__)
+#endif
 
 Py_LOCAL_INLINE(void *)
 CHECK_CALL(Parser *p, void *result)

@@ -18561,7 +18561,11 @@ invalid_named_expression_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_named_expression[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "expression ':=' expression"));
+        #ifdef __VMS
+            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION_P ( a , "cannot use assignment expressions with %s" , _PyPegen_get_expr_name ( a ) );
+        #else
             _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "cannot use assignment expressions with %s" , _PyPegen_get_expr_name ( a ) );
+        #endif
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 D(p->level--);
@@ -18627,7 +18631,11 @@ invalid_named_expression_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_named_expression[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "!(list | tuple | genexp | 'True' | 'None' | 'False') bitwise_or '=' bitwise_or !('=' | ':=')"));
+        #ifdef __VMS
+            _res = p -> in_raw_rule ? NULL : RAISE_SYNTAX_ERROR_KNOWN_LOCATION_P ( a , "cannot assign to %s here. Maybe you meant '==' instead of '='?" , _PyPegen_get_expr_name ( a ) );
+        #else
             _res = p -> in_raw_rule ? NULL : RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "cannot assign to %s here. Maybe you meant '==' instead of '='?" , _PyPegen_get_expr_name ( a ) );
+        #endif
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 D(p->level--);
@@ -18680,7 +18688,11 @@ invalid_assignment_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_assignment[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "invalid_ann_assign_target ':' expression"));
+        #ifdef __VMS
+            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION_P ( a , "only single target (not %s) can be annotated" , _PyPegen_get_expr_name ( a ) );
+        #else
             _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "only single target (not %s) can be annotated" , _PyPegen_get_expr_name ( a ) );
+        #endif
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 D(p->level--);
@@ -18836,7 +18848,11 @@ invalid_assignment_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_assignment[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "star_expressions augassign (yield_expr | star_expressions)"));
+        #ifdef __VMS
+            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION_P ( a , "'%s' is an illegal expression for augmented assignment" , _PyPegen_get_expr_name ( a ) );
+        #else
             _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "'%s' is an illegal expression for augmented assignment" , _PyPegen_get_expr_name ( a ) );
+        #endif
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 D(p->level--);
@@ -19979,7 +19995,11 @@ invalid_with_stmt_indent_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_with_stmt_indent[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "ASYNC? 'with' ','.(expression ['as' star_target])+ ':' NEWLINE !INDENT"));
+        #ifdef __VMS
+            _res = RAISE_INDENTATION_ERROR_P ( "expected an indented block after 'with' statement on line %d" , a -> lineno );
+        #else
             _res = RAISE_INDENTATION_ERROR ( "expected an indented block after 'with' statement on line %d" , a -> lineno );
+        #endif
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 D(p->level--);
@@ -20028,7 +20048,11 @@ invalid_with_stmt_indent_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_with_stmt_indent[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "ASYNC? 'with' '(' ','.(expressions ['as' star_target])+ ','? ')' ':' NEWLINE !INDENT"));
+        #ifdef __VMS
+            _res = RAISE_INDENTATION_ERROR_P ( "expected an indented block after 'with' statement on line %d" , a -> lineno );
+        #else
             _res = RAISE_INDENTATION_ERROR ( "expected an indented block after 'with' statement on line %d" , a -> lineno );
+        #endif
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 D(p->level--);
@@ -20077,7 +20101,11 @@ invalid_try_stmt_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_try_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'try' ':' NEWLINE !INDENT"));
+        #ifdef __VMS
+            _res = RAISE_INDENTATION_ERROR_P ( "expected an indented block after 'try' statement on line %d" , a -> lineno );
+        #else
             _res = RAISE_INDENTATION_ERROR ( "expected an indented block after 'try' statement on line %d" , a -> lineno );
+        #endif
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 D(p->level--);
@@ -20280,7 +20308,7 @@ invalid_finally_stmt_rule(Parser *p)
         {
             D(fprintf(stderr, "%*c+ invalid_finally_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'finally' ':' NEWLINE !INDENT"));
         #ifdef __VMS
-            _res = RAISE_INDENTATION_ERROR ( "expected an indented block after 'finally' statement on line %d" , a -> lineno );
+            _res = RAISE_INDENTATION_ERROR_P ( "expected an indented block after 'finally' statement on line %d" , a -> lineno );
         #else
             _res = RAISE_INDENTATION_ERROR ( "expected an indented block after 'finally' statement on line %d" , a -> lineno );
         #endif
@@ -20377,7 +20405,11 @@ invalid_except_stmt_indent_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_except_stmt_indent[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'except' ':' NEWLINE !INDENT"));
+        #ifdef __VMS
+            _res = RAISE_SYNTAX_ERROR_P ( "expected an indented block after except statement on line %d" , a -> lineno );
+        #else
             _res = RAISE_SYNTAX_ERROR ( "expected an indented block after except statement on line %d" , a -> lineno );
+        #endif
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 D(p->level--);
@@ -20460,7 +20492,11 @@ invalid_match_stmt_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_match_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "\"match\" subject_expr ':' NEWLINE !INDENT"));
+        #ifdef __VMS
+            _res = RAISE_INDENTATION_ERROR_P ( "expected an indented block after 'match' statement on line %d" , a -> lineno );
+        #else
             _res = RAISE_INDENTATION_ERROR ( "expected an indented block after 'match' statement on line %d" , a -> lineno );
+        #endif
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 D(p->level--);
@@ -20639,7 +20675,11 @@ invalid_if_stmt_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_if_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'if' named_expression ':' NEWLINE !INDENT"));
+        #ifdef __VMS
+            _res = RAISE_INDENTATION_ERROR_P ( "expected an indented block after 'if' statement on line %d" , a -> lineno );
+        #else
             _res = RAISE_INDENTATION_ERROR ( "expected an indented block after 'if' statement on line %d" , a -> lineno );
+        #endif
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 D(p->level--);
@@ -20723,7 +20763,11 @@ invalid_elif_stmt_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_elif_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'elif' named_expression ':' NEWLINE !INDENT"));
+        #ifdef __VMS
+            _res = RAISE_INDENTATION_ERROR_P ( "expected an indented block after 'elif' statement on line %d" , a -> lineno );
+        #else
             _res = RAISE_INDENTATION_ERROR ( "expected an indented block after 'elif' statement on line %d" , a -> lineno );
+        #endif
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 D(p->level--);
@@ -20772,7 +20816,11 @@ invalid_else_stmt_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_else_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'else' ':' NEWLINE !INDENT"));
+        #ifdef __VMS
+            _res = RAISE_INDENTATION_ERROR_P ( "expected an indented block after 'else' statement on line %d" , a -> lineno );
+        #else
             _res = RAISE_INDENTATION_ERROR ( "expected an indented block after 'else' statement on line %d" , a -> lineno );
+        #endif
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 D(p->level--);
@@ -20856,7 +20904,11 @@ invalid_while_stmt_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_while_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'while' named_expression ':' NEWLINE !INDENT"));
+        #ifdef __VMS
+            _res = RAISE_INDENTATION_ERROR_P ( "expected an indented block after 'while' statement on line %d" , a -> lineno );
+        #else
             _res = RAISE_INDENTATION_ERROR ( "expected an indented block after 'while' statement on line %d" , a -> lineno );
+        #endif
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 D(p->level--);
@@ -20918,7 +20970,11 @@ invalid_for_stmt_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_for_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "ASYNC? 'for' star_targets 'in' star_expressions ':' NEWLINE !INDENT"));
+        #ifdef __VMS
+            _res = RAISE_INDENTATION_ERROR_P ( "expected an indented block after 'for' statement on line %d" , a -> lineno );
+        #else
             _res = RAISE_INDENTATION_ERROR ( "expected an indented block after 'for' statement on line %d" , a -> lineno );
+        #endif
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 D(p->level--);
@@ -20989,7 +21045,11 @@ invalid_def_raw_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_def_raw[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "ASYNC? 'def' NAME '(' params? ')' ['->' expression] ':' NEWLINE !INDENT"));
+        #ifdef __VMS
+            _res = RAISE_INDENTATION_ERROR_P ( "expected an indented block after function definition on line %d" , a -> lineno );
+        #else
             _res = RAISE_INDENTATION_ERROR ( "expected an indented block after function definition on line %d" , a -> lineno );
+        #endif
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 D(p->level--);
@@ -21045,7 +21105,11 @@ invalid_class_def_raw_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_class_def_raw[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'class' NAME ['(' arguments? ')'] ':' NEWLINE !INDENT"));
+        #ifdef __VMS
+            _res = RAISE_INDENTATION_ERROR_P ( "expected an indented block after class definition on line %d" , a -> lineno );
+        #else
             _res = RAISE_INDENTATION_ERROR ( "expected an indented block after class definition on line %d" , a -> lineno );
+        #endif
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 D(p->level--);

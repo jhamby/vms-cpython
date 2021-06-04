@@ -3,7 +3,7 @@ sys$library:pthread$rtl.exe/SHARE
 GSMATCH=LEQUAL,1,0
 CASE_SENSITIVE=YES
 
-! vms_* like procedures
+! vms specific procedures
 SYMBOL_VECTOR=(-
 map_fd_to_child=PROCEDURE,-
 vms_set_crtl_values=PROCEDURE,-

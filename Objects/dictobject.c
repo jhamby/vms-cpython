@@ -459,11 +459,39 @@ static PyDictKeysObject empty_keys_struct = {
 #else
 struct _dictkeysobject_to_fill {
     Py_ssize_t dk_refcnt;
-    Py_ssize_t dk_size;
-    dict_lookup_func dk_lookup;
+
+    /* Size of the hash table (dk_indices). It must be a power of 2. */
+    uint8_t dk_log2_size;
+
+    /* Kind of keys */
+    uint8_t dk_kind;
+
+    /* Version number -- Reset to 0 by any modification to keys */
+    uint32_t dk_version;
+
+    /* Number of usable entries in dk_entries. */
     Py_ssize_t dk_usable;
+
+    /* Number of used entries in dk_entries. */
     Py_ssize_t dk_nentries;
-    char dk_indices[8];
+
+    /* Actual hash table of dk_size entries. It holds indices in dk_entries,
+       or DKIX_EMPTY(-1) or DKIX_DUMMY(-2).
+
+       Indices must be: 0 <= indice < USABLE_FRACTION(dk_size).
+
+       The size in bytes of an indice depends on dk_size:
+
+       - 1 byte if dk_size <= 0xff (char*)
+       - 2 bytes if dk_size <= 0xffff (int16_t*)
+       - 4 bytes if dk_size <= 0xffffffff (int32_t*)
+       - 8 bytes otherwise (int64_t*)
+
+       Dynamically sized, SIZEOF_VOID_P is minimum. */
+    char dk_indices[8];  /* char is required to avoid strict aliasing. */
+
+    /* "PyDictKeyEntry dk_entries[dk_usable];" array follows:
+       see the DK_ENTRIES() macro */
 } static empty_keys_struct = {
 #endif
         1, /* dk_refcnt */

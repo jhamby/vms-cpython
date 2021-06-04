@@ -252,6 +252,7 @@ PYTHON_OBJS= -
 [.$(OBJ_DIR).Python]pytime.obc -
 [.$(OBJ_DIR).Python]bootstrap_hash.obc -
 [.$(OBJ_DIR).Python]structmember.obc -
+[.$(OBJ_DIR).Python]suggestions.obc -
 [.$(OBJ_DIR).Python]symtable.obc -
 [.$(OBJ_DIR).Python]sysmodule.obc -
 [.$(OBJ_DIR).Python]thread.obc -
@@ -402,12 +403,8 @@ UNICODE_DEPS = -
 # Header files
 
 PYTHON_HEADERS= -
-[.Include]stdint.h -
-[.Include]inttypes.h -
 [.Include]Python.h -
 [.Include]abstract.h -
-[.Include]asdl.h -
-[.Include]ast.h -
 [.Include]bltinmodule.h -
 [.Include]boolobject.h -
 [.Include]bytearrayobject.h -
@@ -473,7 +470,6 @@ PYTHON_HEADERS= -
 [.Include]sliceobject.h -
 [.Include]structmember.h -
 [.Include]structseq.h -
-[.Include]symtable.h -
 [.Include]sysmodule.h -
 [.Include]token.h -
 [.Include]traceback.h -
@@ -482,14 +478,16 @@ PYTHON_HEADERS= -
 [.Include]unicodeobject.h -
 [.Include]warnings.h -
 [.Include]weakrefobject.h -
+[.Include]stdint.h -
+[.Include]inttypes.h -
 pyconfig.h -
 $(PARSER_HEADERS) -
-[.Include]Python-ast.h -
 [.Include.cpython]abstract.h -
 [.Include.cpython]bytearrayobject.h -
 [.Include.cpython]bytesobject.h -
 [.Include.cpython]ceval.h -
 [.Include.cpython]code.h -
+[.Include.cpython]compile.h -
 [.Include.cpython]dictobject.h -
 [.Include.cpython]fileobject.h -
 [.Include.cpython]fileutils.h -
@@ -501,25 +499,34 @@ $(PARSER_HEADERS) -
 [.Include.cpython]methodobject.h -
 [.Include.cpython]object.h -
 [.Include.cpython]objimpl.h -
+[.Include.cpython]odictobject.h -
+[.Include.cpython]picklebufobject.h -
+[.Include.cpython]pyctype.h -
+[.Include.cpython]pydebug.h -
 [.Include.cpython]pyerrors.h -
+[.Include.cpython]pyfpe.h -
 [.Include.cpython]pylifecycle.h -
 [.Include.cpython]pymem.h -
 [.Include.cpython]pystate.h -
 [.Include.cpython]pythonrun.h -
+[.Include.cpython]pytime.h -
 [.Include.cpython]sysmodule.h -
 [.Include.cpython]traceback.h -
 [.Include.cpython]tupleobject.h -
 [.Include.cpython]unicodeobject.h -
 [.Include.internal]pycore_abstract.h -
 [.Include.internal]pycore_accu.h -
+[.Include.internal]pycore_asdl.h -
+[.Include.internal]pycore_ast.h -
+[.Include.internal]pycore_ast_state.h -
 [.Include.internal]pycore_atomic.h -
 [.Include.internal]pycore_atomic_funcs.h -
-[.Include.internal]pycore_ast_state.h -
 [.Include.internal]pycore_bitutils.h -
 [.Include.internal]pycore_bytes_methods.h -
 [.Include.internal]pycore_call.h -
 [.Include.internal]pycore_ceval.h -
 [.Include.internal]pycore_code.h -
+[.Include.internal]pycore_compile.h -
 [.Include.internal]pycore_condvar.h -
 [.Include.internal]pycore_context.h -
 [.Include.internal]pycore_dtoa.h -
@@ -534,14 +541,18 @@ $(PARSER_HEADERS) -
 [.Include.internal]pycore_interp.h -
 [.Include.internal]pycore_list.h -
 [.Include.internal]pycore_long.h -
+[.Include.internal]pycore_moduleobject.h -
 [.Include.internal]pycore_object.h -
 [.Include.internal]pycore_pathconfig.h -
+[.Include.internal]pycore_pyarena.h -
 [.Include.internal]pycore_pyerrors.h -
 [.Include.internal]pycore_pyhash.h -
 [.Include.internal]pycore_pylifecycle.h -
 [.Include.internal]pycore_pymem.h -
 [.Include.internal]pycore_pystate.h -
 [.Include.internal]pycore_runtime.h -
+[.Include.internal]pycore_structseq.h -
+[.Include.internal]pycore_symtable.h -
 [.Include.internal]pycore_sysmodule.h -
 [.Include.internal]pycore_traceback.h -
 [.Include.internal]pycore_tuple.h -
@@ -549,6 +560,7 @@ $(PARSER_HEADERS) -
 [.Include.internal]pycore_unionobject.h -
 [.Include.internal]pycore_warnings.h -
 [.Python]stdlib_module_names.h
+
 ! $(DTRACE_HEADERS)
 
 ############################################################################
@@ -603,45 +615,89 @@ $(PARSER_HEADERS) -
 ############################################################################
 # Static code
 
-[.$(OBJ_DIR).Parser]myreadline.obc : [.Parser]myreadline.c $(PYTHON_HEADERS)
-
-[.$(OBJ_DIR).Modules]config.obc : [.Modules]config.c $(PYTHON_HEADERS)
 [.$(OBJ_DIR).Modules]getpath.obc : [.Modules]getpath.c $(PYTHON_HEADERS)
     @ pipe create/dir $(DIR $(MMS$TARGET)) | copy SYS$INPUT nl:
     $(CC) $(CC_GETPATH_CFLAGS) /OBJECT=$(MMS$TARGET) $(MMS$SOURCE)
 
-
-[.$(OBJ_DIR).Modules]main.obc : [.Modules]main.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).Modules]config.obc : [.Modules]config.c $(PYTHON_HEADERS)
 [.$(OBJ_DIR).Modules]gcmodule.obc : [.Modules]gcmodule.c $(PYTHON_HEADERS)
-
-[.$(OBJ_DIR).Parser]pegen.obc : [.Parser]pegen.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).Modules]getbuildinfo.obc : [.Modules]getbuildinfo.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).Modules]main.obc : [.Modules]main.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).Objects]abstract.obc : [.Objects]abstract.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).Objects]accu.obc : [.Objects]accu.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).Objects]boolobject.obc : [.Objects]boolobject.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).Objects]bytearrayobject.obc : [.Objects]bytearrayobject.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).Objects]bytes_methods.obc : [.Objects]bytes_methods.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).Objects]bytesobject.obc : [.Objects]bytesobject.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).Objects]call.obc : [.Objects]call.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).Objects]capsule.obc : [.Objects]capsule.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).Objects]cellobject.obc : [.Objects]cellobject.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).Objects]classobject.obc : [.Objects]classobject.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).Objects]codeobject.obc : [.Objects]codeobject.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).Objects]complexobject.obc : [.Objects]complexobject.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).Objects]descrobject.obc : [.Objects]descrobject.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).Objects]dictobject.obc : [.Objects]dictobject.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).Objects]enumobject.obc : [.Objects]enumobject.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).Objects]exceptions.obc : [.Objects]exceptions.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).Objects]fileobject.obc : [.Objects]fileobject.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).Objects]floatobject.obc : [.Objects]floatobject.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).Objects]frameobject.obc : [.Objects]frameobject.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).Objects]funcobject.obc : [.Objects]funcobject.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).Objects]genericaliasobject.obc : [.Objects]genericaliasobject.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).Objects]genobject.obc : [.Objects]genobject.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).Objects]interpreteridobject.obc : [.Objects]interpreteridobject.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).Objects]iterobject.obc : [.Objects]iterobject.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).Objects]listobject.obc : [.Objects]listobject.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).Objects]longobject.obc : [.Objects]longobject.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).Objects]memoryobject.obc : [.Objects]memoryobject.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).Objects]methodobject.obc : [.Objects]methodobject.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).Objects]moduleobject.obc : [.Objects]moduleobject.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).Objects]namespaceobject.obc : [.Objects]namespaceobject.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).Objects]object.obc : [.Objects]object.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).Objects]obmalloc.obc : [.Objects]obmalloc.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).Objects]odictobject.obc : [.Objects]odictobject.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).Objects]picklebufobject.obc : [.Objects]picklebufobject.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).Objects]rangeobject.obc : [.Objects]rangeobject.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).Objects]setobject.obc : [.Objects]setobject.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).Objects]sliceobject.obc : [.Objects]sliceobject.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).Objects]structseq.obc : [.Objects]structseq.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).Objects]tupleobject.obc : [.Objects]tupleobject.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).Objects]typeobject.obc : [.Objects]typeobject.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).Objects]unicodectype.obc : [.Objects]unicodectype.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).Objects]unicodeobject.obc : [.Objects]unicodeobject.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).Objects]unionobject.obc : [.Objects]unionobject.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).Objects]weakrefobject.obc : [.Objects]weakrefobject.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).Parser]myreadline.obc : [.Parser]myreadline.c $(PYTHON_HEADERS)
 [.$(OBJ_DIR).Parser]parser.obc : [.Parser]parser.c $(PYTHON_HEADERS)
-[.$(OBJ_DIR).Parser]string_parser.obc : [.Parser]string_parser.c $(PYTHON_HEADERS)
 [.$(OBJ_DIR).Parser]peg_api.obc : [.Parser]peg_api.c $(PYTHON_HEADERS)
-
+[.$(OBJ_DIR).Parser]pegen.obc : [.Parser]pegen.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).Parser]string_parser.obc : [.Parser]string_parser.c $(PYTHON_HEADERS)
 [.$(OBJ_DIR).Parser]token.obc : [.Parser]token.c $(PYTHON_HEADERS)
-
 [.$(OBJ_DIR).Parser]tokenizer.obc : [.Parser]tokenizer.c $(PYTHON_HEADERS)
-[.$(OBJ_DIR).vms]vms_smg_readline.obc : [.vms]vms_smg_readline.c $(PYTHON_HEADERS)
-
-[.$(OBJ_DIR).Python]_warnings.obc : [.Python]_warnings.c $(PYTHON_HEADERS)
 [.$(OBJ_DIR).Python]Python-ast.obc : [.Python]Python-ast.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).Python]_warnings.obc : [.Python]_warnings.c $(PYTHON_HEADERS)
 [.$(OBJ_DIR).Python]asdl.obc : [.Python]asdl.c $(PYTHON_HEADERS)
 [.$(OBJ_DIR).Python]ast.obc : [.Python]ast.c $(PYTHON_HEADERS)
 [.$(OBJ_DIR).Python]ast_opt.obc : [.Python]ast_opt.c $(PYTHON_HEADERS)
 [.$(OBJ_DIR).Python]ast_unparse.obc : [.Python]ast_unparse.c $(PYTHON_HEADERS)
 [.$(OBJ_DIR).Python]bltinmodule.obc : [.Python]bltinmodule.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).Python]bootstrap_hash.obc : [.Python]bootstrap_hash.c $(PYTHON_HEADERS)
 [.$(OBJ_DIR).Python]ceval.obc : [.Python]ceval.c $(PYTHON_HEADERS)
 [.$(OBJ_DIR).Python]codecs.obc : [.Python]codecs.c $(PYTHON_HEADERS)
 [.$(OBJ_DIR).Python]compile.obc : [.Python]compile.c $(PYTHON_HEADERS)
 [.$(OBJ_DIR).Python]context.obc : [.Python]context.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).Python]dtoa.obc : [.Python]dtoa.c $(PYTHON_HEADERS)
 [.$(OBJ_DIR).Python]dynamic_annotations.obc : [.Python]dynamic_annotations.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).Python]dynload_shlib.obc : [.Python]dynload_shlib.c $(PYTHON_HEADERS)
 [.$(OBJ_DIR).Python]errors.obc : [.Python]errors.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).Python]fileutils.obc : [.Python]fileutils.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).Python]formatter_unicode.obc : [.Python]formatter_unicode.c $(PYTHON_HEADERS)
 [.$(OBJ_DIR).Python]frozenmain.obc : [.Python]frozenmain.c $(PYTHON_HEADERS)
 [.$(OBJ_DIR).Python]future.obc : [.Python]future.c $(PYTHON_HEADERS)
 [.$(OBJ_DIR).Python]getargs.obc : [.Python]getargs.c $(PYTHON_HEADERS)
 [.$(OBJ_DIR).Python]getcompiler.obc : [.Python]getcompiler.c $(PYTHON_HEADERS)
 [.$(OBJ_DIR).Python]getcopyright.obc : [.Python]getcopyright.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).Python]getopt.obc : [.Python]getopt.c $(PYTHON_HEADERS)
 [.$(OBJ_DIR).Python]getplatform.obc : [.Python]getplatform.c $(PYTHON_HEADERS)
 [.$(OBJ_DIR).Python]getversion.obc : [.Python]getversion.c $(PYTHON_HEADERS)
 [.$(OBJ_DIR).Python]hamt.obc : [.Python]hamt.c $(PYTHON_HEADERS)
@@ -662,75 +718,24 @@ $(PARSER_HEADERS) -
 [.$(OBJ_DIR).Python]pylifecycle.obc : [.Python]pylifecycle.c $(PYTHON_HEADERS)
 [.$(OBJ_DIR).Python]pymath.obc : [.Python]pymath.c $(PYTHON_HEADERS)
 [.$(OBJ_DIR).Python]pystate.obc : [.Python]pystate.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).Python]pystrcmp.obc : [.Python]pystrcmp.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).Python]pystrhex.obc : [.Python]pystrhex.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).Python]pystrtod.obc : [.Python]pystrtod.c $(PYTHON_HEADERS)
 [.$(OBJ_DIR).Python]pythonrun.obc : [.Python]pythonrun.c $(PYTHON_HEADERS)
 [.$(OBJ_DIR).Python]pytime.obc : [.Python]pytime.c $(PYTHON_HEADERS)
-[.$(OBJ_DIR).Python]bootstrap_hash.obc : [.Python]bootstrap_hash.c $(PYTHON_HEADERS)
 [.$(OBJ_DIR).Python]structmember.obc : [.Python]structmember.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).Python]suggestions.obc : [.Python]suggestions.c $(PYTHON_HEADERS)
 [.$(OBJ_DIR).Python]symtable.obc : [.Python]symtable.c $(PYTHON_HEADERS)
 [.$(OBJ_DIR).Python]sysmodule.obc : [.Python]sysmodule.c $(PYTHON_HEADERS)
 [.$(OBJ_DIR).Python]thread.obc : [.Python]thread.c $(PYTHON_HEADERS)
 [.$(OBJ_DIR).Python]traceback.obc : [.Python]traceback.c $(PYTHON_HEADERS)
-[.$(OBJ_DIR).Python]getopt.obc : [.Python]getopt.c $(PYTHON_HEADERS)
-[.$(OBJ_DIR).Python]pystrcmp.obc : [.Python]pystrcmp.c $(PYTHON_HEADERS)
-[.$(OBJ_DIR).Python]pystrtod.obc : [.Python]pystrtod.c $(PYTHON_HEADERS)
-[.$(OBJ_DIR).Python]pystrhex.obc : [.Python]pystrhex.c $(PYTHON_HEADERS)
-[.$(OBJ_DIR).Python]dtoa.obc : [.Python]dtoa.c $(PYTHON_HEADERS)
-[.$(OBJ_DIR).Python]formatter_unicode.obc : [.Python]formatter_unicode.c $(PYTHON_HEADERS)
-[.$(OBJ_DIR).Python]fileutils.obc : [.Python]fileutils.c $(PYTHON_HEADERS)
-[.$(OBJ_DIR).Python]dynload_shlib.obc : [.Python]dynload_shlib.c $(PYTHON_HEADERS)
-
-[.$(OBJ_DIR).Objects]abstract.obc : [.Objects]abstract.c $(PYTHON_HEADERS)
-[.$(OBJ_DIR).Objects]accu.obc : [.Objects]accu.c $(PYTHON_HEADERS)
-[.$(OBJ_DIR).Objects]boolobject.obc : [.Objects]boolobject.c $(PYTHON_HEADERS)
-[.$(OBJ_DIR).Objects]bytes_methods.obc : [.Objects]bytes_methods.c $(PYTHON_HEADERS)
-[.$(OBJ_DIR).Objects]bytearrayobject.obc : [.Objects]bytearrayobject.c $(PYTHON_HEADERS)
-[.$(OBJ_DIR).Objects]bytesobject.obc : [.Objects]bytesobject.c $(PYTHON_HEADERS)
-[.$(OBJ_DIR).Objects]call.obc : [.Objects]call.c $(PYTHON_HEADERS)
-[.$(OBJ_DIR).Objects]capsule.obc : [.Objects]capsule.c $(PYTHON_HEADERS)
-[.$(OBJ_DIR).Objects]cellobject.obc : [.Objects]cellobject.c $(PYTHON_HEADERS)
-[.$(OBJ_DIR).Objects]classobject.obc : [.Objects]classobject.c $(PYTHON_HEADERS)
-[.$(OBJ_DIR).Objects]codeobject.obc : [.Objects]codeobject.c $(PYTHON_HEADERS)
-[.$(OBJ_DIR).Objects]complexobject.obc : [.Objects]complexobject.c $(PYTHON_HEADERS)
-[.$(OBJ_DIR).Objects]descrobject.obc : [.Objects]descrobject.c $(PYTHON_HEADERS)
-[.$(OBJ_DIR).Objects]enumobject.obc : [.Objects]enumobject.c $(PYTHON_HEADERS)
-[.$(OBJ_DIR).Objects]exceptions.obc : [.Objects]exceptions.c $(PYTHON_HEADERS)
-[.$(OBJ_DIR).Objects]genericaliasobject.obc : [.Objects]genericaliasobject.c $(PYTHON_HEADERS)
-[.$(OBJ_DIR).Objects]genobject.obc : [.Objects]genobject.c $(PYTHON_HEADERS)
-[.$(OBJ_DIR).Objects]fileobject.obc : [.Objects]fileobject.c $(PYTHON_HEADERS)
-[.$(OBJ_DIR).Objects]floatobject.obc : [.Objects]floatobject.c $(PYTHON_HEADERS)
-[.$(OBJ_DIR).Objects]frameobject.obc : [.Objects]frameobject.c $(PYTHON_HEADERS)
-[.$(OBJ_DIR).Objects]funcobject.obc : [.Objects]funcobject.c $(PYTHON_HEADERS)
-[.$(OBJ_DIR).Objects]interpreteridobject.obc : [.Objects]interpreteridobject.c $(PYTHON_HEADERS)
-[.$(OBJ_DIR).Objects]iterobject.obc : [.Objects]iterobject.c $(PYTHON_HEADERS)
-[.$(OBJ_DIR).Objects]listobject.obc : [.Objects]listobject.c $(PYTHON_HEADERS)
-[.$(OBJ_DIR).Objects]longobject.obc : [.Objects]longobject.c $(PYTHON_HEADERS)
-[.$(OBJ_DIR).Objects]dictobject.obc : [.Objects]dictobject.c $(PYTHON_HEADERS)
-[.$(OBJ_DIR).Objects]odictobject.obc : [.Objects]odictobject.c $(PYTHON_HEADERS)
-[.$(OBJ_DIR).Objects]memoryobject.obc : [.Objects]memoryobject.c $(PYTHON_HEADERS)
-[.$(OBJ_DIR).Objects]methodobject.obc : [.Objects]methodobject.c $(PYTHON_HEADERS)
-[.$(OBJ_DIR).Objects]moduleobject.obc : [.Objects]moduleobject.c $(PYTHON_HEADERS)
-[.$(OBJ_DIR).Objects]namespaceobject.obc : [.Objects]namespaceobject.c $(PYTHON_HEADERS)
-[.$(OBJ_DIR).Objects]object.obc : [.Objects]object.c $(PYTHON_HEADERS)
-[.$(OBJ_DIR).Objects]obmalloc.obc : [.Objects]obmalloc.c $(PYTHON_HEADERS)
-[.$(OBJ_DIR).Objects]picklebufobject.obc : [.Objects]picklebufobject.c $(PYTHON_HEADERS)
-[.$(OBJ_DIR).Objects]rangeobject.obc : [.Objects]rangeobject.c $(PYTHON_HEADERS)
-[.$(OBJ_DIR).Objects]setobject.obc : [.Objects]setobject.c $(PYTHON_HEADERS)
-[.$(OBJ_DIR).Objects]sliceobject.obc : [.Objects]sliceobject.c $(PYTHON_HEADERS)
-[.$(OBJ_DIR).Objects]structseq.obc : [.Objects]structseq.c $(PYTHON_HEADERS)
-[.$(OBJ_DIR).Objects]tupleobject.obc : [.Objects]tupleobject.c $(PYTHON_HEADERS)
-[.$(OBJ_DIR).Objects]typeobject.obc : [.Objects]typeobject.c $(PYTHON_HEADERS)
-[.$(OBJ_DIR).Objects]unicodeobject.obc : [.Objects]unicodeobject.c $(PYTHON_HEADERS)
-[.$(OBJ_DIR).Objects]unicodectype.obc : [.Objects]unicodectype.c $(PYTHON_HEADERS)
-[.$(OBJ_DIR).Objects]unionobject.obc : [.Objects]unionobject.c $(PYTHON_HEADERS)
-[.$(OBJ_DIR).Objects]weakrefobject.obc : [.Objects]weakrefobject.c $(PYTHON_HEADERS)
-
-[.$(OBJ_DIR).Modules]getbuildinfo.obc : [.Modules]getbuildinfo.c $(PYTHON_HEADERS)
 [.$(OBJ_DIR).vms]vms_crtl_values.obc : [.vms]vms_crtl_values.c
-[.$(OBJ_DIR).vms]vms_select.obc : [.vms]vms_select.c [.vms]vms_select.h [.vms]vms_spawn_helper.h [.vms]vms_sleep.h
-[.$(OBJ_DIR).vms]vms_spawn_helper.obc : [.vms]vms_spawn_helper.c [.vms]vms_spawn_helper.h
-[.$(OBJ_DIR).vms]vms_sleep.obc : [.vms]vms_sleep.c [.vms]vms_sleep.h
-[.$(OBJ_DIR).vms]vms_mbx_util.obc : [.vms]vms_mbx_util.c [.vms]vms_mbx_util.h
 [.$(OBJ_DIR).vms]vms_fcntl.obc : [.vms]vms_fcntl.c [.vms]vms_fcntl.h [.vms]vms_mbx_util.h
+[.$(OBJ_DIR).vms]vms_mbx_util.obc : [.vms]vms_mbx_util.c [.vms]vms_mbx_util.h
+[.$(OBJ_DIR).vms]vms_select.obc : [.vms]vms_select.c [.vms]vms_select.h [.vms]vms_spawn_helper.h [.vms]vms_sleep.h
+[.$(OBJ_DIR).vms]vms_sleep.obc : [.vms]vms_sleep.c [.vms]vms_sleep.h
+[.$(OBJ_DIR).vms]vms_smg_readline.obc : [.vms]vms_smg_readline.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).vms]vms_spawn_helper.obc : [.vms]vms_spawn_helper.c [.vms]vms_spawn_helper.h
 
 [.$(OBJ_DIR).Python]frozen.obc : [.Python]frozen.c -
 [.Python]importlib.h -
