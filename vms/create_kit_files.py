@@ -27,10 +27,6 @@ def create_content(type, major, minor, level, edit):
                 '" source "' + \
                 kit_dir + file_name + file_ext + \
                 '";')
-        try:
-            dirs.remove('__pycache__')
-        except:
-            pass
 
     kit_template = '''--
 -- (C) Copyright 2021 VMS Software Inc.
@@ -166,7 +162,7 @@ if __name__ == "__main__":
     major = '3'
     minor = '10'
     level = '0'
-    edit = 'dev001'
+    edit = 'dev002'
 
     for opt, optarg in opts:
         if opt in ['--type']:

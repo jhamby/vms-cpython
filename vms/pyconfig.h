@@ -16,6 +16,12 @@
    support for AIX C++ shared extension modules. */
 #undef AIX_GENUINE_CPLUSPLUS
 
+/* The normal alignment of `long', in bytes. */
+#define ALIGNOF_LONG 4
+
+/* The normal alignment of `size_t', in bytes. */
+#define ALIGNOF_SIZE_T 4
+
 /* Alternative SOABI used in debug build to load C extensions built in release
    mode */
 #undef ALT_SOABI

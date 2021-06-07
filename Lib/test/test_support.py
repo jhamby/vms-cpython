@@ -46,7 +46,7 @@ class TestSupport(unittest.TestCase):
         self.assertNotIn("sched", sys.modules)
 
     def test_unlink(self):
-        with open(TESTFN, "w") as f:
+        with open(TESTFN, "w", encoding="utf-8") as f:
             pass
         os_helper.unlink(TESTFN)
         self.assertFalse(os.path.exists(TESTFN))
@@ -78,7 +78,7 @@ class TestSupport(unittest.TestCase):
 
     def test_forget(self):
         mod_filename = TESTFN + '.py'
-        with open(mod_filename, 'w') as f:
+        with open(mod_filename, 'w', encoding="utf-8") as f:
             print('foo = 1', file=f)
         sys.path.insert(0, os.curdir)
         importlib.invalidate_caches()
