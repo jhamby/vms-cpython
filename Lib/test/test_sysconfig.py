@@ -267,7 +267,7 @@ class TestSysConfig(unittest.TestCase):
         if HAS_USER_BASE:
             wanted.extend(['nt_user', 'osx_framework_user', 'posix_user'])
         if sys.platform == 'OpenVMS':
-            wanted.extend(['OpenVMS'])
+            wanted.extend(['openvms'])
         self.assertEqual(get_scheme_names(), tuple(sorted(wanted)))
 
     @skip_unless_symlink
