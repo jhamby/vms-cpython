@@ -12,7 +12,9 @@ from test.test_asyncio import utils as test_utils
 from test import support
 from test.support import os_helper
 
-if sys.platform != 'win32':
+if sys.platform == 'OpenVMS':
+    from asyncio import openvms_events as unix_events
+elif sys.platform != 'win32':
     from asyncio import unix_events
 
 # Program blocking
@@ -180,6 +182,8 @@ class SubprocessMixin:
         if sys.platform == 'win32':
             self.assertIsInstance(returncode, int)
             # expect 1 but sometimes get 0
+        elif sys.platform == 'OpenVMS':
+            self.assertEqual(signal.SIGKILL, returncode)
         else:
             self.assertEqual(-signal.SIGKILL, returncode)
 
@@ -193,6 +197,8 @@ class SubprocessMixin:
         if sys.platform == 'win32':
             self.assertIsInstance(returncode, int)
             # expect 1 but sometimes get 0
+        elif sys.platform == 'OpenVMS':
+            self.assertEqual(signal.SIGTERM, returncode)
         else:
             self.assertEqual(-signal.SIGTERM, returncode)
 
@@ -222,7 +228,10 @@ class SubprocessMixin:
                 return returncode
 
             returncode = self.loop.run_until_complete(send_signal(proc))
-            self.assertEqual(-signal.SIGHUP, returncode)
+            if sys.platform == 'OpenVMS':
+                self.assertEqual(signal.SIGHUP, returncode)
+            else:
+                self.assertEqual(-signal.SIGHUP, returncode)
         finally:
             signal.signal(signal.SIGHUP, old_handler)
 
@@ -639,7 +648,55 @@ class SubprocessMixin:
         self.assertIsNone(self.loop.run_until_complete(execute()))
 
 
-if sys.platform != 'win32':
+if sys.platform == 'win32':
+    # Windows
+    class SubprocessProactorTests(SubprocessMixin, test_utils.TestCase):
+
+        def setUp(self):
+            super().setUp()
+            self.loop = asyncio.ProactorEventLoop()
+            self.set_event_loop(self.loop)
+
+elif sys.platform == 'OpenVMS':
+    # OpenVMS
+    class SubprocessWatcherMixin(SubprocessMixin):
+
+        Watcher = None
+
+        def setUp(self):
+            super().setUp()
+            policy = asyncio.get_event_loop_policy()
+            self.loop = policy.new_event_loop()
+            self.set_event_loop(self.loop)
+
+            watcher = self.Watcher()
+            watcher.attach_loop(self.loop)
+            policy.set_child_watcher(watcher)
+
+        def tearDown(self):
+            super().tearDown()
+            policy = asyncio.get_event_loop_policy()
+            watcher = policy.get_child_watcher()
+            policy.set_child_watcher(None)
+            watcher.attach_loop(None)
+            watcher.close()
+
+    class SubprocessThreadedWatcherTests(SubprocessWatcherMixin,
+                                         test_utils.TestCase):
+
+        Watcher = unix_events.ThreadedChildWatcher
+
+    class SubprocessSafeWatcherTests(SubprocessWatcherMixin,
+                                     test_utils.TestCase):
+
+        Watcher = unix_events.SafeChildWatcher
+
+    class SubprocessFastWatcherTests(SubprocessWatcherMixin,
+                                     test_utils.TestCase):
+
+        Watcher = unix_events.FastChildWatcher
+
+else:
     # Unix
     class SubprocessWatcherMixin(SubprocessMixin):
 
@@ -697,17 +754,8 @@ if sys.platform != 'win32':
         "operating system does not support pidfds",
     )
     class SubprocessPidfdWatcherTests(SubprocessWatcherMixin,
-                                      test_utils.TestCase):
+                                    test_utils.TestCase):
         Watcher = unix_events.PidfdChildWatcher
-
-else:
-    # Windows
-    class SubprocessProactorTests(SubprocessMixin, test_utils.TestCase):
-
-        def setUp(self):
-            super().setUp()
-            self.loop = asyncio.ProactorEventLoop()
-            self.set_event_loop(self.loop)
 
 
 class GenericWatcherTests:

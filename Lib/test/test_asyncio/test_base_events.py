@@ -23,6 +23,24 @@ from test.support import socket_helper
 MOCK_ANY = mock.ANY
 PY34 = sys.version_info >= (3, 4)
 
+if (sys.platform == 'OpenVMS'):
+    import _sys
+    import _ile3
+    import _jpidef
+    import _dscdef
+    import _prvdef
+
+    def check_priv(priv):
+        a = _ile3.ile3list()
+        a.append(_jpidef.JPI__CURPRIV, _dscdef.DSC_K_DTYPE_QU)
+        _sys.getjpi(a)
+        if (a[0] & priv):
+            return True
+        else:
+            return False
+
+    def has_high_priv():
+        return check_priv(_prvdef.PRV_M_OPER | _prvdef.PRV_M_SYSPRV | _prvdef.PRV_M_BYPASS)
 
 def tearDownModule():
     asyncio.set_event_loop_policy(None)
@@ -1608,6 +1626,8 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         self.assertRaises(
             OSError, self.loop.run_until_complete, coro)
 
+    @unittest.skipIf(sys.platform == 'OpenVMS' and not has_high_priv(),
+                        'OpenVMS requires OPER, SYSPRV or BYPASS privilege')
     def test_create_datagram_endpoint_allow_broadcast(self):
         protocol = MyDatagramProto(create_future=True, loop=self.loop)
         self.loop.sock_connect = sock_connect = mock.Mock()
@@ -1749,6 +1769,8 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
 
     @unittest.skipIf(sys.platform == 'vxworks',
                     "SO_BROADCAST is enabled by default on VxWorks")
+    @unittest.skipIf(sys.platform == 'OpenVMS' and not has_high_priv(),
+                        'OpenVMS requires OPER, SYSPRV or BYPASS privilege')
     def test_create_datagram_endpoint_sockopts(self):
         # Socket options should not be applied unless asked for.
         # SO_REUSEPORT is not available on all platforms.

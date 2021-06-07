@@ -19,6 +19,12 @@ from test.support import socket_helper
 if sys.platform == 'win32':
     raise unittest.SkipTest('UNIX only')
 
+patch_signal = 'asyncio.unix_events.signal'
+patch_sys = 'asyncio.unix_events.sys'
+if sys.platform == 'OpenVMS':
+    patch_signal = 'asyncio.openvms_events.signal'
+    patch_sys = 'asyncio.openvms_events.sys'
+
 
 import asyncio
 from asyncio import log
@@ -77,7 +83,7 @@ class SelectorEventLoopSignalTests(test_utils.TestCase):
         self.loop._handle_signal(signal.NSIG + 1)
         self.loop.remove_signal_handler.assert_called_with(signal.NSIG + 1)
 
-    @mock.patch('asyncio.unix_events.signal')
+    @mock.patch(patch_signal)
     def test_add_signal_handler_setup_error(self, m_signal):
         m_signal.NSIG = signal.NSIG
         m_signal.valid_signals = signal.valid_signals
@@ -88,7 +94,7 @@ class SelectorEventLoopSignalTests(test_utils.TestCase):
             self.loop.add_signal_handler,
             signal.SIGINT, lambda: True)
 
-    @mock.patch('asyncio.unix_events.signal')
+    @mock.patch(patch_signal)
     def test_add_signal_handler_coroutine_error(self, m_signal):
         m_signal.NSIG = signal.NSIG
 
@@ -105,7 +111,7 @@ class SelectorEventLoopSignalTests(test_utils.TestCase):
                 self.loop.add_signal_handler,
                 signal.SIGINT, func)
 
-    @mock.patch('asyncio.unix_events.signal')
+    @mock.patch(patch_signal)
     def test_add_signal_handler(self, m_signal):
         m_signal.NSIG = signal.NSIG
         m_signal.valid_signals = signal.valid_signals
@@ -116,7 +122,7 @@ class SelectorEventLoopSignalTests(test_utils.TestCase):
         self.assertIsInstance(h, asyncio.Handle)
         self.assertEqual(h._callback, cb)
 
-    @mock.patch('asyncio.unix_events.signal')
+    @mock.patch(patch_signal)
     def test_add_signal_handler_install_error(self, m_signal):
         m_signal.NSIG = signal.NSIG
         m_signal.valid_signals = signal.valid_signals
@@ -135,7 +141,7 @@ class SelectorEventLoopSignalTests(test_utils.TestCase):
             self.loop.add_signal_handler,
             signal.SIGINT, lambda: True)
 
-    @mock.patch('asyncio.unix_events.signal')
+    @mock.patch(patch_signal)
     @mock.patch('asyncio.base_events.logger')
     def test_add_signal_handler_install_error2(self, m_logging, m_signal):
         m_signal.NSIG = signal.NSIG
@@ -153,7 +159,7 @@ class SelectorEventLoopSignalTests(test_utils.TestCase):
         self.assertFalse(m_logging.info.called)
         self.assertEqual(1, m_signal.set_wakeup_fd.call_count)
 
-    @mock.patch('asyncio.unix_events.signal')
+    @mock.patch(patch_signal)
     @mock.patch('asyncio.base_events.logger')
     def test_add_signal_handler_install_error3(self, m_logging, m_signal):
         class Err(OSError):
@@ -169,7 +175,7 @@ class SelectorEventLoopSignalTests(test_utils.TestCase):
         self.assertFalse(m_logging.info.called)
         self.assertEqual(2, m_signal.set_wakeup_fd.call_count)
 
-    @mock.patch('asyncio.unix_events.signal')
+    @mock.patch(patch_signal)
     def test_remove_signal_handler(self, m_signal):
         m_signal.NSIG = signal.NSIG
         m_signal.valid_signals = signal.valid_signals
@@ -183,7 +189,7 @@ class SelectorEventLoopSignalTests(test_utils.TestCase):
         self.assertEqual(
             (signal.SIGHUP, m_signal.SIG_DFL), m_signal.signal.call_args[0])
 
-    @mock.patch('asyncio.unix_events.signal')
+    @mock.patch(patch_signal)
     def test_remove_signal_handler_2(self, m_signal):
         m_signal.NSIG = signal.NSIG
         m_signal.SIGINT = signal.SIGINT
@@ -201,7 +207,7 @@ class SelectorEventLoopSignalTests(test_utils.TestCase):
             (signal.SIGINT, m_signal.default_int_handler),
             m_signal.signal.call_args[0])
 
-    @mock.patch('asyncio.unix_events.signal')
+    @mock.patch(patch_signal)
     @mock.patch('asyncio.base_events.logger')
     def test_remove_signal_handler_cleanup_error(self, m_logging, m_signal):
         m_signal.NSIG = signal.NSIG
@@ -213,7 +219,7 @@ class SelectorEventLoopSignalTests(test_utils.TestCase):
         self.loop.remove_signal_handler(signal.SIGHUP)
         self.assertTrue(m_logging.info)
 
-    @mock.patch('asyncio.unix_events.signal')
+    @mock.patch(patch_signal)
     def test_remove_signal_handler_error(self, m_signal):
         m_signal.NSIG = signal.NSIG
         m_signal.valid_signals = signal.valid_signals
@@ -224,7 +230,7 @@ class SelectorEventLoopSignalTests(test_utils.TestCase):
         self.assertRaises(
             OSError, self.loop.remove_signal_handler, signal.SIGHUP)
 
-    @mock.patch('asyncio.unix_events.signal')
+    @mock.patch(patch_signal)
     def test_remove_signal_handler_error2(self, m_signal):
         m_signal.NSIG = signal.NSIG
         m_signal.valid_signals = signal.valid_signals
@@ -237,7 +243,7 @@ class SelectorEventLoopSignalTests(test_utils.TestCase):
         self.assertRaises(
             RuntimeError, self.loop.remove_signal_handler, signal.SIGHUP)
 
-    @mock.patch('asyncio.unix_events.signal')
+    @mock.patch(patch_signal)
     def test_close(self, m_signal):
         m_signal.NSIG = signal.NSIG
         m_signal.valid_signals = signal.valid_signals
@@ -254,8 +260,8 @@ class SelectorEventLoopSignalTests(test_utils.TestCase):
         self.assertEqual(len(self.loop._signal_handlers), 0)
         m_signal.set_wakeup_fd.assert_called_once_with(-1)
 
-    @mock.patch('asyncio.unix_events.sys')
-    @mock.patch('asyncio.unix_events.signal')
+    @mock.patch(patch_sys)
+    @mock.patch(patch_signal)
     def test_close_on_finalizing(self, m_signal, m_sys):
         m_signal.NSIG = signal.NSIG
         m_signal.valid_signals = signal.valid_signals
@@ -1212,7 +1218,10 @@ class ChildWatcherTestsMixin:
         self.add_zombie(42, EXITCODE(12))
         self.watcher._sig_chld()
 
-        callback.assert_called_once_with(42, 12, 9, 10, 14)
+        if sys.platform == 'OpenVMS':
+            callback.assert_called_once_with(42, EXITCODE(12), 9, 10, 14)
+        else:
+            callback.assert_called_once_with(42, 12, 9, 10, 14)
 
         callback.reset_mock()
 
@@ -1259,7 +1268,10 @@ class ChildWatcherTestsMixin:
         self.add_zombie(43, SIGNAL(3))
         self.watcher._sig_chld()
 
-        callback1.assert_called_once_with(43, -3, 7, 8)
+        if sys.platform == 'OpenVMS':
+            callback1.assert_called_once_with(43, SIGNAL(3), 7, 8)
+        else:
+            callback1.assert_called_once_with(43, -3, 7, 8)
         self.assertFalse(callback2.called)
 
         callback1.reset_mock()
@@ -1275,7 +1287,10 @@ class ChildWatcherTestsMixin:
         self.running = False
         self.watcher._sig_chld()
 
-        callback2.assert_called_once_with(44, 108, 147, 18)
+        if sys.platform == 'OpenVMS':
+            callback2.assert_called_once_with(44, EXITCODE(108), 147, 18)
+        else:
+            callback2.assert_called_once_with(44, 108, 147, 18)
         self.assertFalse(callback1.called)
 
         callback2.reset_mock()
@@ -1329,8 +1344,12 @@ class ChildWatcherTestsMixin:
         self.running = False
         self.watcher._sig_chld()
 
-        callback1.assert_called_once_with(45, 78, 17, 8)
-        callback2.assert_called_once_with(46, -5, 1147, 18)
+        if sys.platform == 'OpenVMS':
+            callback1.assert_called_once_with(45, EXITCODE(78), 17, 8)
+            callback2.assert_called_once_with(46, SIGNAL(5), 1147, 18)
+        else:
+            callback1.assert_called_once_with(45, 78, 17, 8)
+            callback2.assert_called_once_with(46, -5, 1147, 18)
 
         callback1.reset_mock()
         callback2.reset_mock()
@@ -1356,7 +1375,10 @@ class ChildWatcherTestsMixin:
 
             self.watcher.add_child_handler(50, callback, 1, 12)
 
-        callback.assert_called_once_with(50, 4, 1, 12)
+        if sys.platform == 'OpenVMS':
+            callback.assert_called_once_with(50, EXITCODE(4), 1, 12)
+        else:
+            callback.assert_called_once_with(50, 4, 1, 12)
         callback.reset_mock()
 
         # ensure that the child is effectively reaped
@@ -1391,7 +1413,10 @@ class ChildWatcherTestsMixin:
         self.add_zombie(51, SIGNAL(8))
         self.watcher._sig_chld()
 
-        callback2.assert_called_once_with(51, -8, 21)
+        if sys.platform == 'OpenVMS':
+            callback2.assert_called_once_with(51, SIGNAL(8), 21)
+        else:
+            callback2.assert_called_once_with(51, -8, 21)
         self.assertFalse(callback1.called)
 
         callback2.reset_mock()
@@ -1486,7 +1511,10 @@ class ChildWatcherTestsMixin:
 
         self.assertFalse(callback1.called)
         self.assertFalse(callback2.called)
-        callback3.assert_called_once_with(56, 2, 3)
+        if sys.platform == 'OpenVMS':
+            callback3.assert_called_once_with(56, EXITCODE(2), 3)
+        else:
+            callback3.assert_called_once_with(56, 2, 3)
 
     @waitpid_mocks
     def test_sigchld_unhandled_exception(self, m_waitpid):
@@ -1555,7 +1583,10 @@ class ChildWatcherTestsMixin:
             self.watcher.add_child_handler(591, callback1)
             self.watcher.add_child_handler(592, callback2)
 
-        callback1.assert_called_once_with(591, 7)
+        if sys.platform == 'OpenVMS':
+            callback1.assert_called_once_with(591, EXITCODE(7))
+        else:
+            callback1.assert_called_once_with(591, 7)
         self.assertFalse(callback2.called)
 
     @waitpid_mocks
@@ -1587,7 +1618,10 @@ class ChildWatcherTestsMixin:
         self.add_zombie(60, EXITCODE(9))
         self.watcher._sig_chld()
 
-        callback.assert_called_once_with(60, 9)
+        if sys.platform == 'OpenVMS':
+            callback.assert_called_once_with(60, EXITCODE(9))
+        else:
+            callback.assert_called_once_with(60, 9)
 
     @waitpid_mocks
     def test_set_loop_race_condition(self, m_waitpid):
@@ -1635,8 +1669,12 @@ class ChildWatcherTestsMixin:
 
             m_add_signal_handler.assert_called_once_with(
                 signal.SIGCHLD, self.watcher._sig_chld)
-            callback1.assert_called_once_with(61, 11)  # race condition!
-            callback2.assert_called_once_with(62, -5)  # race condition!
+            if sys.platform == 'OpenVMS':
+                callback1.assert_called_once_with(61, EXITCODE(11))  # race condition!
+                callback2.assert_called_once_with(62, EXITCODE(-5))  # race condition!
+            else:
+                callback1.assert_called_once_with(61, 11)  # race condition!
+                callback2.assert_called_once_with(62, -5)  # race condition!
             self.assertFalse(callback3.called)
 
         callback1.reset_mock()
@@ -1649,7 +1687,10 @@ class ChildWatcherTestsMixin:
 
         self.assertFalse(callback1.called)
         self.assertFalse(callback2.called)
-        callback3.assert_called_once_with(622, 19)
+        if sys.platform == 'OpenVMS':
+            callback3.assert_called_once_with(622, EXITCODE(19))
+        else:
+            callback3.assert_called_once_with(622, 19)
 
     @waitpid_mocks
     def test_close(self, m_waitpid):

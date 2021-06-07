@@ -2944,6 +2944,17 @@ PyOS_getsig(int sig)
 PyOS_sighandler_t
 PyOS_setsig(int sig, PyOS_sighandler_t handler)
 {
+#ifdef __VMS
+    // lack of error handling on OpenVMS
+    switch (sig) {
+        case SIGKILL:
+        case SIGSTOP:
+            if (handler != SIG_DFL) {
+                errno = EINVAL;
+                return SIG_ERR;
+            }
+    }
+#endif
 #ifdef HAVE_SIGACTION
     /* Some code in Modules/signalmodule.c depends on sigaction() being
      * used here if HAVE_SIGACTION is defined.  Fix that if this code

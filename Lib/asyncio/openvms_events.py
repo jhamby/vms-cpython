@@ -28,9 +28,10 @@ from .log import logger
 
 __all__ = (
     'SelectorEventLoop',
-    'AbstractChildWatcher', 'SafeChildWatcher',
-    'FastChildWatcher', 'PidfdChildWatcher',
-    'MultiLoopChildWatcher', 'ThreadedChildWatcher',
+    'AbstractChildWatcher',
+    'SafeChildWatcher',
+    'FastChildWatcher',
+    'ThreadedChildWatcher',
     'DefaultEventLoopPolicy',
 )
 
@@ -241,22 +242,16 @@ class _OpenVMSSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                 raise ValueError(
                     'path and sock can not be specified at the same time')
 
-            path = os.fspath(path)
-            sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM, 0)
-            try:
-                sock.setblocking(False)
-                await self.sock_connect(sock, path)
-            except:
-                sock.close()
-                raise
+            raise ValueError(
+                'path cannot be used on OpenVMS')
 
         else:
             if sock is None:
                 raise ValueError('no path and sock were specified')
-            if (sock.family != socket.AF_UNIX or
+            if (sock.family != socket.AF_INET or
                     sock.type != socket.SOCK_STREAM):
                 raise ValueError(
-                    f'A UNIX Domain Stream Socket was expected, got {sock!r}')
+                    f'An INET Stream Socket was expected, got {sock!r}')
             sock.setblocking(False)
 
         transport, protocol = await self._create_connection_transport(
@@ -281,44 +276,18 @@ class _OpenVMSSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                 raise ValueError(
                     'path and sock can not be specified at the same time')
 
-            path = os.fspath(path)
-            sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+            raise ValueError(
+                'path cannot be used on OpenVMS')
 
-            # Check for abstract socket. `str` and `bytes` paths are supported.
-            if path[0] not in (0, '\x00'):
-                try:
-                    if stat.S_ISSOCK(os.stat(path).st_mode):
-                        os.remove(path)
-                except FileNotFoundError:
-                    pass
-                except OSError as err:
-                    # Directory may have permissions only to create socket.
-                    logger.error('Unable to check or remove stale UNIX socket '
-                                 '%r: %r', path, err)
-
-            try:
-                sock.bind(path)
-            except OSError as exc:
-                sock.close()
-                if exc.errno == errno.EADDRINUSE:
-                    # Let's improve the error message by adding
-                    # with what exact address it occurs.
-                    msg = f'Address {path!r} is already in use'
-                    raise OSError(errno.EADDRINUSE, msg) from None
-                else:
-                    raise
-            except:
-                sock.close()
-                raise
         else:
             if sock is None:
                 raise ValueError(
                     'path was not specified, and no sock specified')
 
-            if (sock.family != socket.AF_UNIX or
+            if (sock.family != socket.AF_INET or
                     sock.type != socket.SOCK_STREAM):
                 raise ValueError(
-                    f'A UNIX Domain Stream Socket was expected, got {sock!r}')
+                    f'An INET Stream Socket was expected, got {sock!r}')
 
         sock.setblocking(False)
         server = base_events.Server(self, [sock], protocol_factory,
@@ -332,101 +301,17 @@ class _OpenVMSSelectorEventLoop(selector_events.BaseSelectorEventLoop):
         return server
 
     async def _sock_sendfile_native(self, sock, file, offset, count):
-        try:
-            os.sendfile
-        except AttributeError:
-            raise exceptions.SendfileNotAvailableError(
-                "os.sendfile() is not available")
-        try:
-            fileno = file.fileno()
-        except (AttributeError, io.UnsupportedOperation) as err:
-            raise exceptions.SendfileNotAvailableError("not a regular file")
-        try:
-            fsize = os.fstat(fileno).st_size
-        except OSError:
-            raise exceptions.SendfileNotAvailableError("not a regular file")
-        blocksize = count if count else fsize
-        if not blocksize:
-            return 0  # empty file
-
-        fut = self.create_future()
-        self._sock_sendfile_native_impl(fut, None, sock, fileno,
-                                        offset, count, blocksize, 0)
-        return await fut
+        raise exceptions.SendfileNotAvailableError(
+            "os.sendfile() is not available")
 
     def _sock_sendfile_native_impl(self, fut, registered_fd, sock, fileno,
                                    offset, count, blocksize, total_sent):
-        fd = sock.fileno()
-        if registered_fd is not None:
-            # Remove the callback early.  It should be rare that the
-            # selector says the fd is ready but the call still returns
-            # EAGAIN, and I am willing to take a hit in that case in
-            # order to simplify the common case.
-            self.remove_writer(registered_fd)
-        if fut.cancelled():
-            self._sock_sendfile_update_filepos(fileno, offset, total_sent)
-            return
-        if count:
-            blocksize = count - total_sent
-            if blocksize <= 0:
-                self._sock_sendfile_update_filepos(fileno, offset, total_sent)
-                fut.set_result(total_sent)
-                return
-
-        try:
-            sent = os.sendfile(fd, fileno, offset, blocksize)
-        except (BlockingIOError, InterruptedError):
-            if registered_fd is None:
-                self._sock_add_cancellation_callback(fut, sock)
-            self.add_writer(fd, self._sock_sendfile_native_impl, fut,
-                            fd, sock, fileno,
-                            offset, count, blocksize, total_sent)
-        except OSError as exc:
-            if (registered_fd is not None and
-                    exc.errno == errno.ENOTCONN and
-                    type(exc) is not ConnectionError):
-                # If we have an ENOTCONN and this isn't a first call to
-                # sendfile(), i.e. the connection was closed in the middle
-                # of the operation, normalize the error to ConnectionError
-                # to make it consistent across all Posix systems.
-                new_exc = ConnectionError(
-                    "socket is not connected", errno.ENOTCONN)
-                new_exc.__cause__ = exc
-                exc = new_exc
-            if total_sent == 0:
-                # We can get here for different reasons, the main
-                # one being 'file' is not a regular mmap(2)-like
-                # file, in which case we'll fall back on using
-                # plain send().
-                err = exceptions.SendfileNotAvailableError(
-                    "os.sendfile call failed")
-                self._sock_sendfile_update_filepos(fileno, offset, total_sent)
-                fut.set_exception(err)
-            else:
-                self._sock_sendfile_update_filepos(fileno, offset, total_sent)
-                fut.set_exception(exc)
-        except (SystemExit, KeyboardInterrupt):
-            raise
-        except BaseException as exc:
-            self._sock_sendfile_update_filepos(fileno, offset, total_sent)
-            fut.set_exception(exc)
-        else:
-            if sent == 0:
-                # EOF
-                self._sock_sendfile_update_filepos(fileno, offset, total_sent)
-                fut.set_result(total_sent)
-            else:
-                offset += sent
-                total_sent += sent
-                if registered_fd is None:
-                    self._sock_add_cancellation_callback(fut, sock)
-                self.add_writer(fd, self._sock_sendfile_native_impl, fut,
-                                fd, sock, fileno,
-                                offset, count, blocksize, total_sent)
+        raise exceptions.SendfileNotAvailableError(
+            "os.sendfile() is not available")
 
     def _sock_sendfile_update_filepos(self, fileno, offset, total_sent):
-        if total_sent > 0:
-            os.lseek(fileno, offset, os.SEEK_SET)
+        raise exceptions.SendfileNotAvailableError(
+            "os.sendfile() is not available")
 
     def _sock_add_cancellation_callback(self, fut, sock):
         def cb(fut):
@@ -439,7 +324,7 @@ class _OpenVMSSelectorEventLoop(selector_events.BaseSelectorEventLoop):
 
 class _OpenVMSReadPipeTransport(transports.ReadTransport):
 
-    max_size = 256 * 1024  # max bytes we read in one event loop iteration
+    max_size = 32 * 1024  # max bytes we read in one event loop iteration
 
     def __init__(self, loop, pipe, protocol, waiter=None, extra=None):
         super().__init__(extra)
@@ -882,84 +767,6 @@ class AbstractChildWatcher:
         raise NotImplementedError()
 
 
-class PidfdChildWatcher(AbstractChildWatcher):
-    """Child watcher implementation using Linux's pid file descriptors.
-
-    This child watcher polls process file descriptors (pidfds) to await child
-    process termination. In some respects, PidfdChildWatcher is a "Goldilocks"
-    child watcher implementation. It doesn't require signals or threads, doesn't
-    interfere with any processes launched outside the event loop, and scales
-    linearly with the number of subprocesses launched by the event loop. The
-    main disadvantage is that pidfds are specific to Linux, and only work on
-    recent (5.3+) kernels.
-    """
-
-    def __init__(self):
-        self._loop = None
-        self._callbacks = {}
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_value, exc_traceback):
-        pass
-
-    def is_active(self):
-        return self._loop is not None and self._loop.is_running()
-
-    def close(self):
-        self.attach_loop(None)
-
-    def attach_loop(self, loop):
-        if self._loop is not None and loop is None and self._callbacks:
-            warnings.warn(
-                'A loop is being detached '
-                'from a child watcher with pending handlers',
-                RuntimeWarning)
-        for pidfd, _, _ in self._callbacks.values():
-            self._loop._remove_reader(pidfd)
-            os.close(pidfd)
-        self._callbacks.clear()
-        self._loop = loop
-
-    def add_child_handler(self, pid, callback, *args):
-        existing = self._callbacks.get(pid)
-        if existing is not None:
-            self._callbacks[pid] = existing[0], callback, args
-        else:
-            pidfd = os.pidfd_open(pid)
-            self._loop._add_reader(pidfd, self._do_wait, pid)
-            self._callbacks[pid] = pidfd, callback, args
-
-    def _do_wait(self, pid):
-        pidfd, callback, args = self._callbacks.pop(pid)
-        self._loop._remove_reader(pidfd)
-        try:
-            _, status = os.waitpid(pid, 0)
-        except ChildProcessError:
-            # The child process is already reaped
-            # (may happen if waitpid() is called elsewhere).
-            returncode = 255
-            logger.warning(
-                "child process pid %d exit status already read: "
-                " will report returncode 255",
-                pid)
-        else:
-            returncode = waitstatus_to_exitcode(status)
-
-        os.close(pidfd)
-        callback(pid, returncode, *args)
-
-    def remove_child_handler(self, pid):
-        try:
-            pidfd, _, _ = self._callbacks.pop(pid)
-        except KeyError:
-            return False
-        self._loop._remove_reader(pidfd)
-        os.close(pidfd)
-        return True
-
-
 class BaseChildWatcher(AbstractChildWatcher):
 
     def __init__(self):
@@ -1190,132 +997,6 @@ class FastChildWatcher(BaseChildWatcher):
                     "%d -> %d", pid, returncode)
             else:
                 callback(pid, returncode, *args)
-
-
-class MultiLoopChildWatcher(AbstractChildWatcher):
-    """A watcher that doesn't require running loop in the main thread.
-
-    This implementation registers a SIGCHLD signal handler on
-    instantiation (which may conflict with other code that
-    install own handler for this signal).
-
-    The solution is safe but it has a significant overhead when
-    handling a big number of processes (*O(n)* each time a
-    SIGCHLD is received).
-    """
-
-    # Implementation note:
-    # The class keeps compatibility with AbstractChildWatcher ABC
-    # To achieve this it has empty attach_loop() method
-    # and doesn't accept explicit loop argument
-    # for add_child_handler()/remove_child_handler()
-    # but retrieves the current loop by get_running_loop()
-
-    def __init__(self):
-        self._callbacks = {}
-        self._saved_sighandler = None
-
-    def is_active(self):
-        return self._saved_sighandler is not None
-
-    def close(self):
-        self._callbacks.clear()
-        if self._saved_sighandler is None:
-            return
-
-        handler = signal.getsignal(signal.SIGCHLD)
-        if handler != self._sig_chld:
-            logger.warning("SIGCHLD handler was changed by outside code")
-        else:
-            signal.signal(signal.SIGCHLD, self._saved_sighandler)
-        self._saved_sighandler = None
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        pass
-
-    def add_child_handler(self, pid, callback, *args):
-        loop = events.get_running_loop()
-        self._callbacks[pid] = (loop, callback, args)
-
-        # Prevent a race condition in case the child is already terminated.
-        self._do_waitpid(pid)
-
-    def remove_child_handler(self, pid):
-        try:
-            del self._callbacks[pid]
-            return True
-        except KeyError:
-            return False
-
-    def attach_loop(self, loop):
-        # Don't save the loop but initialize itself if called first time
-        # The reason to do it here is that attach_loop() is called from
-        # unix policy only for the main thread.
-        # Main thread is required for subscription on SIGCHLD signal
-        if self._saved_sighandler is not None:
-            return
-
-        self._saved_sighandler = signal.signal(signal.SIGCHLD, self._sig_chld)
-        if self._saved_sighandler is None:
-            logger.warning("Previous SIGCHLD handler was set by non-Python code, "
-                           "restore to default handler on watcher close.")
-            self._saved_sighandler = signal.SIG_DFL
-
-        # Set SA_RESTART to limit EINTR occurrences.
-        if hasattr(signal, "siginterrupt"):
-            signal.siginterrupt(signal.SIGCHLD, False)
-
-    def _do_waitpid_all(self):
-        for pid in list(self._callbacks):
-            self._do_waitpid(pid)
-
-    def _do_waitpid(self, expected_pid):
-        assert expected_pid > 0
-
-        try:
-            pid, status = os.waitpid(expected_pid, os.WNOHANG)
-        except ChildProcessError:
-            # The child process is already reaped
-            # (may happen if waitpid() is called elsewhere).
-            pid = expected_pid
-            returncode = 255
-            logger.warning(
-                "Unknown child process pid %d, will report returncode 255",
-                pid)
-            debug_log = False
-        else:
-            if pid == 0:
-                # The child process is still alive.
-                return
-
-            returncode = waitstatus_to_exitcode(status)
-            debug_log = True
-        try:
-            loop, callback, args = self._callbacks.pop(pid)
-        except KeyError:  # pragma: no cover
-            # May happen if .remove_child_handler() is called
-            # after os.waitpid() returns.
-            logger.warning("Child watcher got an unexpected pid: %r",
-                           pid, exc_info=True)
-        else:
-            if loop.is_closed():
-                logger.warning("Loop %r that handles pid %r is closed", loop, pid)
-            else:
-                if debug_log and loop.get_debug():
-                    logger.debug('process %s exited with returncode %s',
-                                 expected_pid, returncode)
-                loop.call_soon_threadsafe(callback, pid, returncode, *args)
-
-    def _sig_chld(self, signum, frame):
-        try:
-            self._do_waitpid_all()
-        except (SystemExit, KeyboardInterrupt):
-            raise
-        except BaseException:
-            logger.warning('Unknown exception in SIGCHLD handler', exc_info=True)
 
 
 class ThreadedChildWatcher(AbstractChildWatcher):

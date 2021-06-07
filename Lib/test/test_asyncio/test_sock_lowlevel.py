@@ -4,6 +4,25 @@ import asyncio
 import sys
 import unittest
 
+if (sys.platform == 'OpenVMS'):
+    import _sys
+    import _ile3
+    import _jpidef
+    import _dscdef
+    import _prvdef
+
+    def check_priv(priv):
+        a = _ile3.ile3list()
+        a.append(_jpidef.JPI__CURPRIV, _dscdef.DSC_K_DTYPE_QU)
+        _sys.getjpi(a)
+        if (a[0] & priv):
+            return True
+        else:
+            return False
+
+    def has_high_priv():
+        return check_priv(_prvdef.PRV_M_OPER | _prvdef.PRV_M_SYSPRV | _prvdef.PRV_M_BYPASS)
+
 from asyncio import proactor_events
 from itertools import cycle, islice
 from test.test_asyncio import utils as test_utils
@@ -246,6 +265,8 @@ class BaseSockTestsMixin:
 
         self.skipTest(skip_reason)
 
+    @unittest.skipIf(sys.platform == 'OpenVMS' and not has_high_priv(),
+                        'OpenVMS requires OPER, SYSPRV or BYPASS privilege')
     def test_sock_client_racing(self):
         with test_utils.run_test_server() as httpd:
             sock = socket.socket()

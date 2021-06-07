@@ -1728,6 +1728,8 @@ class SubprocessTestsMixin:
         if sys.platform == 'win32':
             self.assertIsInstance(returncode, int)
             # expect 1 but sometimes get 0
+        elif sys.platform == 'OpenVMS':
+            self.assertEqual(signal.SIGTERM, returncode)
         else:
             self.assertEqual(-signal.SIGTERM, returncode)
 
@@ -1735,6 +1737,8 @@ class SubprocessTestsMixin:
         if sys.platform == 'win32':
             self.assertIsInstance(returncode, int)
             # expect 1 but sometimes get 0
+        elif sys.platform == 'OpenVMS':
+            self.assertEqual(signal.SIGKILL, returncode)
         else:
             self.assertEqual(-signal.SIGKILL, returncode)
 
@@ -1882,7 +1886,10 @@ class SubprocessTestsMixin:
 
             transp.send_signal(signal.SIGHUP)
             self.loop.run_until_complete(proto.completed)
-            self.assertEqual(-signal.SIGHUP, proto.returncode)
+            if sys.platform == 'OpenVMS':
+                self.assertEqual(signal.SIGHUP, proto.returncode)
+            else:
+                self.assertEqual(-signal.SIGHUP, proto.returncode)
             transp.close()
         finally:
             signal.signal(signal.SIGHUP, old_handler)
