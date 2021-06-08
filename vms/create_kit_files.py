@@ -108,7 +108,7 @@ end product;
 
     text_template = '''=product VSI I64VMS PYTHON {type}{major}.{minor}-{level}{edit} full
 1 'PRODUCT
-=prompt Python for OpenVMS is based on Python Version 3.10 dev ({edit})
+=prompt Python for OpenVMS is based on Python Version 3.11 alpha ({edit})
 
 1 'PRODUCER
 =prompt VSI Software Inc.
@@ -160,9 +160,9 @@ if __name__ == "__main__":
 
     type = 'A'
     major = '3'
-    minor = '10'
+    minor = '11'
     level = '0'
-    edit = 'dev002'
+    edit = 'dev001'
 
     for opt, optarg in opts:
         if opt in ['--type']:

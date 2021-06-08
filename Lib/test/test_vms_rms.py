@@ -21,7 +21,7 @@ class BaseTestCase(unittest.TestCase):
         if os.access('test.fdl', os.R_OK):
             os.system('CREATE/FDL=test.fdl test.dat')
         else:
-            os.system('CREATE/FDL=python$root:[lib.python3^.10.test]test.fdl test.dat')
+            os.system('CREATE/FDL=python$root:[lib.python3^.11.test]test.fdl test.dat')
 
         self.records = [
             (b'AA5AA', 5, b'1234567890A'),

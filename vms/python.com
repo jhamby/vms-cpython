@@ -29,9 +29,9 @@ $ backup 'inc_pat'*.h python$root:[include]
 $ backup 'cpy_pat'*.h python$root:[include.cpython]
 $ backup 'vms_pat'pyconfig.h python$root:[include]
 $
-$ backup 'lib_pat'*.* python$root:[lib.python3^.10...]
-$ backup 'vms_py_pat'*.py python$root:[lib.python3^.10.vms]
-$ backup 'rdb_py_pat'*.py python$root:[lib.python3^.10]
+$ backup 'lib_pat'*.* python$root:[lib.python3^.11...]
+$ backup 'vms_py_pat'*.py python$root:[lib.python3^.11.vms]
+$ backup 'rdb_py_pat'*.py python$root:[lib.python3^.11]
 $ backup 'bld_pat'python$shr.exe python$root:[lib]
 $
 $ backup 'vms_pat'python$define_root.com python$root:[000000]
@@ -39,5 +39,5 @@ $ backup 'vms_pat'python$pcsi_preconfigure.com python$root:[000000]
 $ backup 'vms_pat'python$startup.com python$root:[000000]
 $ backup 'vms_pat'python$shutdown.com python$root:[000000]
 $
-$ backup 'dyn_pat'*.* python$root:[lib.python3^.10.lib-dynload...]*.*
-$ backup 'vms_pat'_sysconfigdata__OpenVMS_cpython-310-ia64-openvms.py python$root:[lib.python3^.10]
+$ backup 'dyn_pat'*.* python$root:[lib.python3^.11.lib-dynload...]*.*
+$ backup 'vms_pat'_sysconfigdata__OpenVMS_cpython-311-ia64-openvms.py python$root:[lib.python3^.11]
