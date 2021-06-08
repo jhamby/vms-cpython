@@ -1,7 +1,7 @@
 ! MMS/EXT/DESCR=Python3.mms/MACRO=("OUTDIR=OUT","CONFIG=DEBUG")
 DYNLOAD_DIR = lib-dynload
 PLATFORM = OpenVMS
-SOABI = cpython-310-ia64-openvms
+SOABI = cpython-311-ia64-openvms
 
 CC_QUALIFIERS = -
 /NAMES=(AS_IS,SHORTENED) -
