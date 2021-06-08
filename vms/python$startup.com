@@ -1,7 +1,7 @@
 $ ! PYTHON$STARTUP.COM
 $ !+
-$ ! 06-May-2020
-$ ! Startup file for Python 3.8.2 on OpenVMS
+$ ! June-2021
+$ ! Startup file for Python on OpenVMS
 $ !
 $ !-
 $

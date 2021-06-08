@@ -1,7 +1,7 @@
 $ ! PYTHON$SHUTDOWN.COM
 $ !+
-$ ! 06-May-2020
-$ ! Shutdown file for Python 3.8.2 on OpenVMS
+$ ! June-2021
+$ ! Shutdown file for Python on OpenVMS
 $ !
 $ !-
 $
