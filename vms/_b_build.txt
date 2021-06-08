@@ -1,4 +1,5 @@
 # Requires build on VILE
-# --no-deps
+# python -m pip wheel -w /pyth$whl --no-deps MarkupSafe==1.1.1
 MarkupSafe==1.1.1
+# python -m pip wheel -w /pyth$whl --no-deps blinker==1.4
 blinker==1.4
