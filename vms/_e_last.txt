@@ -1,9 +1,4 @@
-# Requires Cython and build on VILE
-# --no-deps
-PyYAML==5.4.1
-pyrsistent
-simplejson
-# as is
+# python -m pip wheel -w /pyth$whl --no-deps -r _e_last.txt
 Automat
 CherryPy
 Pygments
@@ -20,6 +15,7 @@ constantly
 distlib
 elementpath
 filelock
+flaky
 flasgger
 flex
 freezegun
@@ -44,10 +40,13 @@ pika
 portend
 prance
 pyasn1_modules
+pyOpenSSL
 pytest_flask
 pytest_httpbin
 pytest_httpserver
 pytest_localserver
+python_interface
+python_magic
 requests
 responses
 rfc3987

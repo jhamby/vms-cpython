@@ -47,7 +47,7 @@ def create_content(type, major, minor, level, edit):
                 lib_new_full_name = '-'.join([
                     lib_name,
                     lib_version,
-                    'cp310',
+                    'py3',
                     'none',
                     'any',
                 ])
@@ -175,7 +175,7 @@ if __name__ == "__main__":
 
     type = 'A'
     major = '1'
-    minor = '0'
+    minor = '1'
     level = '0'
     edit = ''   # 'd' + datetime.date.today().strftime('%Y%m%d')
 
