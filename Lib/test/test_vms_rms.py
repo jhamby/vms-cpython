@@ -23,6 +23,8 @@ class BaseTestCase(unittest.TestCase):
         else:
             os.system('CREATE/FDL=python$root:[lib.python3^.11.test]test.fdl test.dat')
 
+        self._format = b'=5si11s'
+
         self.records = [
             (b'AA5AA', 5, b'1234567890A'),
             (b'BB2BB', 2, b'1234567890B'),
@@ -95,13 +97,13 @@ class BaseTestCase(unittest.TestCase):
 
         # Insert a few records
         for rec_ in self.records:
-            rec = struct.pack(b"=5si11s", rec_[0], rec_[1], rec_[2])
+            rec = struct.pack(self._format, rec_[0], rec_[1], rec_[2])
             f.put(rec)
 
         # Initial records
         f.rewind()
         for rec_ in self.records:
-            r_expected = struct.pack(b"=5si11s", rec_[0], rec_[1], rec_[2])
+            r_expected = struct.pack(self._format, rec_[0], rec_[1], rec_[2])
             s, r_from_file = f.fetch()
             self.assertEqual(s, RMSDEF.RMS__NORMAL)
             self.assertEqual(r_from_file, r_expected)
@@ -112,8 +114,8 @@ class BaseTestCase(unittest.TestCase):
             s, r = f.fetch()
             self.assertEqual(s, RMSDEF.RMS__NORMAL)
             self.assertNotEqual(r, None)
-            k, n, v = struct.unpack("=5si11s", r)
-            rec = struct.pack(b"=5si11s", k, n + 10, b'X' + v[1:])
+            k, n, v = struct.unpack(self._format, r)
+            rec = struct.pack(self._format, k, n + 10, b'X' + v[1:])
             s = f.update(rec)
             self.assertIn(s, (RMSDEF.RMS__NORMAL, RMSDEF.RMS__OK_DUP))
 
@@ -125,36 +127,36 @@ class BaseTestCase(unittest.TestCase):
             self.assertEqual(s, RMSDEF.RMS__NORMAL)
             rec_ = self.records_expected_key1_modified[pos]
             pos = pos + 1
-            r_expected = struct.pack(b"=5si11s", rec_[0], rec_[1], rec_[2])
+            r_expected = struct.pack(self._format, rec_[0], rec_[1], rec_[2])
             self.assertEqual(r, r_expected)
 
         # build a list of all records
         f.usekey(0)
         f.rewind()
-        all_recs = [struct.unpack("=5si11s", r) for r in f]
+        all_recs = [struct.unpack(self._format, r) for r in f]
         self.assertEqual(all_recs, self.records_expected_key0_modified)
 
         f.usekey(1)
         f.rewind()
-        all_recs = [struct.unpack("=5si11s", r) for r in f]
+        all_recs = [struct.unpack(self._format, r) for r in f]
         self.assertEqual(all_recs, self.records_expected_key1_modified)
 
         # delete a record using delete(14)
         f.usekey(1)
 
-        key = struct.pack("=i", 14)
+        key = struct.pack(b"=i", 14)
         s = f.delete(key)
         self.assertEqual(s, RMSDEF.RMS__NORMAL)
 
         #  delete all record key 12 using find(12) + delete()
-        key = struct.pack("=i", 12)
+        key = struct.pack(b"=i", 12)
         s = f.find(key)
         self.assertEqual(s, RMSDEF.RMS__NORMAL)
 
         while (1):
             s, r = f.fetch()
             if r:
-                k, n, v = struct.unpack("=5si11s", r)
+                k, n, v = struct.unpack(self._format, r)
                 if n == 12:
                     s = f.delete()
                 else:
@@ -164,7 +166,7 @@ class BaseTestCase(unittest.TestCase):
 
         # build a list of all records after delete
         f.rewind()
-        all_recs = [struct.unpack("=5si11s", r) for r in f]
+        all_recs = [struct.unpack(self._format, r) for r in f]
         self.assertEqual(all_recs, self.records_expected_key1_after_del_14_12)
 
         # Close the file
@@ -178,11 +180,11 @@ class BaseTestCase(unittest.TestCase):
 
         class TestRec(Record):
             _field = [
-                    ('f1', '5s'),
-                    ('f2', 'i'),
-                    ('f3', '11s'),
+                    ('f1', b'5s'),
+                    ('f2', b'i'),
+                    ('f3', b'11s'),
                     ]
-            _fmt = '=' + ''.join([x[1] for x in _field])
+            _fmt = b'=' + b''.join([x[1] for x in _field])
             _fixsize = struct.calcsize(_fmt)
 
             def __eq__(self, other):
@@ -207,9 +209,9 @@ class BaseTestCase(unittest.TestCase):
 
             def pack_key(self, keynum, keyval):
                 if keynum == 0:
-                    return struct.pack("=5s", keyval)
+                    return struct.pack(b"=5s", keyval)
                 elif keynum == 1:
-                    return struct.pack("=i", keyval)
+                    return struct.pack(b"=i", keyval)
                 else:
                     raise KeyError
 
@@ -292,10 +294,11 @@ class BaseTestCase(unittest.TestCase):
             raise unittest.SkipTest('High privileges required')
 
         # Alphabetic order
+        _format = b'=i32shhiQ32s32p'
 
         for i in range(10):
             s,r = f.fetch()
-            lst = struct.unpack("=i32shhiQ32s32p", r[:116])
+            lst = struct.unpack(_format, r[:116])
             self.assertIsNotNone(lst)
             # print('%s [%o,%o]' % (lst[1], lst[3], lst[2]))
 
@@ -307,7 +310,7 @@ class BaseTestCase(unittest.TestCase):
         for r in f:
             i += 1
             if (i > 10): break
-            lst = struct.unpack("=i32shhiQ32s32p", r[:116])
+            lst = struct.unpack(_format, r[:116])
             self.assertIsNotNone(lst)
             # print('%s [%o,%o]' % (lst[1], lst[3], lst[2]))
 
@@ -317,7 +320,7 @@ class BaseTestCase(unittest.TestCase):
         f.usekey(0)
         f.rewind()
         for r in f:
-            lst = struct.unpack("=i32shhiQ32s32p", r[:116])
+            lst = struct.unpack(_format, r[:116])
             self.assertIsNotNone(lst)
             # print('%s [%o,%o]' % (lst[1], lst[3], lst[2]))
 

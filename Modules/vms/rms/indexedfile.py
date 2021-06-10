@@ -264,7 +264,7 @@ class Record:
     autoDecodeRecord = True
     _field = []
     _fixsize = 0
-    _fmt = ''
+    _fmt = b''
     _varsize = 0
     def __init__(self, data, conv = True, rec = None, opt = None):
         for i in range(len(self._field)):
@@ -321,9 +321,9 @@ class Record:
         return r
 
     def unpack(rec, classe, opt = None):
-        varfmt = ''
+        varfmt = b''
         if len(rec) > classe._fixsize:
-            varfmt = '%ds' % (len(rec) - classe._fixsize)
+            varfmt = b'%ds' % (len(rec) - classe._fixsize)
         lst = list(struct.unpack(classe._fmt + varfmt, rec))
         return classe(lst, False, rec, opt)
     unpack = staticmethod(unpack)
