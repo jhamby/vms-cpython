@@ -13453,11 +13453,20 @@ os_get_terminal_size_impl(PyObject *module, int fd)
      */
 
 #ifdef __VMS		/* Hardcoded for now */
-    if (1 == isatty(fd)) {
-        columns = 80;
-        lines = 24;
-    } else {
-        errno = EBADF;
+    switch(isatty(fd)) {
+        case 1:
+            columns = 80;
+            lines = 24;
+            errno = 0;
+            break;
+        case 0:
+            errno = ENOTTY;
+            break;
+        case -1:
+            errno = EBADF;
+            break;
+    }
+    if (errno) {
         return PyErr_SetFromErrno(PyExc_OSError);
     }
 #else
