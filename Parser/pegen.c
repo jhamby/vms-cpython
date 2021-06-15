@@ -349,7 +349,11 @@ tokenizer_error(Parser *p)
             }
             return -1;
         case E_DEDENT:
+        #ifdef __VMS
+            RAISE_INDENTATION_ERROR_("unindent does not match any outer indentation level");
+        #else
             RAISE_INDENTATION_ERROR("unindent does not match any outer indentation level");
+        #endif
             return -1;
         case E_INTR:
             if (!PyErr_Occurred()) {
@@ -1344,10 +1348,18 @@ _PyPegen_run_parser(Parser *p)
         }
         else {
             if (p->tokens[p->fill-1]->type == INDENT) {
+            #ifdef __VMS
+                RAISE_INDENTATION_ERROR_("unexpected indent");
+            #else
                 RAISE_INDENTATION_ERROR("unexpected indent");
+            #endif
             }
             else if (p->tokens[p->fill-1]->type == DEDENT) {
+            #ifdef __VMS
+                RAISE_INDENTATION_ERROR_("unexpected unindent");
+            #else
                 RAISE_INDENTATION_ERROR("unexpected unindent");
+            #endif
             }
             else {
                 // Use the last token we found on the first pass to avoid reporting

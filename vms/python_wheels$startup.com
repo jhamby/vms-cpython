@@ -1,7 +1,7 @@
 $ ! PYTHON_WHEELS$STARTUP.COM
 $ !+
 $ ! 02-Nov-2020
-$ ! Startup file for wheels for Python 3.8.2 on OpenVMS
+$ ! Startup file for wheels for Python 3.10 on OpenVMS
 $ !
 $ !-
 $

@@ -29,7 +29,11 @@ warn_invalid_escape_sequence(Parser *p, unsigned char first_invalid_escape_char,
                since _PyPegen_raise_error uses p->tokens[p->fill - 1] for the
                error location, if p->known_err_token is not set. */
             p->known_err_token = t;
+        #ifdef __VMS
+            RAISE_SYNTAX_ERROR_P("invalid escape sequence '\\%c'", first_invalid_escape_char);
+        #else
             RAISE_SYNTAX_ERROR("invalid escape sequence '\\%c'", first_invalid_escape_char);
+        #endif
         }
         Py_DECREF(msg);
         return -1;

@@ -96,7 +96,7 @@ CC_GETPATH_CFLAGS = $(CC_QUALIFIERS)/DEFINE=("Py_BUILD_CORE",$(GETPATH_DEFINES))
     ! #include "clinic/transmogrify.h.h"
     define cpython [.Include.cpython]
     define stringlib [.Objects.stringlib]
-    define clinic [.Objects.clinic],[.Python.clinic],[.Modules.clinic],[.Modules._io.clinic],[.Modules.cjkcodecs.clinic],[.Objects.stringlib.clinic],[.Modules._blake2.clinic],[.Modules._sha3.clinic],[.Modules._multiprocessing.clinic],[.Modules._sqlite.clinic]
+    define clinic [.Objects.clinic],[.Python.clinic],[.Modules.clinic],[.Modules._io.clinic],[.Modules.cjkcodecs.clinic],[.Objects.stringlib.clinic],[.Modules._blake2.clinic],[.Modules._sha3.clinic],[.Modules._multiprocessing.clinic],[.Modules._sqlite.clinic],[.Modules._ssl.clinic]
     define _ssl [.Modules._ssl]
     define ctypes [.Modules._ctypes]
     define modules [.Modules]
@@ -263,6 +263,7 @@ PYTHON_OBJS= -
 [.$(OBJ_DIR).Python]dtoa.obc -
 [.$(OBJ_DIR).Python]formatter_unicode.obc -
 [.$(OBJ_DIR).Python]fileutils.obc -
+[.$(OBJ_DIR).Python]suggestions.obc -
 [.$(OBJ_DIR).Python]dynload_shlib.obc
 ! $(LIBOBJS) -
 ! $(MACHDEP_OBJS) -
@@ -406,8 +407,6 @@ PYTHON_HEADERS= -
 [.Include]inttypes.h -
 [.Include]Python.h -
 [.Include]abstract.h -
-[.Include]asdl.h -
-[.Include]ast.h -
 [.Include]bltinmodule.h -
 [.Include]boolobject.h -
 [.Include]bytearrayobject.h -
@@ -473,7 +472,6 @@ PYTHON_HEADERS= -
 [.Include]sliceobject.h -
 [.Include]structmember.h -
 [.Include]structseq.h -
-[.Include]symtable.h -
 [.Include]sysmodule.h -
 [.Include]token.h -
 [.Include]traceback.h -
@@ -484,7 +482,6 @@ PYTHON_HEADERS= -
 [.Include]weakrefobject.h -
 pyconfig.h -
 $(PARSER_HEADERS) -
-[.Include]Python-ast.h -
 [.Include.cpython]abstract.h -
 [.Include.cpython]bytearrayobject.h -
 [.Include.cpython]bytesobject.h -
@@ -514,6 +511,8 @@ $(PARSER_HEADERS) -
 [.Include.internal]pycore_accu.h -
 [.Include.internal]pycore_atomic.h -
 [.Include.internal]pycore_atomic_funcs.h -
+[.Include.internal]pycore_asdl.h -
+[.Include.internal]pycore_ast.h -
 [.Include.internal]pycore_ast_state.h -
 [.Include.internal]pycore_bitutils.h -
 [.Include.internal]pycore_bytes_methods.h -
@@ -542,6 +541,7 @@ $(PARSER_HEADERS) -
 [.Include.internal]pycore_pymem.h -
 [.Include.internal]pycore_pystate.h -
 [.Include.internal]pycore_runtime.h -
+[.Include.internal]pycore_symtable.h -
 [.Include.internal]pycore_sysmodule.h -
 [.Include.internal]pycore_traceback.h -
 [.Include.internal]pycore_tuple.h -
@@ -677,6 +677,7 @@ $(PARSER_HEADERS) -
 [.$(OBJ_DIR).Python]dtoa.obc : [.Python]dtoa.c $(PYTHON_HEADERS)
 [.$(OBJ_DIR).Python]formatter_unicode.obc : [.Python]formatter_unicode.c $(PYTHON_HEADERS)
 [.$(OBJ_DIR).Python]fileutils.obc : [.Python]fileutils.c $(PYTHON_HEADERS)
+[.$(OBJ_DIR).Python]suggestions.obc : [.Python]suggestions.c $(PYTHON_HEADERS)
 [.$(OBJ_DIR).Python]dynload_shlib.obc : [.Python]dynload_shlib.c $(PYTHON_HEADERS)
 
 [.$(OBJ_DIR).Objects]abstract.obc : [.Objects]abstract.c $(PYTHON_HEADERS)

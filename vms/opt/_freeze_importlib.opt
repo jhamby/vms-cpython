@@ -103,6 +103,7 @@ python$build_obj:[Python]pystrhex.obc
 python$build_obj:[Python]dtoa.obc
 python$build_obj:[Python]formatter_unicode.obc
 python$build_obj:[Python]fileutils.obc
+python$build_obj:[Python]suggestions.obc
 python$build_obj:[Python]dynload_shlib.obc
 python$build_obj:[Modules]config.obc
 python$build_obj:[Modules]getpath.obc

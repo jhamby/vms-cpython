@@ -18210,7 +18210,11 @@ invalid_named_expression_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_named_expression[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "expression ':=' expression"));
+        #ifdef __VMS
+            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION_P ( a , "cannot use assignment expressions with %s" , _PyPegen_get_expr_name ( a ) );
+        #else
             _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "cannot use assignment expressions with %s" , _PyPegen_get_expr_name ( a ) );
+        #endif
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 D(p->level--);
@@ -18276,7 +18280,11 @@ invalid_named_expression_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_named_expression[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "!(list | tuple | genexp | 'True' | 'None' | 'False') bitwise_or '=' bitwise_or !('=' | ':=')"));
+        #ifdef __VMS
+            _res = p -> in_raw_rule ? NULL : RAISE_SYNTAX_ERROR_KNOWN_LOCATION_P ( a , "cannot assign to %s here. Maybe you meant '==' instead of '='?" , _PyPegen_get_expr_name ( a ) );
+        #else
             _res = p -> in_raw_rule ? NULL : RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "cannot assign to %s here. Maybe you meant '==' instead of '='?" , _PyPegen_get_expr_name ( a ) );
+        #endif
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 D(p->level--);
@@ -18329,7 +18337,11 @@ invalid_assignment_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_assignment[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "invalid_ann_assign_target ':' expression"));
+        #ifdef __VMS
+            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION_P ( a , "only single target (not %s) can be annotated" , _PyPegen_get_expr_name ( a ) );
+        #else
             _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "only single target (not %s) can be annotated" , _PyPegen_get_expr_name ( a ) );
+        #endif
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 D(p->level--);
@@ -18485,7 +18497,11 @@ invalid_assignment_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_assignment[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "star_expressions augassign (yield_expr | star_expressions)"));
+        #ifdef __VMS
+            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION_P ( a , "'%s' is an illegal expression for augmented assignment" , _PyPegen_get_expr_name ( a ) );
+        #else
             _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "'%s' is an illegal expression for augmented assignment" , _PyPegen_get_expr_name ( a ) );
+        #endif
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 D(p->level--);
@@ -18657,7 +18673,11 @@ invalid_block_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_block[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "NEWLINE !INDENT"));
+        #ifdef __VMS
+            _res = RAISE_INDENTATION_ERROR_ ( "expected an indented block" );
+        #else
             _res = RAISE_INDENTATION_ERROR ( "expected an indented block" );
+        #endif
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 D(p->level--);
@@ -20018,7 +20038,11 @@ invalid_except_stmt_indent_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_except_stmt_indent[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'except' ':' NEWLINE !INDENT"));
+        #ifdef __VMS
+            _res = RAISE_SYNTAX_ERROR_P ( "expected an indented block after except statement on line %d" , a -> lineno );
+        #else
             _res = RAISE_SYNTAX_ERROR ( "expected an indented block after except statement on line %d" , a -> lineno );
+        #endif
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 D(p->level--);
