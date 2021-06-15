@@ -25,7 +25,7 @@ test.support.requires("network")
 TEST_STR = b"hello world\n"
 HOST = socket_helper.HOST
 
-HAVE_UNIX_SOCKETS = hasattr(socket, "AF_UNIX")
+HAVE_UNIX_SOCKETS = hasattr(socket, "AF_UNIX") and os.sys.platform != 'OpenVMS'
 requires_unix_sockets = unittest.skipUnless(HAVE_UNIX_SOCKETS,
                                             'requires Unix sockets')
 HAVE_FORKING = hasattr(os, "fork")
