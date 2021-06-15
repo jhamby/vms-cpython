@@ -868,7 +868,6 @@ lookdict_unicode(PyDictObject *mp, PyObject *key,
        unicodes is to override __eq__, and for speed we don't cater to
        that here. */
     if (!PyUnicode_CheckExact(key)) {
-        mp->ma_keys->dk_lookup = lookdict;
         return lookdict(mp, key, hash, value_addr);
     }
 
@@ -911,7 +910,6 @@ lookdict_unicode_nodummy(PyDictObject *mp, PyObject *key,
        unicodes is to override __eq__, and for speed we don't cater to
        that here. */
     if (!PyUnicode_CheckExact(key)) {
-        mp->ma_keys->dk_lookup = lookdict;
         return lookdict(mp, key, hash, value_addr);
     }
 
@@ -1095,7 +1093,6 @@ insertdict(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject *value)
     if (ix == DKIX_ERROR)
         goto Fail;
 
-    assert(PyUnicode_CheckExact(key) || mp->ma_keys->dk_lookup == lookdict);
     MAINTAIN_TRACKING(mp, key, value);
 
     /* When insertion order is different from shared key, we can't share
@@ -1116,6 +1113,9 @@ insertdict(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject *value)
             /* Need to resize. */
             if (insertion_resize(mp) < 0)
                 goto Fail;
+        }
+        if (!PyUnicode_CheckExact(key) && mp->ma_keys->dk_lookup != lookdict) {
+            mp->ma_keys->dk_lookup = lookdict;
         }
         Py_ssize_t hashpos = find_empty_slot(mp->ma_keys, hash);
         ep = &DK_ENTRIES(mp->ma_keys)[mp->ma_keys->dk_nentries];
@@ -3079,6 +3079,9 @@ PyDict_SetDefault(PyObject *d, PyObject *key, PyObject *defaultobj)
                 return NULL;
             }
         }
+        if (!PyUnicode_CheckExact(key) && mp->ma_keys->dk_lookup != lookdict) {
+            mp->ma_keys->dk_lookup = lookdict;
+        }
         Py_ssize_t hashpos = find_empty_slot(mp->ma_keys, hash);
         ep0 = DK_ENTRIES(mp->ma_keys);
         ep = &ep0[mp->ma_keys->dk_nentries];
@@ -3561,7 +3564,7 @@ PyTypeObject PyDict_Type = {
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
         Py_TPFLAGS_BASETYPE | Py_TPFLAGS_DICT_SUBCLASS |
-        _Py_TPFLAGS_MATCH_SELF,               /* tp_flags */
+        _Py_TPFLAGS_MATCH_SELF | Py_TPFLAGS_MAPPING,  /* tp_flags */
     dictionary_doc,                             /* tp_doc */
     dict_traverse,                              /* tp_traverse */
     dict_tp_clear,                              /* tp_clear */
@@ -4834,7 +4837,7 @@ static PySequenceMethods dictitems_as_sequence = {
     (objobjproc)dictitems_contains,     /* sq_contains */
 };
 
-static PyObject* dictitems_reversed(_PyDictViewObject *dv);
+static PyObject* dictitems_reversed(_PyDictViewObject *dv, PyObject *Py_UNUSED(ignored));
 
 PyDoc_STRVAR(reversed_items_doc,
 "Return a reverse iterator over the dict items.");
@@ -4842,7 +4845,7 @@ PyDoc_STRVAR(reversed_items_doc,
 static PyMethodDef dictitems_methods[] = {
     {"isdisjoint",      (PyCFunction)dictviews_isdisjoint,  METH_O,
      isdisjoint_doc},
-    {"__reversed__",    (PyCFunction)(void(*)(void))dictitems_reversed,    METH_NOARGS,
+    {"__reversed__",    (PyCFunction)dictitems_reversed,    METH_NOARGS,
      reversed_items_doc},
     {NULL,              NULL}           /* sentinel */
 };
@@ -4887,7 +4890,7 @@ dictitems_new(PyObject *dict, PyObject *Py_UNUSED(ignored))
 }
 
 static PyObject *
-dictitems_reversed(_PyDictViewObject *dv)
+dictitems_reversed(_PyDictViewObject *dv, PyObject *Py_UNUSED(ignored))
 {
     if (dv->dv_dict == NULL) {
         Py_RETURN_NONE;
@@ -4917,13 +4920,13 @@ static PySequenceMethods dictvalues_as_sequence = {
     (objobjproc)0,                      /* sq_contains */
 };
 
-static PyObject* dictvalues_reversed(_PyDictViewObject *dv);
+static PyObject* dictvalues_reversed(_PyDictViewObject *dv, PyObject *Py_UNUSED(ignored));
 
 PyDoc_STRVAR(reversed_values_doc,
 "Return a reverse iterator over the dict values.");
 
 static PyMethodDef dictvalues_methods[] = {
-    {"__reversed__",    (PyCFunction)(void(*)(void))dictvalues_reversed,    METH_NOARGS,
+    {"__reversed__",    (PyCFunction)dictvalues_reversed,    METH_NOARGS,
      reversed_values_doc},
     {NULL,              NULL}           /* sentinel */
 };
@@ -4968,7 +4971,7 @@ dictvalues_new(PyObject *dict, PyObject *Py_UNUSED(ignored))
 }
 
 static PyObject *
-dictvalues_reversed(_PyDictViewObject *dv)
+dictvalues_reversed(_PyDictViewObject *dv, PyObject *Py_UNUSED(ignored))
 {
     if (dv->dv_dict == NULL) {
         Py_RETURN_NONE;
@@ -4983,10 +4986,12 @@ PyDictKeysObject *
 _PyDict_NewKeysForClass(void)
 {
     PyDictKeysObject *keys = new_keys_object(PyDict_MINSIZE);
-    if (keys == NULL)
+    if (keys == NULL) {
         PyErr_Clear();
-    else
+    }
+    else {
         keys->dk_lookup = lookdict_split;
+    }
     return keys;
 }
 

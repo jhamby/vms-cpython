@@ -134,7 +134,7 @@ class ImportTests(unittest.TestCase):
     def test_from_import_star_invalid_type(self):
         import re
         with _ready_to_import() as (name, path):
-            with open(path, 'w') as f:
+            with open(path, 'w', encoding='utf-8') as f:
                 f.write("__all__ = [b'invalid_type']")
             globals = {}
             with self.assertRaisesRegex(
@@ -143,7 +143,7 @@ class ImportTests(unittest.TestCase):
                 exec(f"from {name} import *", globals)
             self.assertNotIn(b"invalid_type", globals)
         with _ready_to_import() as (name, path):
-            with open(path, 'w') as f:
+            with open(path, 'w', encoding='utf-8') as f:
                 f.write("globals()[b'invalid_type'] = object()")
             globals = {}
             with self.assertRaisesRegex(
@@ -172,7 +172,7 @@ class ImportTests(unittest.TestCase):
             else:
                 pyc = TESTFN + ".pyc"
 
-            with open(source, "w") as f:
+            with open(source, "w", encoding='utf-8') as f:
                 print("# This tests Python's ability to import a",
                       ext, "file.", file=f)
                 a = random.randrange(1000)
@@ -212,7 +212,7 @@ class ImportTests(unittest.TestCase):
         filename = module + '.py'
 
         # Create a file with a list of 65000 elements.
-        with open(filename, 'w') as f:
+        with open(filename, 'w', encoding='utf-8') as f:
             f.write('d = [\n')
             for i in range(65000):
                 f.write('"",\n')
@@ -249,7 +249,7 @@ class ImportTests(unittest.TestCase):
 
     def test_failing_import_sticks(self):
         source = TESTFN + ".py"
-        with open(source, "w") as f:
+        with open(source, "w", encoding='utf-8') as f:
             print("a = 1/0", file=f)
 
         # New in 2.4, we shouldn't be able to import that no matter how often
@@ -298,7 +298,7 @@ class ImportTests(unittest.TestCase):
     def test_failing_reload(self):
         # A failing reload should leave the module object in sys.modules.
         source = TESTFN + os.extsep + "py"
-        with open(source, "w") as f:
+        with open(source, "w", encoding='utf-8') as f:
             f.write("a = 1\nb=2\n")
 
         sys.path.insert(0, os.curdir)
@@ -315,7 +315,7 @@ class ImportTests(unittest.TestCase):
             remove_files(TESTFN)
 
             # Now damage the module.
-            with open(source, "w") as f:
+            with open(source, "w", encoding='utf-8') as f:
                 f.write("a = 10\nb=20//0\n")
 
             self.assertRaises(ZeroDivisionError, importlib.reload, mod)
@@ -337,7 +337,7 @@ class ImportTests(unittest.TestCase):
     def test_file_to_source(self):
         # check if __file__ points to the source file where available
         source = TESTFN + ".py"
-        with open(source, "w") as f:
+        with open(source, "w", encoding='utf-8') as f:
             f.write("test = None\n")
 
         sys.path.insert(0, os.curdir)
@@ -386,7 +386,7 @@ class ImportTests(unittest.TestCase):
         try:
             source = TESTFN + ".py"
             compiled = importlib.util.cache_from_source(source)
-            with open(source, 'w') as f:
+            with open(source, 'w', encoding='utf-8') as f:
                 pass
             try:
                 os.utime(source, (2 ** 33 - 5, 2 ** 33 - 5))
@@ -593,7 +593,7 @@ class FilePermissionTests(unittest.TestCase):
         # with later updates, see issue #6074 for details
         with _ready_to_import() as (name, path):
             # Write a Python file, make it read-only and import it
-            with open(path, 'w') as f:
+            with open(path, 'w', encoding='utf-8') as f:
                 f.write("x = 'original'\n")
             # Tweak the mtime of the source to ensure pyc gets updated later
             s = os.stat(path)
@@ -603,7 +603,7 @@ class FilePermissionTests(unittest.TestCase):
             self.assertEqual(m.x, 'original')
             # Change the file and then reimport it
             os.chmod(path, 0o600)
-            with open(path, 'w') as f:
+            with open(path, 'w', encoding='utf-8') as f:
                 f.write("x = 'rewritten'\n")
             unload(name)
             importlib.invalidate_caches()
@@ -642,7 +642,7 @@ func_filename = func.__code__.co_filename
         self.sys_path = sys.path[:]
         self.orig_module = sys.modules.pop(self.module_name, None)
         os.mkdir(self.dir_name)
-        with open(self.file_name, "w") as f:
+        with open(self.file_name, "w", encoding='utf-8') as f:
             f.write(self.module_source)
         sys.path.insert(0, self.dir_name)
         importlib.invalidate_caches()
@@ -723,7 +723,8 @@ class PathsTests(unittest.TestCase):
 
     # Regression test for http://bugs.python.org/issue1293.
     def test_trailing_slash(self):
-        with open(os.path.join(self.path, 'test_trailing_slash.py'), 'w') as f:
+        with open(os.path.join(self.path, 'test_trailing_slash.py'),
+                  'w', encoding='utf-8') as f:
             f.write("testdata = 'test_trailing_slash'")
         sys.path.append(self.path+'/')
         mod = __import__("test_trailing_slash")
@@ -861,7 +862,7 @@ class PycacheTests(unittest.TestCase):
     def setUp(self):
         self.source = TESTFN + '.py'
         self._clean()
-        with open(self.source, 'w') as fp:
+        with open(self.source, 'w', encoding='utf-8') as fp:
             print('# This is a test file written by test_import.py', file=fp)
         sys.path.insert(0, os.curdir)
         importlib.invalidate_caches()
@@ -925,7 +926,7 @@ class PycacheTests(unittest.TestCase):
         m = __import__(TESTFN)
         try:
             self.assertEqual(m.__file__,
-                             os.path.join(os.curdir, os.path.relpath(pyc_file)))
+                             os.path.join(os.getcwd(), os.curdir, os.path.relpath(pyc_file)))
         finally:
             os.remove(pyc_file)
 
@@ -933,7 +934,7 @@ class PycacheTests(unittest.TestCase):
         # Modules now also have an __cached__ that points to the pyc file.
         m = __import__(TESTFN)
         pyc_file = importlib.util.cache_from_source(TESTFN + '.py')
-        self.assertEqual(m.__cached__, os.path.join(os.curdir, pyc_file))
+        self.assertEqual(m.__cached__, os.path.join(os.getcwd(), os.curdir, pyc_file))
 
     @skip_if_dont_write_bytecode
     def test___cached___legacy_pyc(self):
@@ -949,7 +950,7 @@ class PycacheTests(unittest.TestCase):
         importlib.invalidate_caches()
         m = __import__(TESTFN)
         self.assertEqual(m.__cached__,
-                         os.path.join(os.curdir, os.path.relpath(pyc_file)))
+                         os.path.join(os.getcwd(), os.curdir, os.path.relpath(pyc_file)))
 
     @skip_if_dont_write_bytecode
     def test_package___cached__(self):
@@ -961,18 +962,18 @@ class PycacheTests(unittest.TestCase):
         os.mkdir('pep3147')
         self.addCleanup(cleanup)
         # Touch the __init__.py
-        with open(os.path.join('pep3147', '__init__.py'), 'w'):
+        with open(os.path.join('pep3147', '__init__.py'), 'wb'):
             pass
-        with open(os.path.join('pep3147', 'foo.py'), 'w'):
+        with open(os.path.join('pep3147', 'foo.py'), 'wb'):
             pass
         importlib.invalidate_caches()
         m = __import__('pep3147.foo')
         init_pyc = importlib.util.cache_from_source(
             os.path.join('pep3147', '__init__.py'))
-        self.assertEqual(m.__cached__, os.path.join(os.curdir, init_pyc))
+        self.assertEqual(m.__cached__, os.path.join(os.getcwd(), os.curdir, init_pyc))
         foo_pyc = importlib.util.cache_from_source(os.path.join('pep3147', 'foo.py'))
         self.assertEqual(sys.modules['pep3147.foo'].__cached__,
-                         os.path.join(os.curdir, foo_pyc))
+                         os.path.join(os.getcwd(), os.curdir, foo_pyc))
 
     def test_package___cached___from_pyc(self):
         # Like test___cached__ but ensuring __cached__ when imported from a
@@ -984,9 +985,9 @@ class PycacheTests(unittest.TestCase):
         os.mkdir('pep3147')
         self.addCleanup(cleanup)
         # Touch the __init__.py
-        with open(os.path.join('pep3147', '__init__.py'), 'w'):
+        with open(os.path.join('pep3147', '__init__.py'), 'wb'):
             pass
-        with open(os.path.join('pep3147', 'foo.py'), 'w'):
+        with open(os.path.join('pep3147', 'foo.py'), 'wb'):
             pass
         importlib.invalidate_caches()
         m = __import__('pep3147.foo')
@@ -996,17 +997,17 @@ class PycacheTests(unittest.TestCase):
         m = __import__('pep3147.foo')
         init_pyc = importlib.util.cache_from_source(
             os.path.join('pep3147', '__init__.py'))
-        self.assertEqual(m.__cached__, os.path.join(os.curdir, init_pyc))
+        self.assertEqual(m.__cached__, os.path.join(os.getcwd(), os.curdir, init_pyc))
         foo_pyc = importlib.util.cache_from_source(os.path.join('pep3147', 'foo.py'))
         self.assertEqual(sys.modules['pep3147.foo'].__cached__,
-                         os.path.join(os.curdir, foo_pyc))
+                         os.path.join(os.getcwd(), os.curdir, foo_pyc))
 
     def test_recompute_pyc_same_second(self):
         # Even when the source file doesn't change timestamp, a change in
         # source size is enough to trigger recomputation of the pyc file.
         __import__(TESTFN)
         unload(TESTFN)
-        with open(self.source, 'a') as fp:
+        with open(self.source, 'a', encoding='utf-8') as fp:
             print("x = 5", file=fp)
         m = __import__(TESTFN)
         self.assertEqual(m.x, 5)
@@ -1138,7 +1139,7 @@ class ImportTracebackTests(unittest.TestCase):
 
     def create_module(self, mod, contents, ext=".py"):
         fname = os.path.join(TESTFN, mod + ext)
-        with open(fname, "w") as f:
+        with open(fname, "w", encoding='utf-8') as f:
             f.write(contents)
         self.addCleanup(unload, mod)
         importlib.invalidate_caches()
@@ -1215,10 +1216,10 @@ class ImportTracebackTests(unittest.TestCase):
         os.mkdir(pkg_path)
         # Touch the __init__.py
         init_path = os.path.join(pkg_path, '__init__.py')
-        with open(init_path, 'w') as f:
+        with open(init_path, 'w', encoding='utf-8') as f:
             f.write(parent)
         bar_path = os.path.join(pkg_path, 'bar.py')
-        with open(bar_path, 'w') as f:
+        with open(bar_path, 'w', encoding='utf-8') as f:
             f.write(child)
         importlib.invalidate_caches()
         return init_path, bar_path

@@ -864,6 +864,7 @@ extern _invalid_parameter_handler _Py_silent_invalid_parameter_handler;
    PyAPI_FUNC(void) _Py_NO_RETURN PyThread_exit_thread(void);
 
    XLC support is intentionally omitted due to bpo-40244 */
+#ifndef _Py_NO_RETURN
 #if defined(__clang__) || \
     (defined(__GNUC__) && \
      ((__GNUC__ >= 3) || \
@@ -873,6 +874,7 @@ extern _invalid_parameter_handler _Py_silent_invalid_parameter_handler;
 #  define _Py_NO_RETURN __declspec(noreturn)
 #else
 #  define _Py_NO_RETURN
+#endif
 #endif
 
 
