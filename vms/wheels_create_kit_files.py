@@ -47,7 +47,7 @@ def create_content(type, major, minor, level, edit):
                 lib_new_full_name = '-'.join([
                     lib_name,
                     lib_version,
-                    'cp310',
+                    'py3',
                     'none',
                     'any',
                 ])
