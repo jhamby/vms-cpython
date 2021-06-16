@@ -1,0 +1,6 @@
+# Requires Cython and build on VILE
+# --no-deps
+# python -m pip wheel -w /pyth$whl --no-deps 
+PyYAML==5.4.1
+pyrsistent
+simplejson
