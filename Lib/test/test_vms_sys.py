@@ -232,6 +232,9 @@ class BaseTestCase(unittest.TestCase):
         status, context = SYS.getqui(QUI.QUI__DISPLAY_QUEUE, context, il)
         qui_name = il[1]
 
+        if status == JBC.JBC__JOBQUEDIS:
+            raise unittest.SkipTest("system job queue manager is not running")
+
         self.assertIn(status, (JBC.JBC__NOMOREQUE, SS.SS__NORMAL))
         self.assertNotEqual(qui_name, '')
         if status == SS.SS__NORMAL:
@@ -259,7 +262,7 @@ class BaseTestCase(unittest.TestCase):
 
         self.assertEqual(status, SS.SS__NORMAL)
         self.assertNotEqual(arch_name, '')
-        self.assertIn(arch_type, (1,2,3))
+        self.assertIn(arch_type, (1,2,3,4))
 
     def test_gettim(self):
         """ test gettim """

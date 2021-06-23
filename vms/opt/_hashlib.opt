@@ -1,5 +1,5 @@
-sys$library:ssl111$libssl_shr32.exe/SHARE
-sys$library:ssl111$libcrypto_shr32.exe/SHARE
+$libssl_shr32/SHARE
+$libcrypto_shr32/SHARE
 sys$library:pthread$rtl.exe/SHARE
 python$build_out:[000000]python$shr.exe/SHARE
 GSMATCH=LEQUAL,1,0

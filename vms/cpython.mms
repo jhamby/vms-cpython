@@ -1,7 +1,12 @@
 ! MMS/EXT/DESCR=Python3.mms/MACRO=("OUTDIR=OUT","CONFIG=DEBUG")
+! NOTE:
+!   this MMS file is created to build X86 version of Python
+!   using KVASER and BALDER machines only
+!   under VORFOLOMEEV account
+!   see target [.$(OBJ_DIR).Python]frozen.obc
 DYNLOAD_DIR = lib-dynload
 PLATFORM = OpenVMS
-SOABI = cpython-310-ia64-openvms
+SOABI = cpython-310-x86_64-openvms
 
 CC_QUALIFIERS = -
 /NAMES=(AS_IS,SHORTENED) -
@@ -92,6 +97,13 @@ CC_SQLITE3_MODULE_CFLAGS = $(CC_QUALIFIERS)/DEFINE=("Py_BUILD_CORE_MODULE",MODUL
 CC_GETPATH_CFLAGS = $(CC_QUALIFIERS)/DEFINE=("Py_BUILD_CORE",$(GETPATH_DEFINES))/INCLUDE_DIRECTORY=($(CC_INCLUDES))
 
 .FIRST
+    ! x86 setup
+    @SYS$MANAGER:X86_XTOOLS$SYLOGIN
+    define sys$library X86$LIBRARY
+    define /trans=concealed oss$root DSA22:[OSS.X86.]
+    define $libssl_shr32 usr_disk:[vorfolomeev.ssl_x86]ssl111$libssl_shr32.exe
+    define $libcrypto_shr32 usr_disk:[vorfolomeev.ssl_x86]ssl111$libcrypto_shr32.exe
+    !
     ! defines for nested includes, like:
     ! #include "clinic/transmogrify.h.h"
     define cpython [.Include.cpython]
@@ -554,20 +566,14 @@ $(PARSER_HEADERS) -
 ############################################################################
 # Importlib
 
+freeze_importlib : [.$(OUT_DIR).Programs]_freeze_importlib.exe
+    ! continue
+
 [.$(OUT_DIR).Programs]_freeze_importlib.exe : [.$(OBJ_DIR).Programs]_freeze_importlib.obc [.$(OBJ_DIR).vms]vms_crtl_init.obc $(LIBRARY_OBJS_OMIT_FROZEN)
   @ pipe create/dir $(DIR $(MMS$TARGET)) | copy SYS$INPUT nl:
     $(LINK)/NODEBUG/NOMAP/EXECUTABLE=python$build_out:[Programs]$(NOTDIR $(MMS$TARGET_NAME)).exe [.$(OBJ_DIR).vms]vms_crtl_init.obc,$(MMS$SOURCE),[.vms.opt]$(NOTDIR $(MMS$TARGET_NAME)).opt/OPT
 
 [.$(OBJ_DIR).Programs]_freeze_importlib.obc : [.Programs]_freeze_importlib.c $(PYTHON_HEADERS)
-
-[.Python]importlib_external.h : [.Lib.importlib]_bootstrap_external.py [.$(OUT_DIR).Programs]_freeze_importlib.exe
-    mcr [.$(OUT_DIR).Programs]_freeze_importlib.exe importlib._bootstrap_external Lib/importlib/_bootstrap_external.py Python/importlib_external.h
-
-[.Python]importlib.h : [.Lib.importlib]_bootstrap.py [.$(OUT_DIR).Programs]_freeze_importlib.exe
-    mcr [.$(OUT_DIR).Programs]_freeze_importlib.exe importlib._bootstrap Lib/importlib/_bootstrap.py Python/importlib.h
-
-[.Python]importlib_zipimport.h : [.Lib]zipimport.py [.$(OUT_DIR).Programs]_freeze_importlib.exe
-    mcr [.$(OUT_DIR).Programs]_freeze_importlib.exe zipimport Lib/zipimport.py Python/importlib_zipimport.h
 
 ############################################################################
 # Static modules
@@ -733,11 +739,31 @@ $(PARSER_HEADERS) -
 [.$(OBJ_DIR).vms]vms_mbx_util.obc : [.vms]vms_mbx_util.c [.vms]vms_mbx_util.h
 [.$(OBJ_DIR).vms]vms_fcntl.obc : [.vms]vms_fcntl.c [.vms]vms_fcntl.h [.vms]vms_mbx_util.h
 
+! Some DECNET magic
 [.$(OBJ_DIR).Python]frozen.obc : [.Python]frozen.c -
-[.Python]importlib.h -
-[.Python]importlib_external.h -
-[.Python]importlib_zipimport.h -
+[.$(OUT_DIR).Programs]_freeze_importlib.exe -
+[.Lib.importlib]_bootstrap_external.py -
+[.Lib.importlib]_bootstrap.py -
+[.Lib]zipimport.py -
+[.vms]frzx86.com -
 $(PYTHON_HEADERS)
+    backup [.vms]frzx86.com usr_disk:[vorfolomeev] /repl
+    - type balder"vorfolomeev AAwf12jg%3kW"::"task=frzx86"
+    @- pipe create/dir $(DIR $(MMS$TARGET)) | copy SYS$INPUT nl:
+    $(CC) $(CC_CORE_CFLAGS) /OBJECT=$(MMS$TARGET) $(MMS$SOURCE)
+
+![.Python]importlib.h
+![.Python]importlib_external.h
+![.Python]importlib_zipimport.h
+
+! [.Python]importlib_external.h : [.Lib.importlib]_bootstrap_external.py [.$(OUT_DIR).Programs]_freeze_importlib.exe
+!     mcr [.$(OUT_DIR).Programs]_freeze_importlib.exe importlib._bootstrap_external Lib/importlib/_bootstrap_external.py Python/importlib_external.h
+
+! [.Python]importlib.h : [.Lib.importlib]_bootstrap.py [.$(OUT_DIR).Programs]_freeze_importlib.exe
+!     mcr [.$(OUT_DIR).Programs]_freeze_importlib.exe importlib._bootstrap Lib/importlib/_bootstrap.py Python/importlib.h
+
+! [.Python]importlib_zipimport.h : [.Lib]zipimport.py [.$(OUT_DIR).Programs]_freeze_importlib.exe
+!     mcr [.$(OUT_DIR).Programs]_freeze_importlib.exe zipimport Lib/zipimport.py Python/importlib_zipimport.h
 
 ############################################################################
 # Library
@@ -824,8 +850,8 @@ LIBDYNLOAD_VMS = -
 [.$(OUT_DIR).$(DYNLOAD_DIR)]_decc.exe -
 [.$(OUT_DIR).$(DYNLOAD_DIR)]_lib.exe -
 [.$(OUT_DIR).$(DYNLOAD_DIR)]_ile3.exe -
-[.$(OUT_DIR).$(DYNLOAD_DIR)]_sys.exe -
-[.$(OUT_DIR).$(DYNLOAD_DIR)]_rdb.exe
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_sys.exe
+! [.$(OUT_DIR).$(DYNLOAD_DIR)]_rdb.exe !fails on x86
 ! [.$(OUT_DIR).$(DYNLOAD_DIR)]_rec.exe
 
 .IFDEF BUILD_DTR
@@ -848,8 +874,8 @@ $(LIBDYNLOAD_VMS) -
 [.$(OUT_DIR).$(DYNLOAD_DIR)]_contextvars.exe -
 [.$(OUT_DIR).$(DYNLOAD_DIR)]_crypt.exe -
 [.$(OUT_DIR).$(DYNLOAD_DIR)]_csv.exe -
-[.$(OUT_DIR).$(DYNLOAD_DIR)]_ctypes.exe -
-[.$(OUT_DIR).$(DYNLOAD_DIR)]_ctypes_test.exe -
+- ![.$(OUT_DIR).$(DYNLOAD_DIR)]_ctypes.exe !fails on x86
+- ![.$(OUT_DIR).$(DYNLOAD_DIR)]_ctypes_test.exe !fails on x86
 [.$(OUT_DIR).$(DYNLOAD_DIR)]_datetime.exe -
 [.$(OUT_DIR).$(DYNLOAD_DIR)]_decimal.exe -
 [.$(OUT_DIR).$(DYNLOAD_DIR)]_elementtree.exe -

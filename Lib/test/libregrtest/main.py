@@ -21,38 +21,6 @@ from test.libregrtest.utils import removepy, count, format_duration, printlist
 from test import support
 from test.support import os_helper
 
-if sys.platform == 'OpenVMS':
-
-    import _jpidef
-    import _syidef
-    import _lib
-    import gc
-
-    def format_mem(mem):
-        """ mem in bytes
-        """
-        abb = ['b', 'kb', 'Mb', 'Gb', 'Tb']
-        p = 0
-        unit = 1024
-        while mem >= unit:
-            unit = unit * 1024
-            p = p + 1
-        unit = unit / 1024
-        if p < len(abb):
-            return "{0}{1}".format(int(mem/unit), abb[p])
-        else:
-            return "{0:,d}b".format(mem)
-
-    # turns out page size is always 512 bytes
-    def get_mem():
-        try:
-            sts, pagecount = _lib.getjpi(_jpidef.JPI__PPGCNT, 0, None)
-            if sts != 1:
-                return 0
-        except:
-            return 0
-        return 512 * int(pagecount)
-
 # bpo-38203: Maximum delay in seconds to exit Python (call Py_Finalize()).
 # Used to protect against threading._shutdown() hang.
 # Must be smaller than buildbot "1200 seconds without output" limit.
@@ -124,9 +92,6 @@ class Regrtest:
         self.tmp_dir = None
         self.worker_test_name = None
 
-        # OpenVMS
-        self.home_files_count = None
-
     def get_executed(self):
         return (set(self.good) | set(self.bad) | set(self.skipped)
                 | set(self.resource_denieds) | set(self.environment_changed)
@@ -197,17 +162,6 @@ class Regrtest:
     def display_progress(self, test_index, text):
         if self.ns.quiet:
             return
-
-        #show used memory
-        if sys.platform == 'OpenVMS':
-            line = "memory (%s)" % format_mem(get_mem())
-            if self.home_files_count:
-                os.popen('purge sys$login:').read()
-                home_files_count = os.popen('dir sys$login: /grand').read().strip()
-                if home_files_count != self.home_files_count:
-                    line += " +files"
-                    self.home_files_count = home_files_count
-            print(line, flush=True)
 
         # "[ 51/405/1] test_tcl passed"
         line = f"{test_index:{self.test_count_width}}{self.test_count}"
@@ -446,11 +400,6 @@ class Regrtest:
         if self.ns.timeout:
             msg += " (timeout: %s)" % format_duration(self.ns.timeout)
         self.log(msg)
-        #show used memory
-        if sys.platform == 'OpenVMS':
-            print("initial memory: %s" % format_mem(get_mem()))
-            os.popen('purge sys$login:').read()
-            self.home_files_count = os.popen('dir sys$login: /grand').read().strip()
 
         previous_test = None
         for test_index, test_name in enumerate(self.tests, 1):
