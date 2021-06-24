@@ -184,17 +184,17 @@ egress:
     return retCode;
 }
 
-unsigned short get_mbx_size(unsigned short channel) {
-    unsigned short mbx_buffer_size = 0;
+unsigned int get_mbx_size(unsigned short channel) {
+    unsigned int   mbx_buffer_size = 0;
     unsigned short mbx_buffer_size_len = 0;
     unsigned int   mbx_char = 0;
     unsigned short mbx_char_len = 0;
     ILE3 item_list[3];
-    item_list[0].ile3$w_length = 4;
+    item_list[0].ile3$w_length = sizeof(mbx_buffer_size);
     item_list[0].ile3$w_code = DVI$_DEVBUFSIZ;
     item_list[0].ile3$ps_bufaddr = &mbx_buffer_size;
     item_list[0].ile3$ps_retlen_addr = &mbx_buffer_size_len;
-    item_list[1].ile3$w_length = 4;
+    item_list[1].ile3$w_length = sizeof(mbx_char);
     item_list[1].ile3$w_code = DVI$_DEVCLASS;
     item_list[1].ile3$ps_bufaddr = &mbx_char;
     item_list[1].ile3$ps_retlen_addr = &mbx_char_len;
@@ -264,7 +264,7 @@ int read_mbx(int fd, char *buf, int size) {
     errno = EVMSERR;
     char devicename[256];
     if (vms_channel_lookup_by_name(getname(fd, devicename, 1), &channel) == 0) {
-        unsigned short mbx_size = get_mbx_size(channel);
+        int mbx_size = (int)get_mbx_size(channel);
         if (mbx_size < size) {
             size = mbx_size;
         }
