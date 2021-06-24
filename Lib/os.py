@@ -207,20 +207,21 @@ def makedirs(name, mode=0o777, exist_ok=False):
     raised.  This is recursive.
 
     """
-    head, tail = path.split(name)
-    if not tail:
-        head, tail = path.split(head)
-    if head and tail and not path.exists(head):
-        try:
-            makedirs(head, exist_ok=exist_ok)
-        except FileExistsError:
-            # Defeats race condition when another thread created the path
-            pass
-        cdir = curdir
-        if isinstance(tail, bytes):
-            cdir = bytes(curdir, 'ASCII')
-        if tail == cdir:           # xxx/newdir/. exists if xxx/newdir exists
-            return
+    if sys.platform != 'OpenVMS':    # OpenVMS already creates all intermediate folders
+        head, tail = path.split(name)
+        if not tail:
+            head, tail = path.split(head)
+        if head and tail and not path.exists(head):
+            try:
+                makedirs(head, exist_ok=exist_ok)
+            except FileExistsError:
+                # Defeats race condition when another thread created the path
+                pass
+            cdir = curdir
+            if isinstance(tail, bytes):
+                cdir = bytes(curdir, 'ASCII')
+            if tail == cdir:           # xxx/newdir/. exists if xxx/newdir exists
+                return
     try:
         mkdir(name, mode)
     except OSError:
