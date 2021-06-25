@@ -144,15 +144,15 @@ for name in (
         TESTFN_UNDECODABLE = os.fsencode(TESTFN_ASCII) + name
         break
 
+if sys.platform == 'OpenVMS':
+    import platform
+    if platform.processor() == 'x86_64':    # OpenVMS for x86 crashes
+        FS_NONASCII = ''
+
 if FS_NONASCII:
     TESTFN_NONASCII = TESTFN_ASCII + FS_NONASCII
 else:
     TESTFN_NONASCII = None
-
-if sys.platform == 'OpenVMS':
-    import platform
-    if platform.processor() == 'x86_64':
-        TESTFN_NONASCII = None
 
 TESTFN = TESTFN_NONASCII or TESTFN_ASCII
 
