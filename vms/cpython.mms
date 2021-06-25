@@ -101,8 +101,7 @@ CC_GETPATH_CFLAGS = $(CC_QUALIFIERS)/DEFINE=("Py_BUILD_CORE",$(GETPATH_DEFINES))
     @SYS$MANAGER:X86_XTOOLS$SYLOGIN
     define sys$library X86$LIBRARY
     define /trans=concealed oss$root DSA22:[OSS.X86.]
-    define $libssl_shr32 usr_disk:[vorfolomeev.ssl_x86]ssl111$libssl_shr32.exe
-    define $libcrypto_shr32 usr_disk:[vorfolomeev.ssl_x86]ssl111$libcrypto_shr32.exe
+    define oss$shared usr_disk:[vorfolomeev.ssl_x86]
     !
     ! defines for nested includes, like:
     ! #include "clinic/transmogrify.h.h"

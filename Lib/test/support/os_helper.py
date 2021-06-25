@@ -148,6 +148,12 @@ if FS_NONASCII:
     TESTFN_NONASCII = TESTFN_ASCII + FS_NONASCII
 else:
     TESTFN_NONASCII = None
+
+if sys.platform == 'OpenVMS':
+    import platform
+    if platform.processor() == 'x86_64':
+        TESTFN_NONASCII = None
+
 TESTFN = TESTFN_NONASCII or TESTFN_ASCII
 
 
