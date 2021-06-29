@@ -197,6 +197,38 @@ $exit
         ch.release()
         sqlca.detach()
 
+    def test_sql_exec(self):
+        sqlca = _rdb.sqlca()
+
+        sqlca.attach(self.dbname_vms)
+        self.assertNotEqual(sqlca.code, -1, sqlca.message)
+
+        stmt = sqlca.prepare("insert into customer (name, address, city) values (?,?,?)")
+        self.assertIsNot(stmt, None, sqlca.message)
+
+        rv = stmt.exec('Bill Smith', '20 Seagul St', 'Berlin')
+        rv = stmt.exec('Joe Smith', '26 Free St', 'Toronto')
+        rv = stmt.exec('Bill Murrey', '13 Elm St', 'Washingtown')
+        
+        sqlca.commit()
+        sqlca.rollback()
+        sqlca.detach()
+
+    def test_sql_select(self):
+        sqlca = _rdb.sqlca()
+
+        sqlca.attach(self.dbname_vms)
+        self.assertNotEqual(sqlca.code, -1, sqlca.message)
+
+        stmt = sqlca.prepare("select name, address from customer where city = ?")
+        self.assertIsNot(stmt, None, sqlca.message)
+
+        row = stmt.select('Toronto')
+        self.assertIsNot(row, None, sqlca.message)
+        
+        sqlca.commit()
+        sqlca.rollback()
+        sqlca.detach()
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
