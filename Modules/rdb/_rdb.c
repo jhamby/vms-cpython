@@ -1,5 +1,6 @@
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
+#include "datetime.h"
 #include "structmember.h"
 
 #define ConvertArgToStr(arg, value, size, func_name)            \
@@ -170,7 +171,7 @@ static PyObject* SQLCA_prepare(SQLCA_Object *self, PyObject *args);
 static PyObject* STMT_exec(STMT_Object *self, PyObject *const *args, Py_ssize_t nargs);
 static PyObject* STMT_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
 static PyObject* STMT_release(STMT_Object *self, PyObject *args);
-
+static PyObject* STMT_data(STMT_Object *self, PyObject *args);
 /* ------------------------------------------------------------------------------------------------------------------------------ */
 static PyObject*
 SQLCA_new(
@@ -330,7 +331,7 @@ SQLCA_exec(
         // command with parameters
         STMT_Object *pStmt = (STMT_Object *)SQLCA_prepare(self, args[0]);
         if (pStmt == NULL || ((PyObject*)pStmt) == Py_None) {
-            return NULL;
+            return (PyObject*)pStmt;
         }
         PyObject *ret_code = STMT_exec(pStmt, args + 1, nargs - 1);
         // delete statement
@@ -456,7 +457,7 @@ SQLCA_prepare(
     }
 
     for (int i = 0; i < pSTMT->sqlda_i->SQLD; i++) {
-        pSTMT->sqlda_i->SQLVAR[i].SQLDATA = (char*) PyMem_Calloc(1, pSTMT->sqlda_i->SQLVAR[i].SQLLEN);
+        pSTMT->sqlda_i->SQLVAR[i].SQLDATA = (char*) PyMem_Calloc(1, pSTMT->sqlda_i->SQLVAR[i].SQLOCTET_LEN);
         if (pSTMT->sqlda_i->SQLVAR[i].SQLDATA == NULL) {
             Py_DECREF(pSTMT);
             return PyErr_NoMemory();
@@ -464,34 +465,12 @@ SQLCA_prepare(
     }
 
     for (int i = 0; i < pSTMT->sqlda_o->SQLD; i++) {
-        if (pSTMT->sqlda_o->SQLVAR[i].SQLTYPE == SQLDA2_INTERVAL) {
-            pSTMT->sqlda_o->SQLVAR[i].SQLTYPE = SQLDA_VARCHAR;
-            pSTMT->sqlda_o->SQLVAR[i].SQLLEN = 100;
-        }
         pSTMT->sqlda_o->SQLVAR[i].SQLIND = PyMem_Calloc(1, sizeof(int));
         if (pSTMT->sqlda_o->SQLVAR[i].SQLIND == NULL) {
             Py_DECREF(pSTMT);
             return PyErr_NoMemory();
         }
-        switch (pSTMT->sqlda_o->SQLVAR[i].SQLTYPE) {
-            case SQLDA_VARCHAR:
-                pSTMT->sqlda_o->SQLVAR[i].SQLDATA = PyMem_Calloc(1, sizeof(vc_t));
-                break;
-            case SQLDA_CHAR:
-            case SQLDA_INTEGER:
-            case SQLDA_SMALLINT:
-            case SQLDA_TINYINT:
-            case SQLDA_FLOAT:
-            case SQLDA_SEGSTRING:
-            case SQLDA_QUADWORD:
-            case SQLDA_DATE:
-            case SQLDA2_DATETIME:
-                pSTMT->sqlda_o->SQLVAR[i].SQLDATA = PyMem_Calloc(1, pSTMT->sqlda_o->SQLVAR[i].SQLLEN);
-                break;
-            default:
-                // PyErr_Format(PyExc_RuntimeError, "Unknown type %i", pSTMT->sqlda_o->SQLVAR[i].SQLTYPE);
-                pSTMT->sqlda_o->SQLVAR[i].SQLDATA = PyMem_Calloc(1, pSTMT->sqlda_o->SQLVAR[i].SQLLEN);
-        }
+        pSTMT->sqlda_o->SQLVAR[i].SQLDATA = PyMem_Calloc(1, pSTMT->sqlda_o->SQLVAR[i].SQLOCTET_LEN);
         if (pSTMT->sqlda_o->SQLVAR[i].SQLDATA == NULL) {
             Py_DECREF(pSTMT);
             return PyErr_NoMemory();
@@ -651,8 +630,8 @@ static STMT_Object *fill_statement(
                 }
                 // 3. copy string
                 if (str && str_size) {
-                    if (str_size > pStmt->sqlda_i->SQLVAR[i].SQLLEN-1) {
-                        str_size = pStmt->sqlda_i->SQLVAR[i].SQLLEN-1;
+                    if (str_size > pStmt->sqlda_i->SQLVAR[i].SQLLEN) {
+                        str_size = pStmt->sqlda_i->SQLVAR[i].SQLLEN;
                     }
                     strncpy(vcp->data, str, str_size);
                     vcp->dlen = strlen(vcp->data);
@@ -688,6 +667,8 @@ static STMT_Object *fill_statement(
                 PyErr_Clear();
                 break;
 
+            case SQLDA_ROWID:
+            case SQLDA_DECIMAL:
             case SQLDA_TINYINT:
             case SQLDA_SMALLINT:
             case SQLDA_INTEGER:
@@ -702,9 +683,9 @@ static STMT_Object *fill_statement(
                 } else if (PyLong_Check(args[i])) {
                     long_value = PyLong_AsLongLong(args[i]);
                 } else {
-                    // PyErr_Format(PyExc_TypeError, "Incompatible type at pos %i", i);
-                    // return NULL;
-                    long_value = 0;
+                    PyErr_Format(PyExc_TypeError, "Incompatible type at pos %i", i + 1);
+                    return NULL;
+                    // long_value = 0;
                 }
                 if (str && str_size) {
                     objectsRepresentation = PyLong_FromString(str, NULL, 10);
@@ -712,13 +693,13 @@ static STMT_Object *fill_statement(
                     Py_DECREF(objectsRepresentation);
                     objectsRepresentation = NULL;
                 }
-                if (pStmt->sqlda_i->SQLVAR[i].SQLLEN <= sizeof(long_value)) {
-                    memcpy(pStmt->sqlda_i->SQLVAR[i].SQLDATA, &long_value, pStmt->sqlda_i->SQLVAR[i].SQLLEN);
+                if (pStmt->sqlda_i->SQLVAR[i].SQLOCTET_LEN <= sizeof(long_value)) {
+                    memcpy(pStmt->sqlda_i->SQLVAR[i].SQLDATA, &long_value, pStmt->sqlda_i->SQLVAR[i].SQLOCTET_LEN);
                 } else {
-                    // PyErr_Format(PyExc_TypeError, "Incompatible type at pos %i", i);
-                    // return NULL;
-                    memcpy(pStmt->sqlda_i->SQLVAR[i].SQLDATA, &long_value, sizeof(long_value));
-                    memset(pStmt->sqlda_i->SQLVAR[i].SQLDATA + sizeof(long_value), 0, pStmt->sqlda_i->SQLVAR[i].SQLLEN - sizeof(long_value));
+                    PyErr_Format(PyExc_TypeError, "Incompatible type at pos %i", i + 1);
+                    return NULL;
+                    // memcpy(pStmt->sqlda_i->SQLVAR[i].SQLDATA, &long_value, sizeof(long_value));
+                    // memset(pStmt->sqlda_i->SQLVAR[i].SQLDATA + sizeof(long_value), 0, pStmt->sqlda_i->SQLVAR[i].SQLOCTET_LEN - sizeof(long_value));
                 }
                 PyErr_Clear();
                 break;
@@ -729,9 +710,9 @@ static STMT_Object *fill_statement(
                 } else {
                     objectsRepresentation = PyFloat_FromString(args[i]);
                     if (!objectsRepresentation) {
-                        // PyErr_Format(PyExc_TypeError, "Incompatible type at pos %i", i);
-                        // return NULL;
-                        double_value = 0;
+                        PyErr_Format(PyExc_TypeError, "Incompatible type at pos %i", i + 1);
+                        return NULL;
+                        // double_value = 0;
                     } else {
                         double_value = PyFloat_AsDouble(objectsRepresentation);
                         Py_DECREF(objectsRepresentation);
@@ -743,19 +724,21 @@ static STMT_Object *fill_statement(
                 } else if (pStmt->sqlda_i->SQLVAR[i].SQLLEN == sizeof(double)) {
                     *(double*)pStmt->sqlda_i->SQLVAR[i].SQLDATA = double_value;
                 } else {
-                    // PyErr_Format(PyExc_TypeError, "Incompatible type at pos %i", i);
-                    // return NULL;
-                    memset(pStmt->sqlda_i->SQLVAR[i].SQLDATA, 0, pStmt->sqlda_i->SQLVAR[i].SQLLEN);
+                    PyErr_Format(PyExc_TypeError, "Incompatible type at pos %i", i + 1);
+                    return NULL;
+                    // memset(pStmt->sqlda_i->SQLVAR[i].SQLDATA, 0, pStmt->sqlda_i->SQLVAR[i].SQLLEN);
                 }
                 PyErr_Clear();
                 break;
 
+            case SQLDA2_DATETIME:
+            case SQLDA2_INTERVAL:
             case SQLDA_DATE:
-                if (pStmt->sqlda_i->SQLVAR[i].SQLLEN != 8) {
-                    // PyErr_Format(PyExc_TypeError, "Invalid SQLLEN at pos %i", i);
-                    // return NULL;
-                    memset(pStmt->sqlda_i->SQLVAR[i].SQLDATA, 0, pStmt->sqlda_i->SQLVAR[i].SQLLEN);
-                    break;
+                if (pStmt->sqlda_i->SQLVAR[i].SQLOCTET_LEN != 8) {
+                    PyErr_Format(PyExc_TypeError, "Invalid SQLOCTET_LEN at pos %i", i + 1);
+                    return NULL;
+                    // memset(pStmt->sqlda_i->SQLVAR[i].SQLDATA, 0, pStmt->sqlda_i->SQLVAR[i].SQLOCTET_LEN);
+                    // break;
                 }
                 if (PyUnicode_CheckExact(args[i])) {
                     objectsRepresentation = NULL;
@@ -768,26 +751,16 @@ static STMT_Object *fill_statement(
                     str = (char*)PyUnicode_AsUTF8AndSize(objectsRepresentation, &str_size);
                 }
                 if (!str || !str_size) {
-                    // PyErr_Format(PyExc_TypeError, "Incompatible type at pos %i", i);
-                    // return NULL;
-                    memset(pStmt->sqlda_i->SQLVAR[i].SQLDATA, 0, pStmt->sqlda_i->SQLVAR[i].SQLLEN);
+                    PyErr_Format(PyExc_TypeError, "Incompatible type at pos %i", i + 1);
+                    return NULL;
+                    // memset(pStmt->sqlda_i->SQLVAR[i].SQLDATA, 0, pStmt->sqlda_i->SQLVAR[i].SQLOCTET_LEN);
                 } else {
-                    if (str[1] == '-') {
-                        snprintf(tmp, sizeof(tmp), "0%s", t);
-                    } else {
-                        strncpy(tmp, t, sizeof(tmp));
-                    }
-                    t = tmp;
-                    while (*t) {
-                        *t = toupper(*t);
-                        t++;
-                    }
                     struct dsc$descriptor_s tmp_dsc;
-                    tmp_dsc.dsc$w_length = strlen(tmp);
+                    tmp_dsc.dsc$w_length = str_size;
                     tmp_dsc.dsc$b_class = DSC$K_CLASS_S;
                     tmp_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-                    tmp_dsc.dsc$a_pointer = tmp;
-
+                    tmp_dsc.dsc$a_pointer = str;
+                    memset(pStmt->sqlda_i->SQLVAR[i].SQLDATA, 0, pStmt->sqlda_i->SQLVAR[i].SQLOCTET_LEN);
                     if (1 != sys$bintim(&tmp_dsc, (struct _generic_64 *)pStmt->sqlda_i->SQLVAR[i].SQLDATA)) {
                         PyErr_Format(PyExc_TypeError, "Invalid time string (%s)", str);
                         return NULL;
@@ -796,8 +769,16 @@ static STMT_Object *fill_statement(
                 PyErr_Clear();
                 break;
 
+            case SQLDA_ASCIZ:
+            case SQLDA_VARBYTE:
+            case SQLDA_SURROGATE:
+            case SQLDA_VARBINARY:
+            case SQLDA_BINARY:
+                PyErr_Format(PyExc_TypeError, "Unsupported data type %i at pos %i", pStmt->sqlda_i->SQLVAR[i].SQLTYPE, i + 1);
+                return NULL;
+
             default:
-                PyErr_Format(PyExc_TypeError, "Unknown data type %i at pos %i", pStmt->sqlda_i->SQLVAR[i].SQLTYPE, i);
+                PyErr_Format(PyExc_TypeError, "Unknown data type %i at pos %i", pStmt->sqlda_i->SQLVAR[i].SQLTYPE, i + 1);
                 return NULL;
         }
     }
@@ -872,10 +853,18 @@ STMT_select(
     eib$$db_fetch(&self->pSQLCA->sqlca, self->cursor, self->sqlda_o);
     Py_END_ALLOW_THREADS
 
-    int fetch_code = self->pSQLCA->sqlca.SQLCODE;
+    // list to return 
+    PyObject *pList = NULL;
 
+    // save fetch status
+    int fetch_code = self->pSQLCA->sqlca.SQLCODE;
+    PyObject *pErr = NULL;
     if (fetch_code != SQLCODE_SUCCESS) {
-        self->pSQLCA->pErr = RDB_error_message(NULL, NULL);
+        // save error
+        pErr = RDB_error_message(NULL, NULL);
+    } else {
+        // get data
+        pList = STMT_data(self, NULL);
     }
 
     // close cursor in any case without checking an error
@@ -883,7 +872,16 @@ STMT_select(
     eib$$db_close_cursor(&self->pSQLCA->sqlca, self->cursor);
     Py_END_ALLOW_THREADS
 
-    return PyLong_FromLong(fetch_code);
+    // restore fetch status
+    self->pSQLCA->pErr = pErr;
+    self->pSQLCA->sqlca.SQLCODE = fetch_code;
+
+    // check errors from STMT_data
+    if (!pList) {
+        Py_RETURN_NONE;
+    }
+
+    return pList;
 }
 
 /* ------------------------------------------------------------------------------------------------------------------------------ */
@@ -988,6 +986,25 @@ STMT_fetch(
 
 /* ------------------------------------------------------------------------------------------------------------------------------ */
 
+enum TIMBUF_POS {
+    YEAR = 0,
+    MONTH,
+    DAY,
+    HOUR,
+    MINUTE,
+    SECOND,
+    SUBSEC,
+};
+
+enum TIMBUF_MUL {
+    DAYHOUR = 24,
+    DAYMIN  = 24*60,
+    DAYSEC  = 24*60*60,
+    HOURMIN = 60,
+    HOURSEC = 60*60,
+    MINSEC  = 60,
+};
+
 static PyObject*
 STMT_data(
     STMT_Object *self,
@@ -1004,17 +1021,21 @@ STMT_data(
     }
 
     vc_len_t len;
-    struct dsc$descriptor_s     dd;
-    struct dsc$descriptor_sd    qd;
-    char str[64];
-    sc_len_t *p;
     PyObject *pValue;
     SQL_T_SQLVAR2 *pVar;
-    unsigned long ret_len;
+    long long long_long_value;
+    double double_value;
+    unsigned short int timbuf[7];
+    int sign;
 
     static PyObject *pNullStr = NULL;
     if (pNullStr == NULL) {
         pNullStr = PyUnicode_FromString("<null>");
+    }
+
+    static PyObject *pInvalidStr = NULL;
+    if (pInvalidStr == NULL) {
+        pInvalidStr = PyUnicode_FromString("<inv>");
     }
 
     for(int i = 0; i < self->sqlda_o->SQLD; ++i) {
@@ -1036,62 +1057,168 @@ STMT_data(
                     len = pVar->SQLLEN;
                     pValue = PyUnicode_FromStringAndSize(pVar->SQLDATA, len);
                     break;
-                case SQLDA_TINYINT:
-                    pValue = PyLong_FromLong(*(char *) pVar->SQLDATA);
-                    break;
                 case SQLDA_FLOAT:
                     if (pVar->SQLLEN == 8) {
                         pValue = PyFloat_FromDouble(*(double *)pVar->SQLDATA);
                     } else if (pVar->SQLLEN == 4) {
                         pValue = PyFloat_FromDouble(*(float *)pVar->SQLDATA);
+                    } else {
+                        pValue = pInvalidStr;
+                        Py_INCREF(pValue);
                     }
                     break;
-                case SQLDA_DATE:
-                    dd.dsc$w_length  = 32;
-                    dd.dsc$b_dtype   = DSC$K_DTYPE_T;
-                    dd.dsc$b_class   = DSC$K_CLASS_S;
-                    dd.dsc$a_pointer = str;
-                    sys$asctim(0, &dd, (struct _generic_64 *)pVar->SQLDATA, 0);
-                    str[20] = '\0';
-                    if (str[0] == ' ') {
-                        str[0] = '0';
-                    }
-                    pValue = PyUnicode_FromString(str);
-                    break;
-                case SQLDA_SMALLINT:
+                case SQLDA_SEGSTRING:
+                case SQLDA_TINYINT:
                 case SQLDA_QUADWORD:
+                case SQLDA_DECIMAL:
+                case SQLDA_SMALLINT:
                 case SQLDA_INTEGER:
-                    p = (sc_len_t *) &pVar->SQLLEN;
-
-                    dd.dsc$w_length  = 64;
-                    dd.dsc$b_dtype   = DSC$K_DTYPE_T;
-                    dd.dsc$b_class   = DSC$K_CLASS_S;
-                    dd.dsc$a_pointer = str;
-
-                    qd.dsc$b_class   = DSC$K_CLASS_SD;
-                    qd.dsc$w_length  = p[0];
-                    qd.dsc$a_pointer = pVar->SQLDATA;
-                    qd.dsc$b_scale   = -1 * p[1];
-                    qd.dsc$b_digits  = 0;
-
-                    switch (pVar->SQLTYPE) {
-                        case SQLDA_SMALLINT:
-                            qd.dsc$b_dtype = DSC$K_DTYPE_W;
-                            break;
-                        case SQLDA_QUADWORD:
-                            qd.dsc$b_dtype = DSC$K_DTYPE_Q;
-                            break;
-                        case SQLDA_INTEGER:
-                            qd.dsc$b_dtype = DSC$K_DTYPE_L;
-                            break;
+                    if (pVar->SQLOCTET_LEN <= sizeof(long_long_value)) {
+                        long_long_value = 0;
+                        memcpy(&long_long_value, pVar->SQLDATA, pVar->SQLOCTET_LEN);
+                        pValue = PyLong_FromLongLong(long_long_value);
+                    } else {
+                        // PyErr_Format(PyExc_TypeError, "Incompatible type at pos %i", i + 1);
+                        // return NULL;
+                        pValue = pInvalidStr;
+                        Py_INCREF(pValue);
                     }
-                    ret_len = 0;
-                    lib$cvt_dx_dx((unsigned int *)&qd, (unsigned int *)&dd, &ret_len);
-                    str[ret_len] = '\0';
-                    pValue = PyUnicode_FromString(str);
+                    break;
+                case SQLDA2_INTERVAL:
+                    long_long_value = *(long long*)pVar->SQLDATA;
+                    switch(pVar->SQLLEN) {
+                        case SQLDA2_DT_YEAR:
+                            pValue = PyLong_FromLong(long_long_value / 12);
+                            break;
+                        case SQLDA2_DT_MONTH:
+                            pValue = PyLong_FromLong(long_long_value);
+                            break;
+                        case SQLDA2_DT_YEAR_MONTH:
+                            sign = 1;
+                            if (long_long_value < 0) {
+                                sign = -1;
+                                long_long_value = -long_long_value;
+                            }
+                            pValue = Py_BuildValue("(i,i)", sign*(long_long_value/12), sign*(long_long_value%12));
+                            break;
+                        case SQLDA2_DT_SECOND:
+                        case SQLDA2_DT_MINUTE:
+                        case SQLDA2_DT_HOUR:
+                        case SQLDA2_DT_DAY:
+                        case SQLDA2_DT_DAY_HOUR:
+                        case SQLDA2_DT_DAY_MINUTE:
+                        case SQLDA2_DT_DAY_SECOND:
+                        case SQLDA2_DT_HOUR_MINUTE:
+                        case SQLDA2_DT_HOUR_SECOND:
+                        case SQLDA2_DT_MINUTE_SECOND:
+                            sign = -1;
+                            if (long_long_value > 0) {
+                                sign = 1;
+                                long_long_value = -long_long_value;
+                            }
+                            if (1 != sys$numtim(timbuf, (struct _generic_64*)&long_long_value)) {
+                                pValue = pInvalidStr;
+                                Py_INCREF(pValue);
+                            } else {
+                                if (!PyDateTimeAPI) {
+                                    PyDateTime_IMPORT;
+                                }
+                                if (!PyDateTimeAPI) {
+                                    pValue = pInvalidStr;
+                                    Py_INCREF(pValue);
+                                } else {
+                                    switch(pVar->SQLLEN) {
+                                        case SQLDA2_DT_SECOND:
+                                            long_long_value = timbuf[DAY] * DAYSEC + timbuf[HOUR] * HOURSEC + timbuf[MINUTE] * MINSEC + timbuf[SECOND];
+                                            double_value = 0.01 * timbuf[SUBSEC] + long_long_value;
+                                            pValue = PyFloat_FromDouble(sign*double_value);
+                                            break;
+                                        case SQLDA2_DT_MINUTE:
+                                            long_long_value = timbuf[DAY] * DAYMIN + timbuf[HOUR] * HOURMIN + timbuf[MINUTE];
+                                            pValue = PyLong_FromLongLong(sign*long_long_value);
+                                            break;
+                                        case SQLDA2_DT_HOUR:
+                                            long_long_value = timbuf[DAY] * DAYHOUR + timbuf[HOUR];
+                                            pValue = PyLong_FromLongLong(sign*long_long_value);
+                                            break;
+                                        case SQLDA2_DT_DAY:
+                                            long_long_value = timbuf[DAY];
+                                            pValue = PyLong_FromLongLong(sign*long_long_value);
+                                            break;
+                                        case SQLDA2_DT_DAY_HOUR:
+                                            pValue = Py_BuildValue("(i,i)", sign*timbuf[DAY], sign*timbuf[HOUR]);
+                                            break;
+                                        case SQLDA2_DT_DAY_MINUTE:
+                                            pValue = Py_BuildValue("(i,i,i)", sign*timbuf[DAY], sign*timbuf[HOUR], sign*timbuf[MINUTE]);
+                                            break;
+                                        case SQLDA2_DT_DAY_SECOND:
+                                            pValue = Py_BuildValue("(i,i,i,d)", sign*timbuf[DAY], sign*timbuf[HOUR], sign*timbuf[MINUTE], sign*(timbuf[SECOND] + 0.01 * timbuf[SUBSEC]));
+                                            break;
+                                        case SQLDA2_DT_HOUR_MINUTE:
+                                            pValue = Py_BuildValue("(i,i)", sign*(timbuf[DAY] * DAYHOUR + timbuf[HOUR]), sign*timbuf[MINUTE]);
+                                            break;
+                                        case SQLDA2_DT_HOUR_SECOND:
+                                            pValue = Py_BuildValue("(i,i,d)", sign*(timbuf[DAY] * DAYHOUR + timbuf[HOUR]), sign*timbuf[MINUTE], sign*(timbuf[SECOND] + 0.01 * timbuf[SUBSEC]));
+                                            break;
+                                        case SQLDA2_DT_MINUTE_SECOND:
+                                            pValue = Py_BuildValue("(i,d)", sign*(timbuf[DAY] * DAYMIN + timbuf[HOUR] * HOURMIN + timbuf[MINUTE]), sign*(timbuf[SECOND] + 0.01 * timbuf[SUBSEC]));
+                                            break;
+                                        default:
+                                            pValue = pInvalidStr;
+                                            Py_INCREF(pValue);
+                                    }
+                                }
+                            }
+                            break;
+                        default:
+                            pValue = pInvalidStr;
+                            Py_INCREF(pValue);
+                    }
+                    break;
+                case SQLDA2_DATETIME:
+                case SQLDA_DATE:
+                    if (1 != sys$numtim(timbuf, (struct _generic_64*)pVar->SQLDATA)) {
+                        pValue = pInvalidStr;
+                        Py_INCREF(pValue);
+                    } else {
+                        if (!PyDateTimeAPI) {
+                            PyDateTime_IMPORT;
+                        }
+                        if (!PyDateTimeAPI) {
+                            pValue = pInvalidStr;
+                            Py_INCREF(pValue);
+                        } else {
+                            switch (pVar->SQLCHRONO_SCALE) {
+                                case 0:
+                                case 3:
+                                    pValue = PyDateTime_FromDateAndTime(timbuf[0], timbuf[1], timbuf[2],
+                                        timbuf[3], timbuf[4], timbuf[5], timbuf[6]);
+                                    break;
+                                case 1:
+                                    pValue = PyDate_FromDate(timbuf[0], timbuf[1], timbuf[2]);
+                                    break;
+                                case 2:
+                                    pValue = PyTime_FromTime(timbuf[3], timbuf[4], timbuf[5], timbuf[6]);
+                                    break;
+                                default:
+                                    pValue = pInvalidStr;
+                                    Py_INCREF(pValue);
+                                    break;
+                            }
+                        }
+                    }
+                    break;
+                case SQLDA_ASCIZ:
+                case SQLDA_VARBYTE:
+                case SQLDA_SURROGATE:
+                case SQLDA_VARBINARY:
+                case SQLDA_BINARY:
+                case SQLDA_ROWID:
+                    pValue = pInvalidStr;
+                    Py_INCREF(pValue);
                     break;
                 default:
-                    pValue = pNullStr;
+                    pValue = pInvalidStr;
                     Py_INCREF(pValue);
                     break;
             }
@@ -1103,7 +1230,9 @@ STMT_data(
                 return NULL;
             }
         } else {
-            PyErr_Format(PyExc_RuntimeError, "Cannot create value from column %i", i);
+            PyErr_Format(PyExc_RuntimeError, "Cannot create value from column %i", i + 1);
+            Py_DECREF(pList);
+            return NULL;
         }
     }
     return pList;
@@ -1136,30 +1265,34 @@ STMT_fields(
         len = 0;
         switch (pVar->SQLTYPE) {
             case SQLDA_VARCHAR:
-                len = (vc_len_t) *pVar->SQLDATA;
-                if (len < 0) {              /* Hack */
-                    len += 256;
-                }
+                len = pVar->SQLLEN;
                 break;
             case SQLDA_CHAR:
-                len = pVar->SQLLEN;
-                break;
-            case SQLDA_TINYINT:
-                len = 1;
-                break;
             case SQLDA_FLOAT:
-                len = pVar->SQLLEN;
-                break;
-            case SQLDA_DATE:
-                len = 20;
-                break;
-            case SQLDA_SMALLINT:
+            case SQLDA_SEGSTRING:
+            case SQLDA_TINYINT:
             case SQLDA_QUADWORD:
+            case SQLDA_DECIMAL:
+            case SQLDA_SMALLINT:
             case SQLDA_INTEGER:
-                len = *(sc_len_t *) &pVar->SQLLEN;
+            case SQLDA2_DATETIME:
+            case SQLDA2_INTERVAL:
+            case SQLDA_DATE:
+                // supported
+                len = pVar->SQLOCTET_LEN;
+                break;
+            case SQLDA_ASCIZ:
+            case SQLDA_VARBYTE:
+            case SQLDA_SURROGATE:
+            case SQLDA_VARBINARY:
+            case SQLDA_BINARY:
+            case SQLDA_ROWID:
+                // unsupported
+                len = pVar->SQLOCTET_LEN;
                 break;
             default:
-                len = pVar->SQLLEN;
+                // unknown
+                len = 0;
                 break;
         }
         pValue = Py_BuildValue("(s#,i,i)", pVar->SQLNAME, pVar->SQLNAME_LEN, pVar->SQLTYPE, len);
