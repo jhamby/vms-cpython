@@ -15,6 +15,7 @@ extern int winerror_to_errno(int);
 #  include <builtins.h>
 #endif
 #  include <unixio.h>
+#  include <sys/stat.h>
 #  include "vms/vms_fcntl.h"
 #  include "vms/vms_mbx_util.h"
 #endif
@@ -1818,12 +1819,32 @@ _Py_read(int fd, void *buf, size_t count)
             do {
                 n = read_mbx(fd, buf, count);
             } while(n == -1 && errno == EAGAIN);
-        } else
-#endif
+        } else {
+            n = read(fd, buf, count);
+            if (0 <= n && n < count) {
+                // test if we have record-oriented file
+                struct stat stst;
+                if (0 == fstat(fd, &stst)) {
+                    switch (stst.st_fab_rfm) {
+                        case 1:
+                        case 2:
+                        case 3:
+                            // insert LF at the record boundary
+                            if (lseek(fd, 0, SEEK_CUR) != stst.st_size) {
+                                ((char*)buf)[n] = '\n';
+                                ++n;
+                            }
+                            break;
+                    }
+                }
+            }
+        }
+#else
 #ifdef MS_WINDOWS
         n = read(fd, buf, (int)count);
 #else
         n = read(fd, buf, count);
+#endif
 #endif
         /* save/restore errno because PyErr_CheckSignals()
          * and PyErr_SetFromErrno() can modify it */
