@@ -217,6 +217,12 @@ $exit
         stmt.exec('2')
         self.assertNotEqual(sqlca.code, -1, sqlca.message)
 
+        stmt=sqlca.prepare("insert into test_interval(a,b,c,d,e,f,g,h,i,j,k,l,m) values(?,?,?,?,?,?,?,?,?,?,?,?,?)")
+        self.assertIsNot(stmt, None, sqlca.message)
+
+        stmt.exec(11,12,13,14,15,16,(17,18),(19,20),(21,22,23),(24,25,26,27),(28,29),(30,31,32),(33,34))
+        self.assertNotEqual(sqlca.code, -1, sqlca.message)
+
         sqlca.commit()
         sqlca.rollback()
         sqlca.detach()

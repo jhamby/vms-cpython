@@ -731,8 +731,9 @@ static STMT_Object *fill_statement(
                 PyErr_Clear();
                 break;
 
-            case SQLDA2_DATETIME:
             case SQLDA2_INTERVAL:
+                //use LIB$CVT_VECTIM
+            case SQLDA2_DATETIME:
             case SQLDA_DATE:
                 if (pStmt->sqlda_i->SQLVAR[i].SQLOCTET_LEN != 8) {
                     PyErr_Format(PyExc_TypeError, "Invalid SQLOCTET_LEN at pos %i", i + 1);
