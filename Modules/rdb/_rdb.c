@@ -674,7 +674,7 @@ static int YearMonthFromStr(char *str, Py_ssize_t str_size, long long *presult) 
     while(str_size && *t) {
         switch(stage) {
             case 0: // begin
-                if (isblank(*t)) {
+                if (*t == ' ') {
                     break;
                 }
                 if (*t == '+') {
@@ -809,7 +809,7 @@ static int ParseInterval(char *str, Py_ssize_t str_size, unsigned short timbuf[7
     while(str_size && *t) {
         switch(stage) {
             case 0: // begin
-                if (isblank(*t)) {
+                if (*t == ' ') {
                     break;
                 }
                 if (*t == '+') {
@@ -850,13 +850,13 @@ static int ParseInterval(char *str, Py_ssize_t str_size, unsigned short timbuf[7
                     }
                     break;
                 }
-                if (isblank(*t)) {
+                if (*t == ' ') {
                     stage = 2;
                     break;
                 }
                 return 0;
             case 2: // blnk end
-                if (!isblank(*t)) {
+                if (*t != ' ') {
                     return 0;
                 }
                 break;
@@ -1072,7 +1072,7 @@ static int DateTimeStrToTimbuf(char *str, Py_ssize_t str_size, unsigned short ti
     int presented = 0;  // current value is presented (do not allow threating empty values as zero)
 
     // skip leading spaces
-    while(str_size && *t && isblank(*t)) {
+    while(str_size && *t == ' ') {
         ++t;
         --str_size;
     }
@@ -1191,7 +1191,7 @@ static int DateTimeStrToTimbuf(char *str, Py_ssize_t str_size, unsigned short ti
 
     // test trailing spaces
     while(str_size && *t) {
-        if (!isblank(*t)) {
+        if (*t != ' ') {
             return 0;
         }
         ++t;

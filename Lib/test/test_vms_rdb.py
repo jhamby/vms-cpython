@@ -178,32 +178,34 @@ $exit
         sqlca.attach(self.dbname_vms)
         self.assertNotEqual(sqlca.code, -1, sqlca.message)
 
-        sqlca.set_readonly()
-        self.assertNotEqual(sqlca.code, -1, sqlca.message)
+        try:
+            sqlca.set_readonly()
+            self.assertNotEqual(sqlca.code, -1, sqlca.message)
 
-        ch = sqlca.declare_cursor("C001", "select * from test_types")
-        self.assertNotEqual(ch, None, sqlca.message)
+            ch = sqlca.declare_cursor("C001", "select * from test_types")
+            self.assertNotEqual(ch, None, sqlca.message)
 
-        fields = ch.fields()
-        self.assertNotEqual(fields, None, sqlca.message)
+            fields = ch.fields()
+            self.assertNotEqual(fields, None, sqlca.message)
 
-        ch.open_cursor()
-        self.assertNotEqual(sqlca.code, -1, sqlca.message)
+            ch.open_cursor()
+            self.assertNotEqual(sqlca.code, -1, sqlca.message)
 
-        pos = 0
-        while ch.fetch() == 0:
-            data = ch.data()
-            self.assertNotEqual(data, None, sqlca.message)
-            self.assertEqual(len(data), len(fields), "number of columns must be equal")
-            pos += 1
+            pos = 0
+            while ch.fetch() == 0:
+                data = ch.data()
+                self.assertNotEqual(data, None, sqlca.message)
+                self.assertEqual(len(data), len(fields), "number of columns must be equal")
+                pos += 1
 
-        self.assertEqual(sqlca.code, _rdb.SQLCODE_EOS, sqlca.message)
+            self.assertEqual(sqlca.code, _rdb.SQLCODE_EOS, sqlca.message)
 
-        ch.close_cursor()
-        self.assertNotEqual(sqlca.code, -1, sqlca.message)
+            ch.close_cursor()
+            self.assertNotEqual(sqlca.code, -1, sqlca.message)
 
-        ch.release()
-        sqlca.detach()
+            ch.release()
+        finally:
+            sqlca.detach()
 
     def test_sql_exec(self):
         sqlca = _rdb.sqlca()
@@ -211,21 +213,23 @@ $exit
         sqlca.attach(self.dbname_vms)
         self.assertNotEqual(sqlca.code, -1, sqlca.message)
 
-        stmt = sqlca.prepare("insert into test_types (a) values (?)")
-        self.assertIsNot(stmt, None, sqlca.message)
+        try:
+            stmt = sqlca.prepare("insert into test_types (a) values (?)")
+            self.assertIsNot(stmt, None, sqlca.message)
 
-        stmt.exec('2')
-        self.assertNotEqual(sqlca.code, -1, sqlca.message)
+            stmt.exec('2')
+            self.assertNotEqual(sqlca.code, -1, sqlca.message)
 
-        stmt=sqlca.prepare("insert into test_interval(a,b,c,d,e,f,g,h,i,j,k,l,m) values(?,?,?,?,?,?,?,?,?,?,?,?,?)")
-        self.assertIsNot(stmt, None, sqlca.message)
+            stmt=sqlca.prepare("insert into test_interval(a,b,c,d,e,f,g,h,i,j,k,l,m) values(?,?,?,?,?,?,?,?,?,?,?,?,?)")
+            self.assertIsNot(stmt, None, sqlca.message)
 
-        stmt.exec(11,12,13,14,15,16,(17,18),(19,20),(21,22,23),(24,25,26,27),(28,29),(30,31,32),(33,34))
-        self.assertNotEqual(sqlca.code, -1, sqlca.message)
+            stmt.exec(11,12,13,14,15,16,(17,11),(19,20),(21,22,23),(24,23,26,27),(28,29),(30,31,32),(33,34))
+            self.assertNotEqual(sqlca.code, -1, sqlca.message)
 
-        sqlca.commit()
-        sqlca.rollback()
-        sqlca.detach()
+            sqlca.commit()
+        finally:
+            sqlca.rollback()
+            sqlca.detach()
 
     def test_sql_select(self):
         sqlca = _rdb.sqlca()
@@ -233,15 +237,17 @@ $exit
         sqlca.attach(self.dbname_vms)
         self.assertNotEqual(sqlca.code, -1, sqlca.message)
 
-        stmt = sqlca.prepare("select * from test_types where a = ?")
-        self.assertIsNot(stmt, None, sqlca.message)
+        try:
+            stmt = sqlca.prepare("select * from test_types where a = ?")
+            self.assertIsNot(stmt, None, sqlca.message)
 
-        row = stmt.select('1')
-        self.assertIsNot(row, None, sqlca.message)
-        
-        sqlca.commit()
-        sqlca.rollback()
-        sqlca.detach()
+            row = stmt.select('1')
+            self.assertIsNot(row, None, sqlca.message)
+            
+            sqlca.commit()
+        finally:
+            sqlca.rollback()
+            sqlca.detach()
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
