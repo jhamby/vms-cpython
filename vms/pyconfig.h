@@ -1700,9 +1700,6 @@
 #define readonly readonly$
 #define _align _align$
 
-#undef O_BINARY
-#define O_BINARY 0100
-
 #ifndef MAP_ANONYMOUS
 #define MAP_ANONYMOUS 0x10
 #endif

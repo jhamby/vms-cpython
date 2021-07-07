@@ -9421,11 +9421,6 @@ os_open_impl(PyObject *module, path_t *path, int flags, int mode, int dir_fd)
             }
         } else
 #endif /* HAVE_OPENAT */
-#ifdef __VMS
-            if (flags & O_BINARY) {
-                fd = open(path->narrow, flags & ~O_BINARY, mode, "ctx=bin");
-            } else
-#endif   /* non __VMS */
             fd = open(path->narrow, flags, mode);
 #endif /* !MS_WINDOWS */
         Py_END_ALLOW_THREADS
