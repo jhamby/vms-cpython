@@ -9378,14 +9378,62 @@ dir_fd may not be implemented on your platform.
   If it is unavailable, using it will raise a NotImplementedError.
 [clinic start generated code]*/
 
+#ifdef __VMS
+
+/*
+argv[0] = number of arguments after argv[0]
+*/
+static unsigned int * PyObject2argv(PyObject *pyobj, unsigned int *argv) {
+    if (!argv) {
+        return (unsigned int *)PyErr_NoMemory();
+    }
+    if (PyUnicode_CheckExact(pyobj)) {
+        ++argv[0];
+        argv = realloc(argv, (argv[0] + 1) * sizeof(unsigned int));
+        if (!argv) {
+            return (unsigned int *)PyErr_NoMemory();
+        }
+        argv[argv[0]] = (unsigned int)PyUnicode_AsUTF8(pyobj);
+    } else if (PyBytes_CheckExact(pyobj)) {
+        ++argv[0];
+        argv = realloc(argv, (argv[0] + 1) * sizeof(unsigned int));
+        if (!argv) {
+            return (unsigned int *)PyErr_NoMemory();
+        }
+        argv[argv[0]] = (unsigned int)PyBytes_AS_STRING(pyobj);
+    } else if (PyTuple_CheckExact(pyobj)) {
+        int imax = PyTuple_GET_SIZE(pyobj);
+        for(int i = 0; i < imax; ++i) {
+            argv = PyObject2argv(PyTuple_GET_ITEM(pyobj, i), argv);
+            if (!argv) {
+                return NULL;
+            }
+        }
+    } else {
+        PyErr_SetString(PyExc_ValueError, "rms must be a string or tuple of strings");
+        if (argv) {
+            free(argv);
+        }
+        return NULL;
+    }
+    return argv;
+}
+
+static int
+os_open_impl(PyObject *module, path_t *path, int flags, int mode, int dir_fd, PyObject *rms)
+#else
 static int
 os_open_impl(PyObject *module, path_t *path, int flags, int mode, int dir_fd)
+#endif
 /*[clinic end generated code: output=abc7227888c8bc73 input=ad8623b29acd2934]*/
 {
     int fd;
     int async_err = 0;
 #ifdef HAVE_OPENAT
     int openat_unavailable = 0;
+#endif
+#ifdef __VMS
+    unsigned int *argv = NULL;
 #endif
 
 #ifdef O_CLOEXEC
@@ -9404,12 +9452,34 @@ os_open_impl(PyObject *module, path_t *path, int flags, int mode, int dir_fd)
         return -1;
     }
 
+#ifdef __VMS
+        if (rms && rms != Py_None) {
+            argv = malloc(4 * sizeof(unsigned int));
+            argv[0] = 3;
+            argv[1] = (unsigned int)path->narrow;
+            argv[2] = (unsigned int)flags;
+            argv[3] = (unsigned int)mode;
+            argv = PyObject2argv(rms, argv);
+            if (!argv) {
+                return -1;
+            }
+        }
+#endif
+
     _Py_BEGIN_SUPPRESS_IPH
     do {
         Py_BEGIN_ALLOW_THREADS
 #ifdef MS_WINDOWS
         fd = _wopen(path->wide, flags, mode);
 #else
+#ifdef __VMS
+        if (argv) {
+            // we have option arguments
+            fd = (int)lib$callg(argv, (int (*)(void)) open);
+            free(argv);
+            argv = NULL;
+        } else
+#endif
 #ifdef HAVE_OPENAT
         if (dir_fd != DEFAULT_DIR_FD) {
             if (HAVE_OPENAT_RUNTIME) {
