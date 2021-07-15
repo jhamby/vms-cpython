@@ -28,9 +28,9 @@ def addstr(il, item, item_value, item_length):
 
 def addstrd(il, item, item_value:str, item_length):
     if not item_value:
-        il.append(item, _dscdef.DSC_K_DTYPE_VT, item_length - 1)
+        il.append(item, _dscdef.DSC_K_DTYPE_VT, item_length)
     else:
-        item_value = '{:{item_length}.{item_length}}'.format(item_value, item_length = item_length - 1)
+        item_value = '{:{item_length}.{item_length}}'.format(item_value, item_length = item_length)
         il.append(item, _dscdef.DSC_K_DTYPE_VT, item_value)
 
 def addstrn(il:object, item:int, item_value:str, item_length:int):
@@ -41,7 +41,10 @@ def addstrn(il:object, item:int, item_value:str, item_length:int):
         il.append(item, _dscdef.DSC_K_DTYPE_T, item_value)
 
 def getstr(il, index, flag):
-    return il[index]
+    v = il[index]
+    if v and flag:
+        v = v[1:]
+    return v
 
 def addbin(il, item, item_value, item_offset, item_len):
     bytes_value = (item_value).to_bytes(8,'little')
