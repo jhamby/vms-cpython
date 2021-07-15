@@ -1,7 +1,7 @@
 # Common modules
-# --no-deps
+# python -m pip wheel -w /pyth$whl --no-deps 
 Flask==1.1.2
-Jinja2==2.11.3
+Jinja2==3.0.1
 Werkzeug==1.0.1
 apipkg==1.5
 attrs==20.3.0

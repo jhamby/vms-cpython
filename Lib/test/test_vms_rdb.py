@@ -11,41 +11,6 @@ import _decc
 
 class BaseTestCase(unittest.TestCase):
 
-    db_data = [
-        [   'Neil Rieck',
-            '20 Water St N',
-            'Kitchener',
-            'Ontario',
-            'N2H5A5',
-            '5195551212',
-            '',
-        ],
-        [   'Steve Kennel',
-            '20 Water St N',
-            'Kitchener',
-            'Ontario',
-            'N2H5A5',
-            '5195551212',
-            '',
-        ],
-        [   'Dave McNeil',
-            '140 Bayfield St',
-            'Barrie',
-            'Ontario',
-            'L4M3B1',
-            '7055551212',
-            '',
-        ],
-        [   'Karim Macklai',
-            '220 Simcoe St',
-            'Toronto',
-            'Ontario',
-            'M5T1T4',
-            '4165551212',
-            '',
-        ],
-    ]
-
     def setUp(self):
         self.dbname = ''
         self.dbname_vms = ''
@@ -64,7 +29,7 @@ class BaseTestCase(unittest.TestCase):
     def create_sql_database(self):
         """ tests creating SQL database """
 
-        sql_content_header = \
+        sql_content = \
 '''$!============================================================
 $temp = f$search("{dbname}")
 $if temp .nes. ""
@@ -75,48 +40,118 @@ $mcr sql$
 create database filename {dbname}
         number of users 500
         number of cluster nodes 1;
-create domain   standard_address        char(25);
-create domain   standard_city           char(20);
-create domain   standard_name           char(30);
-create domain   standard_tel            char(10);
+create table test_types(
+        a           char(30),
+        b           varchar(25),
+        c           tinyint,
+        d           smallint,
+        e           integer,
+        f           bigint,
+        g           decimal,
+        h           numeric,
+        i           float,
+        j           real,
+        k           double precision,
+        l           date vms,
+        m           date ansi,
+        n           time,
+        o           timestamp,
+        p           interval year to month,
+        q           interval day to minute);
 commit;
-create table customer(
-        name    char(30),
-        address char(25),
-        city    char(20),
-        tel1    char(10),
-        tel2    char(10));
+insert into test_types values(
+        '1',
+        'A',
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7.1,
+        8.1,
+        9.1,
+        '01-JAN-1980',
+        date '1980-01-02',
+        time '12:13:14',
+        timestamp '1980-01-02 12:13:14',
+        interval '-1-2' year to month,
+        interval '5:6:7' day to minute);
 commit;
-alter table customer add column postal char(6) after column city;
-alter table customer add column province char(15) after column city;
+create table test_interval(
+        a           interval year,
+        b           interval month,
+        c           interval day,
+        d           interval hour,
+        e           interval minute,
+        f           interval second,
+        g           interval year to month,
+        h           interval day to hour,
+        i           interval day to minute,
+        j           interval day to second,
+        k           interval hour to minute,
+        l           interval hour to second,
+        m           interval minute to second);
 commit;
-'''
-        sql_content_record = \
-'''
-insert into customer values(
-        '{name}',
-        '{addr}',
-        '{city}',
-        '{province}',
-        '{postal}',
-        '{tel1}',
-        '{tel2}');
-'''
-        sql_content_record_with_names = \
-'''
-insert into customer(
-        name,address,city,province,postal,tel1,tel2)
-        values(
-        '{name}',
-        '{addr}',
-        '{city}',
-        '{province}',
-        '{postal}',
-        '{tel1}',
-        '{tel2}');
-'''
-        sql_content_footer = \
-'''
+insert into test_interval values(
+        interval '1' year,
+        interval '2' month,
+        interval '3' day,
+        interval '4' hour,
+        interval '5' minute,
+        interval '6' second,
+        interval '7-8' year to month,
+        interval '9:10' day to hour,
+        interval '11:12:13' day to minute,
+        interval '14:15:16:17' day to second,
+        interval '18:19' hour to minute,
+        interval '20:21:22' hour to second,
+        interval '23:24' minute to second);
+commit;
+insert into test_interval values(
+        interval '-1' year,
+        interval '-2' month,
+        interval '-3' day,
+        interval '-4' hour,
+        interval '-5' minute,
+        interval '-6' second,
+        interval '-7-8' year to month,
+        interval '-9:10' day to hour,
+        interval '-11:12:13' day to minute,
+        interval '-14:15:16:17' day to second,
+        interval '-18:19' hour to minute,
+        interval '-20:21:22' hour to second,
+        interval '-23:24' minute to second);
+commit;
+insert into test_interval values(
+        interval '99' year,
+        interval '98' month,
+        interval '97' day,
+        interval '96' hour,
+        interval '95' minute,
+        interval '94' second,
+        interval '99-11' year to month,
+        interval '99:23' day to hour,
+        interval '99:23:59' day to minute,
+        interval '99:23:59:59' day to second,
+        interval '99:59' hour to minute,
+        interval '99:59:59' hour to second,
+        interval '99:59' minute to second);
+commit;
+insert into test_interval values(
+        interval '-99' year,
+        interval '-98' month,
+        interval '-97' day,
+        interval '-96' hour,
+        interval '-95' minute,
+        interval '-94' second,
+        interval '-99-11' year to month,
+        interval '-99:23' day to hour,
+        interval '-99:23:59' day to minute,
+        interval '-99:23:59:59' day to second,
+        interval '-99:59' hour to minute,
+        interval '-99:59:59' hour to second,
+        interval '-99:59' minute to second);
 commit;
 exit
 $go_out:
@@ -126,29 +161,7 @@ $exit
         os.close(fd)
         os.unlink(self.dbname)
         self.dbname_vms = _decc.to_vms(self.dbname)[0]
-        sql_content = sql_content_header.format(dbname=self.dbname_vms)
-        for data in BaseTestCase.db_data[:-2]:
-            sql_content += sql_content_record.format(
-                name=data[0],
-                addr=data[1],
-                city=data[2],
-                province=data[3],
-                postal=data[4],
-                tel1=data[5],
-                tel2=data[6],
-            )
-        for data in BaseTestCase.db_data[-2:]:
-            sql_content += sql_content_record.format(
-                name=data[0],
-                addr=data[1],
-                city=data[2],
-                province=data[3],
-                postal=data[4],
-                tel1=data[5],
-                tel2=data[6],
-            )
-        sql_content += sql_content_footer
-
+        sql_content = sql_content.format(dbname=self.dbname_vms)
         with tempfile.NamedTemporaryFile(suffix=".COM", delete=False) as tmpfile:
             tmpfile.write(sql_content.encode())
             tmpfile.close()
@@ -165,38 +178,76 @@ $exit
         sqlca.attach(self.dbname_vms)
         self.assertNotEqual(sqlca.code, -1, sqlca.message)
 
-        sqlca.set_readonly()
+        try:
+            sqlca.set_readonly()
+            self.assertNotEqual(sqlca.code, -1, sqlca.message)
+
+            ch = sqlca.declare_cursor("C001", "select * from test_types")
+            self.assertNotEqual(ch, None, sqlca.message)
+
+            fields = ch.fields()
+            self.assertNotEqual(fields, None, sqlca.message)
+
+            ch.open_cursor()
+            self.assertNotEqual(sqlca.code, -1, sqlca.message)
+
+            pos = 0
+            while ch.fetch() == 0:
+                data = ch.data()
+                self.assertNotEqual(data, None, sqlca.message)
+                self.assertEqual(len(data), len(fields), "number of columns must be equal")
+                pos += 1
+
+            self.assertEqual(sqlca.code, _rdb.SQLCODE_EOS, sqlca.message)
+
+            ch.close_cursor()
+            self.assertNotEqual(sqlca.code, -1, sqlca.message)
+
+            ch.release()
+        finally:
+            sqlca.detach()
+
+    def test_sql_exec(self):
+        sqlca = _rdb.sqlca()
+
+        sqlca.attach(self.dbname_vms)
         self.assertNotEqual(sqlca.code, -1, sqlca.message)
 
-        ch = sqlca.declare_cursor("C001", "select name, address, city from customer")
-        self.assertNotEqual(ch, None, sqlca.message)
+        try:
+            stmt = sqlca.prepare("insert into test_types (a) values (?)")
+            self.assertIsNot(stmt, None, sqlca.message)
 
-        fields = ch.fields()
-        self.assertNotEqual(fields, None, sqlca.message)
-        self.assertEqual(len(fields), 3, "must be 3 columns")
+            stmt.exec('2')
+            self.assertNotEqual(sqlca.code, -1, sqlca.message)
 
-        ch.open_cursor()
+            stmt=sqlca.prepare("insert into test_interval(a,b,c,d,e,f,g,h,i,j,k,l,m) values(?,?,?,?,?,?,?,?,?,?,?,?,?)")
+            self.assertIsNot(stmt, None, sqlca.message)
+
+            stmt.exec(11,12,13,14,15,16,(17,11),(19,20),(21,22,23),(24,23,26,27),(28,29),(30,31,32),(33,34))
+            self.assertNotEqual(sqlca.code, -1, sqlca.message)
+
+            sqlca.commit()
+        finally:
+            sqlca.rollback()
+            sqlca.detach()
+
+    def test_sql_select(self):
+        sqlca = _rdb.sqlca()
+
+        sqlca.attach(self.dbname_vms)
         self.assertNotEqual(sqlca.code, -1, sqlca.message)
 
-        pos = 0
-        while ch.fetch() == 0:
-            data = ch.data()
-            self.assertNotEqual(data, None, sqlca.message)
-            self.assertEqual(len(data), 3, "must be 3 columns")
-            name, addr, city = data
-            self.assertEqual(name.strip(), BaseTestCase.db_data[pos][0])
-            self.assertEqual(addr.strip(), BaseTestCase.db_data[pos][1])
-            self.assertEqual(city.strip(), BaseTestCase.db_data[pos][2])
-            pos += 1
+        try:
+            stmt = sqlca.prepare("select * from test_types where a = ?")
+            self.assertIsNot(stmt, None, sqlca.message)
 
-        self.assertEqual(sqlca.code, _rdb.SQLCODE_EOS, sqlca.message)
-
-        ch.close_cursor()
-        self.assertNotEqual(sqlca.code, -1, sqlca.message)
-
-        ch.release()
-        sqlca.detach()
-
+            row = stmt.select('1')
+            self.assertIsNot(row, None, sqlca.message)
+            
+            sqlca.commit()
+        finally:
+            sqlca.rollback()
+            sqlca.detach()
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

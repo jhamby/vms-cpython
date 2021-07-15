@@ -627,7 +627,6 @@ freeze_importlib : [.$(OUT_DIR).Programs]_freeze_importlib.exe
 [.$(OBJ_DIR).Parser]token.obc : [.Parser]token.c $(PYTHON_HEADERS)
 
 [.$(OBJ_DIR).Parser]tokenizer.obc : [.Parser]tokenizer.c $(PYTHON_HEADERS)
-[.$(OBJ_DIR).vms]vms_smg_readline.obc : [.vms]vms_smg_readline.c $(PYTHON_HEADERS)
 
 [.$(OBJ_DIR).Python]_warnings.obc : [.Python]_warnings.c $(PYTHON_HEADERS)
 [.$(OBJ_DIR).Python]Python-ast.obc : [.Python]Python-ast.c $(PYTHON_HEADERS)
@@ -731,6 +730,8 @@ freeze_importlib : [.$(OUT_DIR).Programs]_freeze_importlib.exe
 [.$(OBJ_DIR).Objects]weakrefobject.obc : [.Objects]weakrefobject.c $(PYTHON_HEADERS)
 
 [.$(OBJ_DIR).Modules]getbuildinfo.obc : [.Modules]getbuildinfo.c $(PYTHON_HEADERS)
+
+[.$(OBJ_DIR).vms]vms_smg_readline.obc : [.vms]vms_smg_readline.c $(PYTHON_HEADERS)
 [.$(OBJ_DIR).vms]vms_crtl_values.obc : [.vms]vms_crtl_values.c
 [.$(OBJ_DIR).vms]vms_select.obc : [.vms]vms_select.c [.vms]vms_select.h [.vms]vms_spawn_helper.h [.vms]vms_sleep.h
 [.$(OBJ_DIR).vms]vms_spawn_helper.obc : [.vms]vms_spawn_helper.c [.vms]vms_spawn_helper.h

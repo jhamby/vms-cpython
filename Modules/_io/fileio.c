@@ -385,11 +385,6 @@ _Py_COMP_DIAG_POP
 #ifdef MS_WINDOWS
                 self->fd = _wopen(widename, flags, 0666);
 #else
-#ifdef __VMS
-                if (flags & O_BINARY) {
-                    self->fd = open(name, flags & ~O_BINARY, 0666, "ctx=bin");
-                } else
-#endif
                 self->fd = open(name, flags, 0666);
 #endif
                 Py_END_ALLOW_THREADS

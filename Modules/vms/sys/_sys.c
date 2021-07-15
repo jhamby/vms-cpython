@@ -785,7 +785,7 @@ SYS_getsyi(
     char *node = NULL;
     Py_ssize_t node_size = 0;
     if (nargs > 1 && args[1] != Py_None) {
-        if (!PyLong_Check(args[1])) {
+        if (PyLong_Check(args[1])) {
             csi = PyLong_AsLong(args[1]);
             pcsi = &csi;
         } else if (PyUnicode_CheckExact(args[1])) {

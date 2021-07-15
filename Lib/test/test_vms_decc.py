@@ -1,13 +1,17 @@
 import sys
 import unittest
-import time
 
 if sys.platform != 'OpenVMS':
     raise unittest.SkipTest('OpenVMS required')
 
+import os
+import time
+from test.support.os_helper import TESTFN
+
 import _decc as DECC
 import _lib as LIB
 import _syidef as SYIDEF
+import _fabdef as FABDEF
 
 class BaseTestCase(unittest.TestCase):
 
@@ -16,6 +20,37 @@ class BaseTestCase(unittest.TestCase):
 
     def tearDown(self):
         pass
+
+    def test_record_file(self):
+        """ tests write-read record file"""
+
+        lines = [
+            b"Line #1\n",
+            b"\n",
+            b"Line #3\n",
+        ]
+        
+        fd = os.open(TESTFN, os.O_RDWR | os.O_CREAT, rms=("rfm=var",))
+        self.assertNotEqual(fd, -1)
+
+        for line in lines:
+            n = os.write(fd, line)
+            self.assertEqual(n, len(line))
+        os.close(fd)
+
+        st = os.stat(TESTFN)
+        self.assertEqual(st.st_fab_rfm, FABDEF.FAB_C_VAR)
+
+        fp = open(TESTFN, "r")
+        self.assertNotEqual(fp, None)
+
+        for line in lines:
+            line_read = fp.readline()
+            self.assertEqual(line.decode(), line_read)
+
+        fp.close()
+
+        os.remove(TESTFN)
 
     def test_dlopen_test(self):
         """ tests if shared image is accessible """

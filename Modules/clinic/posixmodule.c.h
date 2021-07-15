@@ -4455,16 +4455,27 @@ PyDoc_STRVAR(os_open__doc__,
 #define OS_OPEN_METHODDEF    \
     {"open", (PyCFunction)(void(*)(void))os_open, METH_FASTCALL|METH_KEYWORDS, os_open__doc__},
 
+#ifdef __VMS
+static int
+os_open_impl(PyObject *module, path_t *path, int flags, int mode, int dir_fd, PyObject *rms);
+#else
 static int
 os_open_impl(PyObject *module, path_t *path, int flags, int mode, int dir_fd);
+#endif
 
 static PyObject *
 os_open(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+#ifdef __VMS
+    static const char * const _keywords[] = {"path", "flags", "mode", "dir_fd", "rms", NULL};
+    PyObject *argsbuf[5] = {0};
+    PyObject *rms = NULL;
+#else
     static const char * const _keywords[] = {"path", "flags", "mode", "dir_fd", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "open", 0};
     PyObject *argsbuf[4];
+#endif
+    static _PyArg_Parser _parser = {NULL, _keywords, "open", 0};
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     path_t path = PATH_T_INITIALIZE("open", "path", 0, 0);
     int flags;
@@ -4472,7 +4483,11 @@ os_open(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwn
     int dir_fd = DEFAULT_DIR_FD;
     int _return_value;
 
+#ifdef __VMS
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 4, 0, argsbuf);
+#else
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 3, 0, argsbuf);
+#endif
     if (!args) {
         goto exit;
     }
@@ -4499,11 +4514,18 @@ skip_optional_pos:
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    if (!OPENAT_DIR_FD_CONVERTER(args[3], &dir_fd)) {
+    if (args[3] && !OPENAT_DIR_FD_CONVERTER(args[3], &dir_fd)) {
         goto exit;
     }
+#ifdef __VMS
+    rms = args[4];
+#endif
 skip_optional_kwonly:
+#ifdef __VMS
+    _return_value = os_open_impl(module, &path, flags, mode, dir_fd, rms);
+#else
     _return_value = os_open_impl(module, &path, flags, mode, dir_fd);
+#endif
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
     }
