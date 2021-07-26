@@ -468,7 +468,7 @@ SYS_getmsg(
     struct dsc$descriptor_s val_dsc;
     int status = 0;
     unsigned short result_len = 0;
-    unsigned char out = 0;
+    unsigned char out[4];
 
     val_dsc.dsc$w_length = sizeof(buffer) - 1;
     val_dsc.dsc$b_class = DSC$K_CLASS_S;
@@ -476,7 +476,7 @@ SYS_getmsg(
     val_dsc.dsc$a_pointer = buffer;
 
     Py_BEGIN_ALLOW_THREADS
-    status = sys$getmsg(msgid, &result_len, &val_dsc, flags, &out);
+    status = sys$getmsg(msgid, &result_len, &val_dsc, flags, out);
     Py_END_ALLOW_THREADS
 
     if (!$VMS_STATUS_SUCCESS(status)) {
@@ -484,7 +484,7 @@ SYS_getmsg(
     }
     buffer[result_len] = 0;
 
-    return Py_BuildValue("(i,s,B)", status, buffer, out);
+    return Py_BuildValue("(i,s,(i,i))", status, buffer, out[1], out[2]);
 }
 
 // unsigned int _idtoasc(unsigned int id, char **nambuf, unsigned int *resid, unsigned int *attrib, unsigned int *ctxt)
@@ -1806,7 +1806,7 @@ static PyMethodDef _module_methods[] = {
     {"asctoid", (PyCFunction) SYS_asctoid, METH_O,
         PyDoc_STR("asctoid(name: int)->[status: int, id: int, attrib: int]   Translates the specified identifier name into its binary identifier value")},
     {"getmsg", (PyCFunction) SYS_getmsg, METH_FASTCALL,
-        PyDoc_STR("getmsg(msgid: int, flags: int)->[status: int, msg: str, out: int]   Returns message text associated with a given message identification code")},
+        PyDoc_STR("getmsg(msgid: int, flags: int)->[status: int, msg: str, out: (int, int)]   Returns message text associated with a given message identification code")},
     {"idtoasc", (PyCFunction) SYS_idtoasc, METH_FASTCALL,
         PyDoc_STR("idtoasc(id: int, ?context: int)->[status: int, name: str, id: int, attrib: int, context: int]   Translates the specified identifier value to the identifier name")},
     {"crembx", (PyCFunction) SYS_crembx, METH_FASTCALL,

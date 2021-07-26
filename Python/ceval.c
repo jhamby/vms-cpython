@@ -1609,6 +1609,12 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
     _Py_IDENTIFIER(__ltrace__);
 #endif
 
+#ifdef __VMS
+    #ifdef _DEBUG
+        int f_lineno_local = 0;
+    #endif
+#endif
+
     if (_Py_EnterRecursiveCall(tstate, "")) {
         return NULL;
     }
@@ -1786,6 +1792,12 @@ main_loop:
     tracing_dispatch:
         f->f_lasti = INSTR_OFFSET();
         NEXTOPARG();
+
+#ifdef __VMS
+    #ifdef _DEBUG
+        f_lineno_local = PyFrame_GetLineNumber(f);
+    #endif
+#endif
 
         if (PyDTrace_LINE_ENABLED())
             maybe_dtrace_line(f, &trace_info);
