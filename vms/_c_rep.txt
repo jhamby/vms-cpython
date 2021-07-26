@@ -14,3 +14,4 @@ reportlab==3.5.66
 numpy==1.20.3
 psycopg2==2.8.6
 pandas==1.2.4
+pyrsistent=0.18.0
