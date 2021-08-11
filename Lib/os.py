@@ -207,6 +207,12 @@ def makedirs(name, mode=0o777, exist_ok=False):
     raised.  This is recursive.
 
     """
+
+    if sys.platform == "OpenVMS" and path.exists(name):
+        if not exist_ok:
+            raise FileExistsError()
+        return
+
     head, tail = path.split(name)
     if not tail:
         head, tail = path.split(head)
