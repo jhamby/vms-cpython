@@ -462,9 +462,6 @@ reset_signal_handlers(const sigset_t *child_sigmask)
 #include <unixio.h>
 #include <unixlib.h>
 
-#include <ffi.h>
-#include "ctypes/ctypes.h"
-
 #include "vms/vms_spawn_helper.h"
 #include "vms/vms_sleep.h"
 #include "vms/vms_mbx_util.h"
