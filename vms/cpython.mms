@@ -10,7 +10,7 @@ SOABI = cpython-310-x86_64-openvms
 
 CC_QUALIFIERS = -
 /NAMES=(AS_IS,SHORTENED) -
-/WARNINGS=(WARNINGS=ALL, DISABLE=(EXTRASEMI)) -
+/WARNINGS=(WARNINGS=ALL, DISABLE=(EXTRASEMI,INCLUDEINFO)) -
 /ACCEPT=NOVAXC_KEYWORDS -
 /REENTRANCY=MULTITHREAD
 
@@ -33,6 +33,7 @@ SHLIB_EXT=""".EXE""", -
 ABIFLAGS="""""", -
 MULTIARCH="""$(SOABI)""", -
 PLATFORM="""$(PLATFORM)""", -
+- ! USING_MALLOC_CLOSURE_DOT_C=1, - ! ctypes, LIBFFI
 USE_SSL                         ! SSL
 
 ! define output folder
@@ -51,7 +52,7 @@ OUTDIR = OUT
 CONFIG = DEBUG
 .ENDIF
 
-.IF $(CONFIG) .EQ DEBUG
+.IF $(FINDSTRING DEBUG, $(CONFIG)) .EQ DEBUG
 ! debug
 CC_QUALIFIERS = $(CC_QUALIFIERS)/DEBUG/NOOPTIMIZE/LIST=$(MMS$TARGET_NAME)/SHOW=ALL
 CC_DEFINES = $(CC_DEFINES),_DEBUG
@@ -80,6 +81,9 @@ CC_INCLUDES = -
 [.Modules._multiprocessing], -
 [.Modules._io], -
 [.vms], -
+libffi$root:[vms.x86], -
+libffi$root:[include], -
+libffi$root:[src.x86], -
 oss$root:[include], -
 dtr$library, -
 SSL111$ROOT:[INCLUDE]
@@ -120,6 +124,9 @@ CC_GETPATH_CFLAGS = $(CC_QUALIFIERS)/DEFINE=("Py_BUILD_CORE",$(GETPATH_DEFINES))
     define openssl ssl111$include:
     ! SQL
     sqlmod :==  mcr sql$mod
+    ! LIBFFI
+    DEFINE LIBFFI$ROOT WRK_DISK:[VORFOLOMEEV.LIBFFI.]
+    DEFINE SYS_X86$ROOT USR_DISK:[VORFOLOMEEV.SYSLIB_X86]
     ! names
     BUILD_OUT_DIR = F$ENVIRONMENT("DEFAULT")-"]"+".$(OUT_DIR).]"
     BUILD_OBJ_DIR = F$ENVIRONMENT("DEFAULT")-"]"+".$(OBJ_DIR).]"
@@ -874,8 +881,8 @@ $(LIBDYNLOAD_VMS) -
 [.$(OUT_DIR).$(DYNLOAD_DIR)]_contextvars.exe -
 [.$(OUT_DIR).$(DYNLOAD_DIR)]_crypt.exe -
 [.$(OUT_DIR).$(DYNLOAD_DIR)]_csv.exe -
-- ![.$(OUT_DIR).$(DYNLOAD_DIR)]_ctypes.exe !fails on x86
-- ![.$(OUT_DIR).$(DYNLOAD_DIR)]_ctypes_test.exe !fails on x86
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_ctypes.exe -
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_ctypes_test.exe -
 [.$(OUT_DIR).$(DYNLOAD_DIR)]_datetime.exe -
 [.$(OUT_DIR).$(DYNLOAD_DIR)]_decimal.exe -
 [.$(OUT_DIR).$(DYNLOAD_DIR)]_elementtree.exe -

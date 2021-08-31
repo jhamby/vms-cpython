@@ -18,6 +18,8 @@ class ArrayTestCase(unittest.TestCase):
         init = list(range(15, 25))
 
         for fmt in formats:
+            if sys.platform == "OpenVMS" and fmt == c_longdouble:
+                continue
             alen = len(init)
             int_array = ARRAY(fmt, alen)
 

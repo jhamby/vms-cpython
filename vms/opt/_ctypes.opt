@@ -1,4 +1,6 @@
-oss$root:[lib]libffi32.olb/lib
+! oss$root:[lib]libffi32.olb/lib
+libffi$root:[out.debug]libffi$shr.olb/lib
+SYS_X86$ROOT:LIBRTL.EXE/SHARE
 sys$library:pthread$rtl.exe/SHARE
 python$build_out:[000000]python$shr.exe/SHARE
 CASE_SENSITIVE=YES
