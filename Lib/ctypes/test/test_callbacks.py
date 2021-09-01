@@ -6,6 +6,7 @@ from ctypes import *
 from ctypes.test import need_symbol
 import _ctypes_test
 
+import sys
 class Callbacks(unittest.TestCase):
     functype = CFUNCTYPE
 
@@ -81,6 +82,7 @@ class Callbacks(unittest.TestCase):
         self.check_type(c_double, 3.14)
         self.check_type(c_double, -3.14)
 
+    @unittest.skipIf(sys.platform == "OpenVMS", "OpenVMS fails on long double")
     def test_longdouble(self):
         self.check_type(c_longdouble, 3.14)
         self.check_type(c_longdouble, -3.14)
