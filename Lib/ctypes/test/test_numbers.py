@@ -227,7 +227,10 @@ class NumberTestCase(unittest.TestCase):
     def test_float_overflow(self):
         import sys
         big_int = int(sys.float_info.max) * 2
-        for t in float_types + [c_longdouble]:
+        test_float_types = float_types
+        if sys.platform != 'OpenVMS':
+            test_float_types += [c_longdouble]
+        for t in test_float_types:
             self.assertRaises(OverflowError, t, big_int)
             if (hasattr(t, "__ctype_be__")):
                 self.assertRaises(OverflowError, t.__ctype_be__, big_int)

@@ -168,6 +168,7 @@ class CFunctions(unittest.TestCase):
         self.assertEqual(self._dll.tf_D(42.), 14.)
         self.assertEqual(self.S(), 42)
 
+    @unittest.skipIf(sys.platform == "OpenVMS", "OpenVMS fails on long double")
     def test_longdouble_plus(self):
         self._dll.tf_bD.restype = c_longdouble
         self._dll.tf_bD.argtypes = (c_byte, c_longdouble)
