@@ -68,7 +68,7 @@
 #endif
 #if defined(__VMS) && defined(THREAD_STACK_SIZE) && THREAD_STACK_SIZE == 0
 #undef  THREAD_STACK_SIZE
-#define THREAD_STACK_SIZE       256 * 1024
+#define THREAD_STACK_SIZE       512 * 1024
 #endif
 /* for safety, ensure a viable minimum stacksize */
 #define THREAD_STACK_MIN        0x8000  /* 32 KiB */
