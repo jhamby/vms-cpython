@@ -518,7 +518,7 @@ binascii_a2b_base64_impl(PyObject *module, Py_buffer *data)
                          "Invalid base64-encoded string: "
                          "number of data characters (%zd) cannot be 1 more "
                          "than a multiple of 4",
-                         (bin_data - bin_data_start) / 3 * 4 + 1);
+                         Py_PtrDiff(bin_data, bin_data_start) / 3 * 4 + 1);
         } else {
             PyErr_SetString(state->Error, "Incorrect padding");
         }

@@ -208,10 +208,10 @@ _PyType_GetTextSignatureFromInternalDoc(const char *name, const char *internal_d
 
     /* back "end" up until it points just past the final ')' */
     end -= SIGNATURE_END_MARKER_LENGTH - 1;
-    assert((end - start) >= 2); /* should be "()" at least */
+    assert(Py_PtrDiff(end, start) >= 2); /* should be "()" at least */
     assert(end[-1] == ')');
     assert(end[0] == '\n');
-    return PyUnicode_FromStringAndSize(start, end - start);
+    return PyUnicode_FromStringAndSize(start, Py_PtrDiff(end, start));
 }
 
 
@@ -598,7 +598,7 @@ type_module(PyTypeObject *type, void *context)
         const char *s = strrchr(type->tp_name, '.');
         if (s != NULL) {
             mod = PyUnicode_FromStringAndSize(
-                type->tp_name, (Py_ssize_t)(s - type->tp_name));
+                type->tp_name, (Py_ssize_t)Py_PtrDiff(s, type->tp_name));
             if (mod != NULL)
                 PyUnicode_InternInPlace(&mod);
         }
@@ -3591,7 +3591,7 @@ PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
         s = strrchr(spec->name, '.');
         if (s != NULL) {
             modname = PyUnicode_FromStringAndSize(
-                    spec->name, (Py_ssize_t)(s - spec->name));
+                    spec->name, (Py_ssize_t)Py_PtrDiff(s, spec->name));
             if (modname == NULL) {
                 goto fail;
             }

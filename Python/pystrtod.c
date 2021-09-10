@@ -428,7 +428,7 @@ _Py_string_to_number_with_underscores(
         goto error;
     }
     *end = '\0';
-    result = innerfunc(dup, end - dup, arg);
+    result = innerfunc(dup, Py_PtrDiff(end, dup), arg);
     PyMem_Free(dup);
     return result;
 
@@ -1021,7 +1021,7 @@ format_float_short(double d, char format_code,
         goto exit;
     }
     assert(digits_end != NULL && digits_end >= digits);
-    digits_len = digits_end - digits;
+    digits_len = Py_PtrDiff(digits_end, digits);
 
     if (digits_len && !Py_ISDIGIT(digits[0])) {
         /* Infinities and nans here; adapt Gay's output,
@@ -1231,7 +1231,7 @@ format_float_short(double d, char format_code,
         *p = '\0';
         /* It's too late if this fails, as we've already stepped on
            memory that isn't ours. But it's an okay debugging test. */
-        assert(p-buf < bufsize);
+        assert(Py_PtrDiff(p, buf) < bufsize);
     }
     if (digits)
         _Py_dg_freedtoa(digits);

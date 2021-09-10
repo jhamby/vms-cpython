@@ -55,7 +55,7 @@ STRINGLIB(find_char)(const STRINGLIB_CHAR* s, Py_ssize_t n, STRINGLIB_CHAR ch)
 #if STRINGLIB_SIZEOF_CHAR == 1
         p = memchr(s, ch, n);
         if (p != NULL)
-            return (p - s);
+            return Py_PtrDiff(p, s);
         return -1;
 #else
         /* use memchr if we can choose a needle without too many likely
@@ -68,34 +68,34 @@ STRINGLIB(find_char)(const STRINGLIB_CHAR* s, Py_ssize_t n, STRINGLIB_CHAR ch)
         if (needle != 0) {
             do {
                 void *candidate = memchr(p, needle,
-                                         (e - p) * sizeof(STRINGLIB_CHAR));
+                                         Py_PtrDiff(e, p) * sizeof(STRINGLIB_CHAR));
                 if (candidate == NULL)
                     return -1;
                 s1 = p;
                 p = (const STRINGLIB_CHAR *)
                         _Py_ALIGN_DOWN(candidate, sizeof(STRINGLIB_CHAR));
                 if (*p == ch)
-                    return (p - s);
+                    return Py_PtrDiff(p, s);
                 /* False positive */
                 p++;
-                if (p - s1 > MEMCHR_CUT_OFF)
+                if (Py_PtrDiff(p, s1) > MEMCHR_CUT_OFF)
                     continue;
-                if (e - p <= MEMCHR_CUT_OFF)
+                if (Py_PtrDiff(e, p) <= MEMCHR_CUT_OFF)
                     break;
                 e1 = p + MEMCHR_CUT_OFF;
                 while (p != e1) {
                     if (*p == ch)
-                        return (p - s);
+                        return Py_PtrDiff(p, s);
                     p++;
                 }
             }
-            while (e - p > MEMCHR_CUT_OFF);
+            while (Py_PtrDiff(e, p) > MEMCHR_CUT_OFF);
         }
 #endif
     }
     while (p < e) {
         if (*p == ch)
-            return (p - s);
+            return Py_PtrDiff(p, s);
         p++;
     }
     return -1;
@@ -159,7 +159,7 @@ STRINGLIB(rfind_char)(const STRINGLIB_CHAR* s, Py_ssize_t n, STRINGLIB_CHAR ch)
     while (p > s) {
         p--;
         if (*p == ch)
-            return (p - s);
+            return Py_PtrDiff(p, s);
     }
     return -1;
 }
@@ -406,7 +406,7 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *haystack, Py_ssize_t len_haystack,
             }
             LOG("Left half matches. Returning %d.\n",
                 window - haystack);
-            return window - haystack;
+            return Py_PtrDiff(window, haystack);
         }
     }
     else {
@@ -457,7 +457,7 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *haystack, Py_ssize_t len_haystack,
                 }
             }
             LOG("Left half matches. Returning %d.\n", window - haystack);
-            return window - haystack;
+            return Py_PtrDiff(window, haystack);
         }
     }
     LOG("Not found. Returning -1.\n");

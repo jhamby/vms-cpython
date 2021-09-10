@@ -390,7 +390,7 @@ _PyPegen_raise_error(Parser *p, PyObject *errtype, const char *errmsg, ...)
     Py_ssize_t col_offset;
     Py_ssize_t end_col_offset = -1;
     if (t->col_offset == -1) {
-        col_offset = Py_SAFE_DOWNCAST(p->tok->cur - p->tok->buf,
+        col_offset = Py_SAFE_DOWNCAST(Py_PtrDiff(p->tok->cur, p->tok->buf),
                                       intptr_t, int);
     } else {
         col_offset = t->col_offset + 1;
@@ -427,7 +427,7 @@ get_error_line(Parser *p, Py_ssize_t lineno)
     if ((next_newline = strchr(cur_line, '\n')) == NULL) { // This is the last line
         next_newline = cur_line + strlen(cur_line);
     }
-    return PyUnicode_DecodeUTF8(cur_line, next_newline - cur_line, "replace");
+    return PyUnicode_DecodeUTF8(cur_line, Py_PtrDiff(next_newline, cur_line), "replace");
 }
 
 void *
@@ -446,7 +446,7 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
         end_lineno = p->tok->lineno;
     }
     if (end_col_offset == CURRENT_POS) {
-        end_col_offset = p->tok->cur - p->tok->line_start;
+        end_col_offset = Py_PtrDiff(p->tok->cur, p->tok->line_start);
     }
 
     if (p->start_rule == Py_fstring_input) {
@@ -490,7 +490,7 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
         assert(p->tok->fp == NULL || p->tok->fp == stdin || p->tok->done == E_EOF || !uses_utf8_codec);
 
         if (p->tok->lineno <= lineno) {
-            Py_ssize_t size = p->tok->inp - p->tok->buf;
+            Py_ssize_t size = Py_PtrDiff(p->tok->inp, p->tok->buf);
             error_line = PyUnicode_DecodeUTF8(p->tok->buf, size, "replace");
         }
         else {
@@ -662,8 +662,8 @@ static int
 initialize_token(Parser *p, Token *token, const char *start, const char *end, int token_type) {
     assert(token != NULL);
 
-    token->type = (token_type == NAME) ? _get_keyword_or_name_type(p, start, (int)(end - start)) : token_type;
-    token->bytes = PyBytes_FromStringAndSize(start, end - start);
+    token->type = (token_type == NAME) ? _get_keyword_or_name_type(p, start, (int)Py_PtrDiff(end, start)) : token_type;
+    token->bytes = PyBytes_FromStringAndSize(start, Py_PtrDiff(end, start));
     if (token->bytes == NULL) {
         return -1;
     }
@@ -677,8 +677,8 @@ initialize_token(Parser *p, Token *token, const char *start, const char *end, in
     int lineno = token_type == STRING ? p->tok->first_lineno : p->tok->lineno;
     int end_lineno = p->tok->lineno;
 
-    int col_offset = (start != NULL && start >= line_start) ? (int)(start - line_start) : -1;
-    int end_col_offset = (end != NULL && end >= p->tok->line_start) ? (int)(end - p->tok->line_start) : -1;
+    int col_offset = (start != NULL && start >= line_start) ? (int)Py_PtrDiff(start, line_start) : -1;
+    int end_col_offset = (end != NULL && end >= p->tok->line_start) ? (int)Py_PtrDiff(end, p->tok->line_start) : -1;
 
     token->lineno = p->starting_lineno + lineno;
     token->col_offset = p->tok->lineno == 1 ? p->starting_col_offset + col_offset : col_offset;
@@ -725,7 +725,7 @@ _PyPegen_fill_token(Parser *p)
 
     // Record and skip '# type: ignore' comments
     while (type == TYPE_IGNORE) {
-        Py_ssize_t len = end - start;
+        Py_ssize_t len = Py_PtrDiff(end, start);
         char *tag = PyMem_Malloc(len + 1);
         if (tag == NULL) {
             PyErr_NoMemory();

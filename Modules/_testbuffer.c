@@ -2266,7 +2266,7 @@ ndarray_memoryview_from_buffer(PyObject *self, PyObject *dummy)
     }
     /* copy the complete raw data */
     memcpy(infobuf, ndbuf->data, ndbuf->len);
-    info.buf = infobuf + ((char *)view->buf - ndbuf->data);
+    info.buf = infobuf + Py_PtrDiff((char *)view->buf, ndbuf->data);
 
     if (view->format) {
         if (strlen(view->format) > ND_MAX_NDIM) {

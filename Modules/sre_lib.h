@@ -30,7 +30,7 @@ SRE(at)(SRE_STATE* state, const SRE_CHAR* ptr, SRE_CODE at)
                 SRE_IS_LINEBREAK((int) ptr[-1]));
 
     case SRE_AT_END:
-        return (((SRE_CHAR *)state->end - ptr == 1 &&
+        return ((Py_PtrDiff((SRE_CHAR *)state->end, ptr) == 1 &&
                  SRE_IS_LINEBREAK((int) ptr[0])) ||
                 ((void*) ptr == state->end));
 
@@ -211,7 +211,7 @@ SRE(count)(SRE_STATE* state, const SRE_CODE* pattern, Py_ssize_t maxcount)
     Py_ssize_t i;
 
     /* adjust end */
-    if (maxcount < end - ptr && maxcount != SRE_MAXREPEAT)
+    if (maxcount < Py_PtrDiff(end, ptr) && maxcount != SRE_MAXREPEAT)
         end = ptr + maxcount;
 
     switch (pattern[0]) {
@@ -324,13 +324,13 @@ SRE(count)(SRE_STATE* state, const SRE_CODE* pattern, Py_ssize_t maxcount)
                 break;
         }
         TRACE(("|%p|%p|COUNT %zd\n", pattern, ptr,
-               (SRE_CHAR*) state->ptr - ptr));
-        return (SRE_CHAR*) state->ptr - ptr;
+               Py_PtrDiff((SRE_CHAR*) state->ptr, ptr)));
+        return Py_PtrDiff((SRE_CHAR*) state->ptr, ptr);
     }
 
     TRACE(("|%p|%p|COUNT %zd\n", pattern, ptr,
-           ptr - (SRE_CHAR*) state->ptr));
-    return ptr - (SRE_CHAR*) state->ptr;
+           Py_PtrDiff(ptr, (SRE_CHAR*) state->ptr)));
+    return Py_PtrDiff(ptr, (SRE_CHAR*) state->ptr);
 }
 
 #if 0 /* not used in this release */
@@ -572,7 +572,7 @@ entrance:
     if (ctx->pattern[0] == SRE_OP_INFO) {
         /* optimization info block */
         /* <INFO> <1=skip> <2=flags> <3=min> ... */
-        if (ctx->pattern[3] && (uintptr_t)(end - ctx->ptr) < ctx->pattern[3]) {
+        if (ctx->pattern[3] && (uintptr_t)Py_PtrDiff(end, ctx->ptr) < ctx->pattern[3]) {
             TRACE(("reject (got %zd chars, need %zd)\n",
                    end - ctx->ptr, (Py_ssize_t) ctx->pattern[3]));
             RETURN_FAILURE;
@@ -837,7 +837,7 @@ entrance:
             TRACE(("|%p|%p|REPEAT_ONE %d %d\n", ctx->pattern, ctx->ptr,
                    ctx->pattern[1], ctx->pattern[2]));
 
-            if ((Py_ssize_t) ctx->pattern[1] > end - ctx->ptr)
+            if ((Py_ssize_t) ctx->pattern[1] > Py_PtrDiff(end, ctx->ptr))
                 RETURN_FAILURE; /* cannot match */
 
             state->ptr = ctx->ptr;
@@ -923,7 +923,7 @@ entrance:
             TRACE(("|%p|%p|MIN_REPEAT_ONE %d %d\n", ctx->pattern, ctx->ptr,
                    ctx->pattern[1], ctx->pattern[2]));
 
-            if ((Py_ssize_t) ctx->pattern[1] > end - ctx->ptr)
+            if ((Py_ssize_t) ctx->pattern[1] > Py_PtrDiff(end, ctx->ptr))
                 RETURN_FAILURE; /* cannot match */
 
             state->ptr = ctx->ptr;
@@ -1268,7 +1268,7 @@ entrance:
             /* <ASSERT> <skip> <back> <pattern> */
             TRACE(("|%p|%p|ASSERT %d\n", ctx->pattern,
                    ctx->ptr, ctx->pattern[1]));
-            if (ctx->ptr - (SRE_CHAR *)state->beginning < (Py_ssize_t)ctx->pattern[1])
+            if (Py_PtrDiff(ctx->ptr, (SRE_CHAR *)state->beginning) < (Py_ssize_t)ctx->pattern[1])
                 RETURN_FAILURE;
             state->ptr = ctx->ptr - ctx->pattern[1];
             DO_JUMP0(JUMP_ASSERT, jump_assert, ctx->pattern+2);
@@ -1281,7 +1281,7 @@ entrance:
             /* <ASSERT_NOT> <skip> <back> <pattern> */
             TRACE(("|%p|%p|ASSERT_NOT %d\n", ctx->pattern,
                    ctx->ptr, ctx->pattern[1]));
-            if (ctx->ptr - (SRE_CHAR *)state->beginning >= (Py_ssize_t)ctx->pattern[1]) {
+            if (Py_PtrDiff(ctx->ptr, (SRE_CHAR *)state->beginning) >= (Py_ssize_t)ctx->pattern[1]) {
                 state->ptr = ctx->ptr - ctx->pattern[1];
                 DO_JUMP0(JUMP_ASSERT_NOT, jump_assert_not, ctx->pattern+2);
                 if (ret) {
@@ -1387,9 +1387,9 @@ SRE(search)(SRE_STATE* state, SRE_CODE* pattern)
 
         flags = pattern[2];
 
-        if (pattern[3] && end - ptr < (Py_ssize_t)pattern[3]) {
+        if (pattern[3] && Py_PtrDiff(end, ptr) < (Py_ssize_t)pattern[3]) {
             TRACE(("reject (got %u chars, need %u)\n",
-                   (unsigned int)(end - ptr), pattern[3]));
+                   (unsigned int)Py_PtrDiff(end, ptr), pattern[3]));
             return 0;
         }
         if (pattern[3] > 1) {
@@ -1453,7 +1453,7 @@ SRE(search)(SRE_STATE* state, SRE_CODE* pattern)
         Py_ssize_t i = 0;
 
         end = (SRE_CHAR *)state->end;
-        if (prefix_len > end - ptr)
+        if (prefix_len > Py_PtrDiff(end, ptr))
             return 0;
 #if SIZEOF_SRE_CHAR < 4
         for (i = 0; i < prefix_len; i++)

@@ -98,7 +98,7 @@ static void
 w_flush(WFILE *p)
 {
     assert(p->fp != NULL);
-    fwrite(p->buf, 1, p->ptr - p->buf, p->fp);
+    fwrite(p->buf, 1, Py_PtrDiff(p->ptr, p->buf), p->fp);
     p->ptr = p->buf;
 }
 
@@ -110,10 +110,10 @@ w_reserve(WFILE *p, Py_ssize_t needed)
         return 0; /* An error already occurred */
     if (p->fp != NULL) {
         w_flush(p);
-        return needed <= p->end - p->ptr;
+        return needed <= Py_PtrDiff(p->end, p->ptr);
     }
     assert(p->str != NULL);
-    pos = p->ptr - p->buf;
+    pos = Py_PtrDiff(p->ptr, p->buf);
     size = PyBytes_GET_SIZE(p->str);
     if (size > 16*1024*1024)
         delta = (size >> 3);            /* 12.5% overallocation */
@@ -143,7 +143,7 @@ w_string(const void *s, Py_ssize_t n, WFILE *p)
     Py_ssize_t m;
     if (!n || p->ptr == NULL)
         return;
-    m = p->end - p->ptr;
+    m = Py_PtrDiff(p->end, p->ptr);
     if (p->fp != NULL) {
         if (n <= m) {
             memcpy(p->ptr, s, n);
@@ -628,7 +628,7 @@ r_string(Py_ssize_t n, RFILE *p)
     if (p->ptr != NULL) {
         /* Fast path for loads() */
         const char *res = p->ptr;
-        Py_ssize_t left = p->end - p->ptr;
+        Py_ssize_t left = Py_PtrDiff(p->end, p->ptr);
         if (left < n) {
             PyErr_SetString(PyExc_EOFError,
                             "marshal data too short");
@@ -1580,7 +1580,7 @@ PyMarshal_WriteObjectToString(PyObject *x, int version)
     w_clear_refs(&wf);
     if (wf.str != NULL) {
         const char *base = PyBytes_AS_STRING(wf.str);
-        if (_PyBytes_Resize(&wf.str, (Py_ssize_t)(wf.ptr - base)) < 0)
+        if (_PyBytes_Resize(&wf.str, (Py_ssize_t)Py_PtrDiff(wf.ptr, base)) < 0)
             return NULL;
     }
     if (wf.error != WFERR_OK) {

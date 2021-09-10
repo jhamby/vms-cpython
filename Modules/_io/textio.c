@@ -2037,7 +2037,7 @@ find_control_char(int kind, const char *s, const char *end, Py_UCS4 ch)
 {
     if (kind == PyUnicode_1BYTE_KIND) {
         assert(ch < 256);
-        return (char *) memchr((const void *) s, (char) ch, end - s);
+        return (char *) memchr((const void *) s, (char) ch, Py_PtrDiff(end, s));
     }
     for (;;) {
         while (PyUnicode_READ(kind, s, 0) > ch)
@@ -2055,13 +2055,13 @@ _PyIO_find_line_ending(
     int translated, int universal, PyObject *readnl,
     int kind, const char *start, const char *end, Py_ssize_t *consumed)
 {
-    Py_ssize_t len = (end - start)/kind;
+    Py_ssize_t len = Py_PtrDiff(end, start)/kind;
 
     if (translated) {
         /* Newlines are already translated, only search for \n */
         const char *pos = find_control_char(kind, start, end, '\n');
         if (pos != NULL)
-            return (pos - start)/kind + 1;
+            return Py_PtrDiff(pos, start)/kind + 1;
         else {
             *consumed = len;
             return -1;
@@ -2085,12 +2085,12 @@ _PyIO_find_line_ending(
             ch = PyUnicode_READ(kind, s, 0);
             s += kind;
             if (ch == '\n')
-                return (s - start)/kind;
+                return Py_PtrDiff(s, start)/kind;
             if (ch == '\r') {
                 if (PyUnicode_READ(kind, s, 0) == '\n')
-                    return (s - start)/kind + 1;
+                    return Py_PtrDiff(s, start)/kind + 1;
                 else
-                    return (s - start)/kind;
+                    return Py_PtrDiff(s, start)/kind;
             }
         }
     }
@@ -2103,7 +2103,7 @@ _PyIO_find_line_ending(
         if (readnl_len == 1) {
             const char *pos = find_control_char(kind, start, end, nl[0]);
             if (pos != NULL)
-                return (pos - start)/kind + 1;
+                return Py_PtrDiff(pos, start)/kind + 1;
             *consumed = len;
             return -1;
         }
@@ -2123,14 +2123,14 @@ _PyIO_find_line_ending(
                         break;
                 }
                 if (i == readnl_len)
-                    return (pos - start)/kind + readnl_len;
+                    return Py_PtrDiff(pos, start)/kind + readnl_len;
                 s = pos + kind;
             }
             pos = find_control_char(kind, e, end, nl[0]);
             if (pos == NULL)
                 *consumed = len;
             else
-                *consumed = (pos - start)/kind;
+                *consumed = Py_PtrDiff(pos, start)/kind;
             return -1;
         }
     }

@@ -67,7 +67,7 @@ STRINGLIB(find_max_char)(const STRINGLIB_CHAR *begin, const STRINGLIB_CHAR *end)
 #error Invalid STRINGLIB_SIZEOF_CHAR (must be 1, 2 or 4)
 #endif
     Py_UCS4 mask;
-    Py_ssize_t n = end - begin;
+    Py_ssize_t n = Py_PtrDiff(end, begin);
     const STRINGLIB_CHAR *p = begin;
     const STRINGLIB_CHAR *unrolled_end = begin + _Py_SIZE_ROUND_DOWN(n, 4);
     Py_UCS4 max_char;

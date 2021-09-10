@@ -758,7 +758,7 @@ parse_hh_mm_ss_ff(const char *tstr, const char *tstr_end, int *hour,
     }
 
     // Parse .fff[fff]
-    size_t len_remains = p_end - p;
+    size_t len_remains = Py_PtrDiff(p_end, p);
     if (!(len_remains == 6 || len_remains == 3)) {
         return -3;
     }
@@ -822,7 +822,7 @@ parse_isoformat_time(const char *dtstr, size_t dtlen, int *hour, int *minute,
     //    - +HH:MM           (len  6)
     //    - +HH:MM:SS        (len  9)
     //    - +HH:MM:SS.ffffff (len 16)
-    size_t tzlen = p_end - tzinfo_pos;
+    size_t tzlen = Py_PtrDiff(p_end, tzinfo_pos);
     if (!(tzlen == 6 || tzlen == 9 || tzlen == 16)) {
         return -5;
     }
@@ -5292,7 +5292,7 @@ datetime_fromisoformat(PyObject *cls, PyObject *dtstr)
             }
         }
 
-        len -= (p - dt_ptr);
+        len -= Py_PtrDiff(p, dt_ptr);
         rv = parse_isoformat_time(p, len, &hour, &minute, &second,
                                   &microsecond, &tzoffset, &tzusec);
     }

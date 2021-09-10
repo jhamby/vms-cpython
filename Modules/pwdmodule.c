@@ -6,6 +6,12 @@
 
 #include <pwd.h>
 
+#if defined(__VMS) && __INITIAL_POINTER_SIZE == 64
+    typedef struct __passwd64 PyPASSWD;
+#else 
+    typedef struct passwd PyPASSWD;
+#endif 
+
 #include "clinic/pwdmodule.c.h"
 /*[clinic input]
 module pwd
@@ -77,7 +83,7 @@ sets(PyObject *v, int i, const char* val)
 }
 
 static PyObject *
-mkpwent(PyObject *module, struct passwd *p)
+mkpwent(PyObject *module, PyPASSWD *p)
 {
     int setIndex = 0;
     PyObject *v = PyStructSequence_New(get_pwd_state(module)->StructPwdType);
@@ -132,7 +138,7 @@ pwd_getpwuid(PyObject *module, PyObject *uidobj)
     PyObject *retval = NULL;
     uid_t uid;
     int nomem = 0;
-    struct passwd *p;
+    PyPASSWD *p;
     char *buf = NULL, *buf2 = NULL;
 
     if (!_Py_Uid_Converter(uidobj, &uid)) {
@@ -145,7 +151,7 @@ pwd_getpwuid(PyObject *module, PyObject *uidobj)
     int status;
     Py_ssize_t bufsize;
     /* Note: 'pwd' will be used via pointer 'p' on getpwuid_r success. */
-    struct passwd pwd;
+    PyPASSWD pwd;
 
     Py_BEGIN_ALLOW_THREADS
     bufsize = sysconf(_SC_GETPW_R_SIZE_MAX);
@@ -216,7 +222,7 @@ pwd_getpwnam_impl(PyObject *module, PyObject *name)
 {
     char *buf = NULL, *buf2 = NULL, *name_chars;
     int nomem = 0;
-    struct passwd *p;
+    PyPASSWD *p;
     PyObject *bytes, *retval = NULL;
 
     if ((bytes = PyUnicode_EncodeFSDefault(name)) == NULL)
@@ -228,7 +234,7 @@ pwd_getpwnam_impl(PyObject *module, PyObject *name)
     int status;
     Py_ssize_t bufsize;
     /* Note: 'pwd' will be used via pointer 'p' on getpwnam_r success. */
-    struct passwd pwd;
+    PyPASSWD pwd;
 
     Py_BEGIN_ALLOW_THREADS
     bufsize = sysconf(_SC_GETPW_R_SIZE_MAX);
@@ -293,7 +299,7 @@ pwd_getpwall_impl(PyObject *module)
 /*[clinic end generated code: output=4853d2f5a0afac8a input=d7ecebfd90219b85]*/
 {
     PyObject *d;
-    struct passwd *p;
+    PyPASSWD *p;
     if ((d = PyList_New(0)) == NULL)
         return NULL;
     setpwent();

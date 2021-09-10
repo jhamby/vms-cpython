@@ -191,7 +191,7 @@ expand_encodebuffer(MultibyteEncodeBuffer *buf, Py_ssize_t esize)
 {
     Py_ssize_t orgpos, orgsize, incsize;
 
-    orgpos = (Py_ssize_t)((char *)buf->outbuf -
+    orgpos = (Py_ssize_t)Py_PtrDiff((char *)buf->outbuf,
                             PyBytes_AS_STRING(buf->outobj));
     orgsize = PyBytes_GET_SIZE(buf->outobj);
     incsize = (esize < (orgsize >> 1) ? (orgsize >> 1) | 1 : esize);
@@ -211,7 +211,7 @@ expand_encodebuffer(MultibyteEncodeBuffer *buf, Py_ssize_t esize)
     return 0;
 }
 #define REQUIRE_ENCODEBUFFER(buf, s) do {                               \
-    if ((s) < 0 || (s) > (buf)->outbuf_end - (buf)->outbuf)             \
+    if ((s) < 0 || (s) > Py_PtrDiff((buf)->outbuf_end, (buf)->outbuf))  \
         if (expand_encodebuffer(buf, s) == -1)                          \
             goto errorexit;                                             \
 } while(0)
@@ -271,7 +271,7 @@ multibytecodec_encerror(MultibyteCodec *codec,
 
         inpos = 0;
         for (;;) {
-            Py_ssize_t outleft = (Py_ssize_t)(buf->outbuf_end - buf->outbuf);
+            Py_ssize_t outleft = (Py_ssize_t)Py_PtrDiff(buf->outbuf_end, buf->outbuf);
 
             r = codec->encode(state, codec->config,
                               kind, data, &inpos, 1,
@@ -397,7 +397,7 @@ multibytecodec_decerror(MultibyteCodec *codec,
             return 0; /* retry it */
         case MBERR_TOOFEW:
             reason = "incomplete multibyte sequence";
-            esize = (Py_ssize_t)(buf->inbuf_end - buf->inbuf);
+            esize = (Py_ssize_t)Py_PtrDiff(buf->inbuf_end, buf->inbuf);
             break;
         case MBERR_INTERNAL:
             PyErr_SetString(PyExc_RuntimeError,
@@ -422,14 +422,14 @@ multibytecodec_decerror(MultibyteCodec *codec,
         return 0;
     }
 
-    start = (Py_ssize_t)(buf->inbuf - buf->inbuf_top);
+    start = (Py_ssize_t)Py_PtrDiff(buf->inbuf, buf->inbuf_top);
     end = start + esize;
 
     /* use cached exception object if available */
     if (buf->excobj == NULL) {
         buf->excobj = PyUnicodeDecodeError_Create(codec->encoding,
                         (const char *)buf->inbuf_top,
-                        (Py_ssize_t)(buf->inbuf_end - buf->inbuf_top),
+                        (Py_ssize_t)Py_PtrDiff(buf->inbuf_end, buf->inbuf_top),
                         start, end, reason);
         if (buf->excobj == NULL)
             goto errorexit;
@@ -463,7 +463,7 @@ multibytecodec_decerror(MultibyteCodec *codec,
 
     newpos = PyLong_AsSsize_t(PyTuple_GET_ITEM(retobj, 1));
     if (newpos < 0 && !PyErr_Occurred())
-        newpos += (Py_ssize_t)(buf->inbuf_end - buf->inbuf_top);
+        newpos += (Py_ssize_t)Py_PtrDiff(buf->inbuf_end, buf->inbuf_top);
     if (newpos < 0 || buf->inbuf_top + newpos > buf->inbuf_end) {
         PyErr_Clear();
         PyErr_Format(PyExc_IndexError,
@@ -521,7 +521,7 @@ multibytecodec_encode(MultibyteCodec *codec,
     while (buf.inpos < buf.inlen) {
         /* we don't reuse inleft and outleft here.
          * error callbacks can relocate the cursor anywhere on buffer*/
-        Py_ssize_t outleft = (Py_ssize_t)(buf.outbuf_end - buf.outbuf);
+        Py_ssize_t outleft = (Py_ssize_t)Py_PtrDiff(buf.outbuf_end, buf.outbuf);
 
         r = codec->encode(state, codec->config,
                           kind, data,
@@ -539,7 +539,7 @@ multibytecodec_encode(MultibyteCodec *codec,
         for (;;) {
             Py_ssize_t outleft;
 
-            outleft = (Py_ssize_t)(buf.outbuf_end - buf.outbuf);
+            outleft = (Py_ssize_t)Py_PtrDiff(buf.outbuf_end, buf.outbuf);
             r = codec->encreset(state, codec->config, &buf.outbuf,
                                 outleft);
             if (r == 0)
@@ -549,7 +549,7 @@ multibytecodec_encode(MultibyteCodec *codec,
                 goto errorexit;
         }
 
-    finalsize = (Py_ssize_t)((char *)buf.outbuf -
+    finalsize = (Py_ssize_t)Py_PtrDiff((char *)buf.outbuf,
                              PyBytes_AS_STRING(buf.outobj));
 
     if (finalsize != PyBytes_GET_SIZE(buf.outobj))
@@ -688,7 +688,7 @@ _multibytecodec_MultibyteCodec_decode_impl(MultibyteCodecObject *self,
     while (buf.inbuf < buf.inbuf_end) {
         Py_ssize_t inleft, r;
 
-        inleft = (Py_ssize_t)(buf.inbuf_end - buf.inbuf);
+        inleft = (Py_ssize_t)Py_PtrDiff(buf.inbuf_end, buf.inbuf);
 
         r = self->codec->decode(&state, self->codec->config,
                         &buf.inbuf, inleft, &buf.writer);
@@ -852,7 +852,7 @@ decoder_append_pending(MultibyteStatefulDecoderContext *ctx,
 {
     Py_ssize_t npendings;
 
-    npendings = (Py_ssize_t)(buf->inbuf_end - buf->inbuf);
+    npendings = (Py_ssize_t)Py_PtrDiff(buf->inbuf_end, buf->inbuf);
     if (npendings + ctx->pendingsize > MAXDECPENDING ||
         npendings > PY_SSIZE_T_MAX - ctx->pendingsize) {
             PyErr_SetString(PyExc_UnicodeError, "pending buffer overflow");
@@ -881,7 +881,7 @@ decoder_feed_buffer(MultibyteStatefulDecoderContext *ctx,
         Py_ssize_t inleft;
         Py_ssize_t r;
 
-        inleft = (Py_ssize_t)(buf->inbuf_end - buf->inbuf);
+        inleft = (Py_ssize_t)Py_PtrDiff(buf->inbuf_end, buf->inbuf);
 
         r = ctx->codec->decode(&ctx->state, ctx->codec->config,
             &buf->inbuf, inleft, &buf->writer);

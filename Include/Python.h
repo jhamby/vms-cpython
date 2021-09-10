@@ -52,6 +52,12 @@
 /* For size_t? */
 #ifdef HAVE_STDDEF_H
 #include <stddef.h>
+
+#if defined(__VMS) && __INITIAL_POINTER_SIZE == 64
+#  undef offsetof
+#  define offsetof(type, identifier) Py_PtrDiff((char *)&((type*)0L)->identifier, (char *)0L)
+# endif
+
 #endif
 
 /* CAUTION:  Build setups should ensure that NDEBUG is defined on the

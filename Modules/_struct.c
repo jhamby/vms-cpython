@@ -1306,6 +1306,10 @@ prepare_s(PyStructObject *self)
     Py_ssize_t size, len, num, itemsize;
     size_t ncodes;
 
+    #ifdef __VMS
+    Py_ssize_t strict_align = 1;
+    #endif
+
     _structmodulestate *state = get_struct_state_structinst(self);
 
     fmt = PyBytes_AS_STRING(self->s_format);
@@ -1364,7 +1368,16 @@ prepare_s(PyStructObject *self)
         if (num > (PY_SSIZE_T_MAX - size) / itemsize)
             goto overflow;
         size += num * itemsize;
+    #ifdef __VMS
+        if (strict_align < e->alignment) {
+            strict_align = e->alignment;
+        }
+    #endif
     }
+
+    #ifdef __VMS
+    size += size % strict_align;
+    #endif
 
     /* check for overflow */
     if ((ncodes + 1) > ((size_t)PY_SSIZE_T_MAX / sizeof(formatcode))) {

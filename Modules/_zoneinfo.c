@@ -1637,12 +1637,12 @@ parse_abbr(const char *const p, PyObject **abbr)
         str_end = ptr;
     }
 
-    *abbr = PyUnicode_FromStringAndSize(str_start, str_end - str_start);
+    *abbr = PyUnicode_FromStringAndSize(str_start, Py_PtrDiff(str_end, str_start));
     if (*abbr == NULL) {
         return -1;
     }
 
-    return ptr - p;
+    return Py_PtrDiff(ptr, p);
 }
 
 /* Parse a UTC offset from a TZ str. */
@@ -1725,7 +1725,7 @@ parse_tz_delta(const char *const p, long *total_seconds)
 complete:
     *total_seconds = sign * ((hours * 3600) + (minutes * 60) + seconds);
 
-    return ptr - p;
+    return Py_PtrDiff(ptr, p);
 }
 
 /* Parse the date portion of a transition rule. */
@@ -1848,7 +1848,7 @@ parse_transition_rule(const char *const p, TransitionRuleType **out)
         *out = (TransitionRuleType *)rv;
     }
 
-    return ptr - p;
+    return Py_PtrDiff(ptr, p);
 }
 
 /* Parse the time portion of a transition rule (e.g. following an /) */
@@ -1905,7 +1905,7 @@ parse_transition_time(const char *const p, int8_t *hour, int8_t *minute,
         *(components[i]) = sign * buff;
     }
 
-    return ptr - p;
+    return Py_PtrDiff(ptr, p);
 }
 
 /* Constructor for a _tzrule.

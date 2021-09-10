@@ -105,7 +105,7 @@ static int fuzz_struct_unpack(const char* data, size_t size) {
         return 0;
     }
 
-    size_t format_length = first_null - data;
+    size_t format_length = Py_PtrDiff(first_null, data);
     size_t buffer_length = size - format_length - 1;
 
     PyObject* pattern = PyBytes_FromStringAndSize(data, format_length);

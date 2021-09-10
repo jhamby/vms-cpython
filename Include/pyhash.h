@@ -27,6 +27,11 @@ PyAPI_FUNC(Py_hash_t) _Py_HashBytes(const void*, Py_ssize_t);
 #  define _PyHASH_BITS 31
 #endif
 
+#ifdef __VMS
+# undef  _PyHASH_BITS
+# define _PyHASH_BITS 31
+#endif
+
 #define _PyHASH_MODULUS (((size_t)1 << _PyHASH_BITS) - 1)
 #define _PyHASH_INF 314159
 #define _PyHASH_IMAG _PyHASH_MULTIPLIER

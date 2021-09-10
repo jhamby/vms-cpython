@@ -1334,7 +1334,7 @@ eval_frame_handle_pending(PyThreadState *tstate)
 /* Code access macros */
 
 /* The integer overflow is checked by an assertion below. */
-#define INSTR_OFFSET() ((int)(next_instr - first_instr))
+#define INSTR_OFFSET() ((int)Py_PtrDiff(next_instr, first_instr))
 #define NEXTOPARG()  do { \
         _Py_CODEUNIT word = *next_instr; \
         opcode = _Py_OPCODE(word); \
@@ -1393,7 +1393,7 @@ eval_frame_handle_pending(PyThreadState *tstate)
 
 /* The stack can grow at most MAXINT deep, as co_nlocals and
    co_stacksize are ints. */
-#define STACK_LEVEL()     ((int)(stack_pointer - f->f_valuestack))
+#define STACK_LEVEL()     ((int)Py_PtrDiff(stack_pointer, f->f_valuestack))
 #define EMPTY()           (STACK_LEVEL() == 0)
 #define TOP()             (stack_pointer[-1])
 #define SECOND()          (stack_pointer[-2])
@@ -1485,7 +1485,7 @@ eval_frame_handle_pending(PyThreadState *tstate)
         co_opcache = NULL; \
         if (co->co_opcache != NULL) { \
             unsigned char co_opcache_offset = \
-                co->co_opcache_map[next_instr - first_instr]; \
+                co->co_opcache_map[Py_PtrDiff(next_instr, first_instr)]; \
             if (co_opcache_offset > 0) { \
                 assert(co_opcache_offset <= co->co_opcache_size); \
                 co_opcache = &co->co_opcache[co_opcache_offset - 1]; \
@@ -1499,7 +1499,7 @@ eval_frame_handle_pending(PyThreadState *tstate)
         if (co_opcache != NULL) { \
             co_opcache->optimized = -1; \
             unsigned char co_opcache_offset = \
-                co->co_opcache_map[next_instr - first_instr]; \
+                co->co_opcache_map[Py_PtrDiff(next_instr, first_instr)]; \
             assert(co_opcache_offset <= co->co_opcache_size); \
             co->co_opcache_map[co_opcache_offset] = 0; \
             co_opcache = NULL; \
@@ -1809,7 +1809,7 @@ main_loop:
             int err;
             /* see maybe_call_line_trace()
                for expository comments */
-            f->f_stackdepth = (int)(stack_pointer - f->f_valuestack);
+            f->f_stackdepth = (int)Py_PtrDiff(stack_pointer, f->f_valuestack);
 
             err = maybe_call_line_trace(tstate->c_tracefunc,
                                         tstate->c_traceobj,
@@ -2549,7 +2549,7 @@ main_loop:
 
             if (iter == NULL) {
                 int opcode_at_minus_3 = 0;
-                if ((next_instr - first_instr) > 2) {
+                if (Py_PtrDiff(next_instr, first_instr) > 2) {
                     opcode_at_minus_3 = _Py_OPCODE(next_instr[-3]);
                 }
                 format_awaitable_error(tstate, Py_TYPE(iterable),
@@ -2631,7 +2631,7 @@ main_loop:
             assert(f->f_lasti > 0);
             f->f_lasti -= 1;
             f->f_state = FRAME_SUSPENDED;
-            f->f_stackdepth = (int)(stack_pointer - f->f_valuestack);
+            f->f_stackdepth = (int)Py_PtrDiff(stack_pointer, f->f_valuestack);
             goto exiting;
         }
 
@@ -2648,7 +2648,7 @@ main_loop:
                 retval = w;
             }
             f->f_state = FRAME_SUSPENDED;
-            f->f_stackdepth = (int)(stack_pointer - f->f_valuestack);
+            f->f_stackdepth = (int)Py_PtrDiff(stack_pointer, f->f_valuestack);
             goto exiting;
         }
 

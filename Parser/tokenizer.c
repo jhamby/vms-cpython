@@ -182,7 +182,7 @@ get_coding_spec(const char *s, char **spec, Py_ssize_t size, struct tok_state *t
                 t++;
 
             if (begin < t) {
-                char* r = new_string(begin, t - begin, tok);
+                char* r = new_string(begin, Py_PtrDiff(t, begin), tok);
                 const char* q;
                 if (!r)
                     return 0;
@@ -336,7 +336,7 @@ tok_concatenate_interactive_new_line(struct tok_state *tok, const char *line) {
         return 0;
     }
 
-    Py_ssize_t current_size = tok->interactive_src_end - tok->interactive_src_start;
+    Py_ssize_t current_size = Py_PtrDiff(tok->interactive_src_end, tok->interactive_src_start);
     Py_ssize_t line_size = strlen(line);
     char* new_str = tok->interactive_src_start;
 
@@ -376,14 +376,14 @@ tok_concatenate_interactive_new_line(struct tok_state *tok, const char *line) {
 static int
 tok_reserve_buf(struct tok_state *tok, Py_ssize_t size)
 {
-    Py_ssize_t cur = tok->cur - tok->buf;
-    Py_ssize_t oldsize = tok->inp - tok->buf;
+    Py_ssize_t cur = Py_PtrDiff(tok->cur, tok->buf);
+    Py_ssize_t oldsize = Py_PtrDiff(tok->inp, tok->buf);
     Py_ssize_t newsize = oldsize + Py_MAX(size, oldsize >> 1);
-    if (newsize > tok->end - tok->buf) {
+    if (newsize > Py_PtrDiff(tok->end, tok->buf)) {
         char *newbuf = tok->buf;
-        Py_ssize_t start = tok->start == NULL ? -1 : tok->start - tok->buf;
-        Py_ssize_t line_start = tok->start == NULL ? -1 : tok->line_start - tok->buf;
-        Py_ssize_t multi_line_start = tok->multi_line_start - tok->buf;
+        Py_ssize_t start = tok->start == NULL ? -1 : Py_PtrDiff(tok->start, tok->buf);
+        Py_ssize_t line_start = tok->start == NULL ? -1 : Py_PtrDiff(tok->line_start, tok->buf);
+        Py_ssize_t multi_line_start = Py_PtrDiff(tok->multi_line_start, tok->buf);
         newbuf = (char *)PyMem_Realloc(newbuf, newsize);
         if (newbuf == NULL) {
             tok->done = E_NOMEM;
@@ -635,7 +635,7 @@ translate_newlines(const char *s, int exec_input, struct tok_state *tok) {
         current++;
     }
     *current = '\0';
-    final_length = current - buf + 1;
+    final_length = Py_PtrDiff(current, buf - 1);
     if (final_length < needed_length && final_length) {
         /* should never fail */
         char* result = PyMem_Realloc(buf, final_length);
@@ -687,11 +687,11 @@ decode_str(const char *input, int single, struct tok_state *tok)
     /* need to check line 1 and 2 separately since check_coding_spec
        assumes a single line as input */
     if (newl[0]) {
-        if (!check_coding_spec(str, newl[0] - str, tok, buf_setreadl)) {
+        if (!check_coding_spec(str, Py_PtrDiff(newl[0], str), tok, buf_setreadl)) {
             return NULL;
         }
         if (tok->enc == NULL && tok->decoding_state != STATE_NORMAL && newl[1]) {
-            if (!check_coding_spec(newl[0]+1, newl[1] - newl[0],
+            if (!check_coding_spec(newl[0]+1, Py_PtrDiff(newl[1], newl[0]),
                                    tok, buf_setreadl))
                 return NULL;
         }
@@ -819,7 +819,7 @@ tok_readline_raw(struct tok_state *tok)
             return 0;
         }
         char *line = Py_UniversalNewlineFgets(tok->inp,
-                                              (int)(tok->end - tok->inp),
+                                              (int)Py_PtrDiff(tok->end, tok->inp),
                                               tok->fp, NULL);
         if (line == NULL) {
             return 1;
@@ -910,7 +910,7 @@ tok_underflow_interactive(struct tok_state *tok) {
         tok->done = E_EOF;
     }
     else if (tok->start != NULL) {
-        Py_ssize_t cur_multi_line_start = tok->multi_line_start - tok->buf;
+        Py_ssize_t cur_multi_line_start = Py_PtrDiff(tok->multi_line_start, tok->buf);
         size_t size = strlen(newtok);
         tok->lineno++;
         if (!tok_reserve_buf(tok, size + 1)) {
@@ -1054,7 +1054,7 @@ tok_nextc(struct tok_state *tok)
         }
         if (Py_DebugFlag) {
             printf("line[%d] = ", tok->lineno);
-            print_escape(stdout, tok->cur, tok->inp - tok->cur);
+            print_escape(stdout, tok->cur, Py_PtrDiff(tok->inp, tok->cur));
             printf("  tok->done = %d\n", tok->done);
         }
         if (!rc) {
@@ -1098,14 +1098,14 @@ syntaxerror(struct tok_state *tok, const char *format, ...)
         goto error;
     }
 
-    errtext = PyUnicode_DecodeUTF8(tok->line_start, tok->cur - tok->line_start,
+    errtext = PyUnicode_DecodeUTF8(tok->line_start, Py_PtrDiff(tok->cur, tok->line_start),
                                    "replace");
     if (!errtext) {
         goto error;
     }
     int offset = (int)PyUnicode_GET_LENGTH(errtext);
     Py_ssize_t line_len = strcspn(tok->line_start, "\n");
-    if (line_len != tok->cur - tok->line_start) {
+    if (line_len != Py_PtrDiff(tok->cur, tok->line_start)) {
         Py_DECREF(errtext);
         errtext = PyUnicode_DecodeUTF8(tok->line_start, line_len,
                                        "replace");
@@ -1251,7 +1251,7 @@ verify_identifier(struct tok_state *tok)
     PyObject *s;
     if (tok->decoding_erred)
         return 0;
-    s = PyUnicode_DecodeUTF8(tok->start, tok->cur - tok->start, NULL);
+    s = PyUnicode_DecodeUTF8(tok->start, Py_PtrDiff(tok->cur, tok->start), NULL);
     if (s == NULL) {
         if (PyErr_ExceptionMatches(PyExc_UnicodeDecodeError)) {
             tok->done = E_DECODE;
@@ -1581,7 +1581,7 @@ tok_get(struct tok_state *tok, const char **p_start, const char **p_end)
         *p_end = tok->cur;
 
         /* async/await parsing block. */
-        if (tok->cur - tok->start == 5 && tok->start[0] == 'a') {
+        if (Py_PtrDiff(tok->cur, tok->start) == 5 && tok->start[0] == 'a') {
             /* May be an 'async' or 'await' token.  For Python 3.7 or
                later we recognize them unconditionally.  For Python
                3.5 or 3.6 we recognize 'async' in front of 'def', and
@@ -1613,7 +1613,7 @@ tok_get(struct tok_state *tok, const char **p_start, const char **p_end)
                                          &ahead_tok_end);
 
                 if (ahead_tok_kind == NAME
-                    && ahead_tok.cur - ahead_tok.start == 3
+                    && Py_PtrDiff(ahead_tok.cur, ahead_tok.start) == 3
                     && memcmp(ahead_tok.start, "def", 3) == 0)
                 {
                     /* The next token is going to be 'def', so instead of
@@ -1984,7 +1984,7 @@ tok_get(struct tok_state *tok, const char **p_start, const char **p_end)
         }
         tok->parenstack[tok->level] = c;
         tok->parenlinenostack[tok->level] = tok->lineno;
-        tok->parencolstack[tok->level] = (int)(tok->start - tok->line_start);
+        tok->parencolstack[tok->level] = (int)Py_PtrDiff(tok->start, tok->line_start);
         tok->level++;
         break;
     case ')':

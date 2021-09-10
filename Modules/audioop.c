@@ -1456,7 +1456,7 @@ audioop_ratecv_impl(PyObject *module, Py_buffer *fragment, int width,
                     goto exit;
                 /* We have checked before that the length
                  * of the string fits into int. */
-                len = (Py_ssize_t)(ncp - PyBytes_AsString(str));
+                len = (Py_ssize_t)Py_PtrDiff(ncp, PyBytes_AsString(str));
                 rv = PyBytes_FromStringAndSize
                     (PyBytes_AsString(str), len);
                 Py_DECREF(str);

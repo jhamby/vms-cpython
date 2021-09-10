@@ -103,7 +103,7 @@ STRINGLIB(utf8_decode)(const char **inptr, const char *end,
                 \xC0-\xC1 -- fake 0000-007F */
                 goto InvalidStart;
             }
-            if (end - s < 2) {
+            if (Py_PtrDiff(end, s) < 2) {
                 /* unexpected end of data: the caller will decide whether
                    it's an error or not */
                 break;
@@ -127,10 +127,10 @@ STRINGLIB(utf8_decode)(const char **inptr, const char *end,
         if (ch < 0xF0) {
             /* \xE0\xA0\x80-\xEF\xBF\xBF -- 0800-FFFF */
             Py_UCS4 ch2, ch3;
-            if (end - s < 3) {
+            if (Py_PtrDiff(end, s) < 3) {
                 /* unexpected end of data: the caller will decide whether
                    it's an error or not */
-                if (end - s < 2)
+                if (Py_PtrDiff(end, s) < 2)
                     break;
                 ch2 = (unsigned char)s[1];
                 if (!IS_CONTINUATION_BYTE(ch2) ||
@@ -177,17 +177,17 @@ STRINGLIB(utf8_decode)(const char **inptr, const char *end,
         if (ch < 0xF5) {
             /* \xF0\x90\x80\x80-\xF4\x8F\xBF\xBF -- 10000-10FFFF */
             Py_UCS4 ch2, ch3, ch4;
-            if (end - s < 4) {
+            if (Py_PtrDiff(end, s) < 4) {
                 /* unexpected end of data: the caller will decide whether
                    it's an error or not */
-                if (end - s < 2)
+                if (Py_PtrDiff(end, s) < 2)
                     break;
                 ch2 = (unsigned char)s[1];
                 if (!IS_CONTINUATION_BYTE(ch2) ||
                     (ch2 < 0x90 ? ch == 0xF0 : ch == 0xF4))
                     /* for clarification see comments below */
                     goto InvalidContinuation1;
-                if (end - s < 3)
+                if (Py_PtrDiff(end, s) < 3)
                     break;
                 ch3 = (unsigned char)s[2];
                 if (!IS_CONTINUATION_BYTE(ch3))
@@ -235,7 +235,7 @@ STRINGLIB(utf8_decode)(const char **inptr, const char *end,
     ch = 0;
 Return:
     *inptr = s;
-    *outpos = p - dest;
+    *outpos = Py_PtrDiff(p, dest);
     return ch;
 InvalidStart:
     ch = 1;
@@ -590,7 +590,7 @@ STRINGLIB(utf16_decode)(const unsigned char **inptr, const unsigned char *e,
     ch = 0;
 Return:
     *inptr = q;
-    *outpos = p - dest;
+    *outpos = Py_PtrDiff(p, dest);
     return ch;
 UnexpectedEnd:
     ch = 1;
@@ -727,7 +727,7 @@ STRINGLIB(utf16_encode)(const STRINGLIB_CHAR *in,
     return len;
   fail:
     *outptr = out;
-    return len - (end - in + 1);
+    return len - (Py_PtrDiff(end, in) + 1);
 #endif
 }
 
@@ -815,7 +815,7 @@ STRINGLIB(utf32_encode)(const STRINGLIB_CHAR *in,
 #if STRINGLIB_SIZEOF_CHAR > 1
   fail:
     *outptr = out;
-    return len - (end - in + 1);
+    return len - (Py_PtrDiff(end, in) + 1);
 #endif
 }
 

@@ -222,7 +222,7 @@ _codecs_escape_encode_impl(PyObject *module, PyObject *data,
 
         for (i = 0; i < size; i++) {
             /* There's at least enough room for a hex escape */
-            assert(newsize - (p - PyBytes_AS_STRING(v)) >= 4);
+            assert(newsize - Py_PtrDiff(p, PyBytes_AS_STRING(v)) >= 4);
             c = PyBytes_AS_STRING(data)[i];
             if (c == '\'' || c == '\\')
                 *p++ = '\\', *p++ = c;
@@ -242,7 +242,7 @@ _codecs_escape_encode_impl(PyObject *module, PyObject *data,
                 *p++ = c;
         }
         *p = '\0';
-        if (_PyBytes_Resize(&v, (p - PyBytes_AS_STRING(v)))) {
+        if (_PyBytes_Resize(&v, Py_PtrDiff(p, PyBytes_AS_STRING(v)))) {
             return NULL;
         }
     }

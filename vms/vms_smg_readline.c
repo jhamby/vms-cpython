@@ -12,6 +12,8 @@
 #include <trmdef.h>
 #include <stsdef.h>
 
+#include "vms/vms_ptr32.h"
+
 /* SMG$ support */
 static unsigned long                             pyvms_gl_keyboard_id;   /* SMG$ */
 static unsigned long                             pyvms_gl_key_table_id;  /* SMG$ */
@@ -51,7 +53,7 @@ char* vms_SMG_Readline(FILE *stdin, FILE *stdout, const char *prompt) {
 
     /* set up descriptors */
     inputD.dsc$w_length  = MAX_LINE_BUFFER - 2;
-    inputD.dsc$a_pointer = (void*)PyMem_RawMalloc(MAX_LINE_BUFFER);
+    inputD.dsc$a_pointer = (vms_ptr32)PyMem_RawMalloc(MAX_LINE_BUFFER);
     if (inputD.dsc$a_pointer == NULL) {
         return NULL;
     }
@@ -62,7 +64,7 @@ char* vms_SMG_Readline(FILE *stdin, FILE *stdout, const char *prompt) {
         promptD.dsc$w_length  = strlen(prompt);
         promptD.dsc$b_dtype   = DSC$K_DTYPE_T;
         promptD.dsc$b_class   = DSC$K_CLASS_S;
-        promptD.dsc$a_pointer = (char*)prompt;
+        promptD.dsc$a_pointer = (vms_ptr32)prompt;
         promptPtr = &promptD;
     } else {
         promptPtr = 0;      /* no prompt */

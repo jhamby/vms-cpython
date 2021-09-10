@@ -172,7 +172,7 @@ PyByteArray_Resize(PyObject *self, Py_ssize_t requested_size)
     /* All computations are done unsigned to avoid integer overflows
        (see issue #22335). */
     size_t alloc = (size_t) obj->ob_alloc;
-    size_t logical_offset = (size_t) (obj->ob_start - obj->ob_bytes);
+    size_t logical_offset = (size_t) Py_PtrDiff(obj->ob_start, obj->ob_bytes);
     size_t size = (size_t) requested_size;
 
     assert(self != NULL);
@@ -957,7 +957,7 @@ bytearray_repr(PyByteArrayObject *self)
     for (i = 0; i < length; i++) {
         /* There's at least enough room for a hex escape
            and a closing quote. */
-        assert(newsize - (p - buffer) >= 5);
+        assert(newsize - Py_PtrDiff(p, buffer) >= 5);
         c = bytes[i];
         if (c == '\'' || c == '\\')
             *p++ = '\\', *p++ = c;
@@ -978,13 +978,13 @@ bytearray_repr(PyByteArrayObject *self)
         else
             *p++ = c;
     }
-    assert(newsize - (p - buffer) >= 1);
+    assert(newsize - Py_PtrDiff(p, buffer) >= 1);
     *p++ = quote;
     while (*quote_postfix) {
        *p++ = *quote_postfix++;
     }
 
-    v = PyUnicode_FromStringAndSize(buffer, p - buffer);
+    v = PyUnicode_FromStringAndSize(buffer, Py_PtrDiff(p, buffer));
     PyObject_Free(buffer);
     return v;
 }
@@ -1329,7 +1329,7 @@ bytearray_translate_impl(PyByteArrayObject *self, PyObject *table,
     }
     /* Fix the size of the resulting bytearray */
     if (inlen > 0)
-        if (PyByteArray_Resize(result, output - output_start) < 0) {
+        if (PyByteArray_Resize(result, Py_PtrDiff(output, output_start)) < 0) {
             Py_CLEAR(result);
             goto done;
         }

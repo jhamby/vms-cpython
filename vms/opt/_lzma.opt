@@ -1,4 +1,4 @@
-oss$root:[lib]liblzma32.olb/lib
+oss$root:[lib]liblzma64.olb/lib
 sys$library:pthread$rtl.exe/SHARE
 python$build_out:[000000]python$shr.exe/SHARE
 GSMATCH=LEQUAL,1,0

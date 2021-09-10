@@ -24,6 +24,7 @@
 #include <unixio.h>
 #include <unixlib.h>
 
+#include "vms/vms_ptr32.h"
 #include "vms/vms_spawn_helper.h"
 #include "vms/vms_select.h"
 #include "vms/vms_sleep.h"
@@ -39,7 +40,7 @@ int vms_channel_lookup_by_name(char* name, unsigned short *channel) {
     if (name != NULL) {
         /* Assign the channel */
         /*--------------------*/
-        dev_desc.dsc$a_pointer = name;
+        dev_desc.dsc$a_pointer = (vms_ptr32)name;
         dev_desc.dsc$w_length = strlen(name);
         dev_desc.dsc$b_dtype = DSC$K_DTYPE_T;
         dev_desc.dsc$b_class = DSC$K_CLASS_S;
@@ -301,8 +302,8 @@ int vms_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds,
                         ILE3 item_list[2];
                         item_list[0].ile3$w_length = 4;
                         item_list[0].ile3$w_code = DVI$_DEVCLASS;
-                        item_list[0].ile3$ps_bufaddr = (void *)&mbx_char;
-                        item_list[0].ile3$ps_retlen_addr = (void *)&mbx_len;
+                        item_list[0].ile3$ps_bufaddr = (vms_ptr32)&mbx_char;
+                        item_list[0].ile3$ps_retlen_addr = (vms_ptr32)&mbx_len;
                         memset(item_list + 1, 0, sizeof(item_list[1]));
 
                         status = SYS$GETDVIW(EFN$C_ENF, pipe_array[pi].channel, 0, &item_list, 0, 0, 0, 0);

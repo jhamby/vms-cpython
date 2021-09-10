@@ -18,7 +18,9 @@
 #include <stsdef.h>
 #include <unixio.h>
 
+#include "vms_ptr32.h"
 #include "vms_mbx_util.h"
+
 int vms_channel_lookup(int fd, unsigned short *channel);
 int vms_channel_lookup_by_name(char* name, unsigned short *channel);
 
@@ -26,13 +28,13 @@ unsigned short simple_create_mbx(const char *name, int mbx_size) {
     unsigned short channel = 0;
     struct dsc$descriptor_s dsc_name, *pdsc_name = 0;
     if (name) {
-        dsc_name.dsc$a_pointer = (char*)name;
+        dsc_name.dsc$a_pointer = (vms_ptr32)name;
         dsc_name.dsc$w_length = strlen(name);
         dsc_name.dsc$b_dtype = DSC$K_DTYPE_T;
         dsc_name.dsc$b_class = DSC$K_CLASS_S;
         pdsc_name = &dsc_name;
     }
-    sys$crembx(0, &channel, mbx_size, 0, 0, PSL$C_USER, pdsc_name, 0, 0);
+    sys$crembx(0, &channel, mbx_size, 0, 0, PSL$C_USER, (vms_ptr32)pdsc_name, 0, 0);
     return channel;
 }
 
@@ -346,7 +348,7 @@ int vms_isapipe_by_name(char *name) {
             return 0;
         }
     }
-    if (ptr - name < 8 || ptr - name > 9) {
+    if (ptr < name + 8 || ptr > name + 9) {
         // amount of number must be 4 or 5
         return 0;
     }

@@ -46,6 +46,10 @@
 #include <stdio.h>  /* fprintf */
 #include <stdlib.h> /* getenv, rand_s */
 
+#ifdef __VMS
+#include "vms/vms_ptr32.h"
+#endif
+
 #ifdef _WIN32
 #  define getpid GetCurrentProcessId
 #else
@@ -164,7 +168,7 @@ typedef char ICHAR;
 #define ROUND_UP(n, sz) (((n) + ((sz)-1)) & ~((sz)-1))
 
 /* Do safe (NULL-aware) pointer arithmetic */
-#define EXPAT_SAFE_PTR_DIFF(p, q) (((p) && (q)) ? ((p) - (q)) : 0)
+#define EXPAT_SAFE_PTR_DIFF(p, q) (((p) && (q)) ? Py_PtrDiff((p), (q)) : 0)
 
 #include "internal.h"
 #include "xmltok.h"
@@ -503,7 +507,7 @@ static void parserInit(XML_Parser parser, const XML_Char *encodingName);
 
 #define poolStart(pool) ((pool)->start)
 #define poolEnd(pool) ((pool)->ptr)
-#define poolLength(pool) ((pool)->ptr - (pool)->start)
+#define poolLength(pool) Py_PtrDiff((pool)->ptr, (pool)->start)
 #define poolChop(pool) ((void)--(pool->ptr))
 #define poolLastChar(pool) (((pool)->ptr)[-1])
 #define poolDiscard(pool) ((pool)->ptr = (pool)->start)
@@ -1962,7 +1966,7 @@ XML_GetBuffer(XML_Parser parser, int len) {
         /* The buffer pointers cannot be NULL here; we have at least some bytes
          * in the buffer */
         memmove(parser->m_buffer, &parser->m_buffer[offset],
-                parser->m_bufferEnd - parser->m_bufferPtr + keep);
+                Py_PtrDiff(parser->m_bufferEnd, parser->m_bufferPtr + keep));
         parser->m_bufferEnd -= offset;
         parser->m_bufferPtr -= offset;
       }
@@ -2125,7 +2129,7 @@ XML_GetCurrentByteIndex(XML_Parser parser) {
     return -1;
   if (parser->m_eventPtr)
     return (XML_Index)(parser->m_parseEndByteIndex
-                       - (parser->m_parseEndPtr - parser->m_eventPtr));
+                       - Py_PtrDiff(parser->m_parseEndPtr, parser->m_eventPtr));
   return -1;
 }
 
@@ -2134,7 +2138,7 @@ XML_GetCurrentByteCount(XML_Parser parser) {
   if (parser == NULL)
     return 0;
   if (parser->m_eventEndPtr && parser->m_eventPtr)
-    return (int)(parser->m_eventEndPtr - parser->m_eventPtr);
+    return (int)Py_PtrDiff(parser->m_eventEndPtr, parser->m_eventPtr);
   return 0;
 }
 
@@ -2145,9 +2149,9 @@ XML_GetInputContext(XML_Parser parser, int *offset, int *size) {
     return NULL;
   if (parser->m_eventPtr && parser->m_buffer) {
     if (offset != NULL)
-      *offset = (int)(parser->m_eventPtr - parser->m_buffer);
+      *offset = (int)Py_PtrDiff(parser->m_eventPtr, parser->m_buffer);
     if (size != NULL)
-      *size = (int)(parser->m_bufferEnd - parser->m_buffer);
+      *size = (int)Py_PtrDiff(parser->m_bufferEnd, parser->m_buffer);
     return parser->m_buffer;
   }
 #else
@@ -2410,7 +2414,7 @@ storeRawNames(XML_Parser parser) {
        size of tag->buf is a multiple of sizeof(XML_Char).
     */
     bufSize = nameLen + ROUND_UP(tag->rawNameLength, sizeof(XML_Char));
-    if (bufSize > tag->bufEnd - tag->buf) {
+    if (bufSize > Py_PtrDiff(tag->bufEnd, tag->buf)) {
       char *temp = (char *)REALLOC(parser, tag->buf, bufSize);
       if (temp == NULL)
         return XML_FALSE;
@@ -2424,7 +2428,7 @@ storeRawNames(XML_Parser parser) {
       */
       if (tag->name.localPart)
         tag->name.localPart
-            = (XML_Char *)temp + (tag->name.localPart - (XML_Char *)tag->buf);
+            = (XML_Char *)temp + Py_PtrDiff(tag->name.localPart, (XML_Char *)tag->buf);
       tag->buf = temp;
       tag->bufEnd = temp + bufSize;
       rawNameBuf = temp + nameLen;
@@ -2727,13 +2731,13 @@ doContent(XML_Parser parser, int startTagLevel, const ENCODING *enc,
           const enum XML_Convert_Result convert_res
               = XmlConvert(enc, &fromPtr, rawNameEnd, (ICHAR **)&toPtr,
                            (ICHAR *)tag->bufEnd - 1);
-          convLen = (int)(toPtr - (XML_Char *)tag->buf);
+          convLen = (int)Py_PtrDiff(toPtr, (XML_Char *)tag->buf);
           if ((fromPtr >= rawNameEnd)
               || (convert_res == XML_CONVERT_INPUT_INCOMPLETE)) {
             tag->name.strLen = convLen;
             break;
           }
-          bufSize = (int)(tag->bufEnd - tag->buf) << 1;
+          bufSize = (int)Py_PtrDiff(tag->bufEnd, tag->buf) << 1;
           {
             char *temp = (char *)REALLOC(parser, tag->buf, bufSize);
             if (temp == NULL)
@@ -2924,11 +2928,11 @@ doContent(XML_Parser parser, int startTagLevel, const ENCODING *enc,
           XmlConvert(enc, &s, end, &dataPtr, (ICHAR *)parser->m_dataBufEnd);
           parser->m_characterDataHandler(
               parser->m_handlerArg, parser->m_dataBuf,
-              (int)(dataPtr - (ICHAR *)parser->m_dataBuf));
+              (int)Py_PtrDiff(dataPtr, (ICHAR *)parser->m_dataBuf));
         } else
           parser->m_characterDataHandler(
               parser->m_handlerArg, (XML_Char *)s,
-              (int)((XML_Char *)end - (XML_Char *)s));
+              (int)Py_PtrDiff((XML_Char *)end, (XML_Char *)s));
       } else if (parser->m_defaultHandler)
         reportDefault(parser, enc, s, end);
       /* We are at the end of the final buffer, should we check for
@@ -2954,7 +2958,7 @@ doContent(XML_Parser parser, int startTagLevel, const ENCODING *enc,
                 enc, &s, next, &dataPtr, (ICHAR *)parser->m_dataBufEnd);
             *eventEndPP = s;
             charDataHandler(parser->m_handlerArg, parser->m_dataBuf,
-                            (int)(dataPtr - (ICHAR *)parser->m_dataBuf));
+                            (int)Py_PtrDiff(dataPtr, (ICHAR *)parser->m_dataBuf));
             if ((convert_res == XML_CONVERT_COMPLETED)
                 || (convert_res == XML_CONVERT_INPUT_INCOMPLETE))
               break;
@@ -2962,7 +2966,7 @@ doContent(XML_Parser parser, int startTagLevel, const ENCODING *enc,
           }
         } else
           charDataHandler(parser->m_handlerArg, (XML_Char *)s,
-                          (int)((XML_Char *)next - (XML_Char *)s));
+                          (int)Py_PtrDiff((XML_Char *)next, (XML_Char *)s));
       } else if (parser->m_defaultHandler)
         reportDefault(parser, enc, s, next);
     } break;
@@ -3609,7 +3613,7 @@ doCdataSection(XML_Parser parser, const ENCODING *enc, const char **startPtr,
                 enc, &s, next, &dataPtr, (ICHAR *)parser->m_dataBufEnd);
             *eventEndPP = next;
             charDataHandler(parser->m_handlerArg, parser->m_dataBuf,
-                            (int)(dataPtr - (ICHAR *)parser->m_dataBuf));
+                            (int)Py_PtrDiff(dataPtr, (ICHAR *)parser->m_dataBuf));
             if ((convert_res == XML_CONVERT_COMPLETED)
                 || (convert_res == XML_CONVERT_INPUT_INCOMPLETE))
               break;
@@ -3617,7 +3621,7 @@ doCdataSection(XML_Parser parser, const ENCODING *enc, const char **startPtr,
           }
         } else
           charDataHandler(parser->m_handlerArg, (XML_Char *)s,
-                          (int)((XML_Char *)next - (XML_Char *)s));
+                          (int)Py_PtrDiff((XML_Char *)next, (XML_Char *)s));
       } else if (parser->m_defaultHandler)
         reportDefault(parser, enc, s, next);
     } break;
@@ -5188,7 +5192,7 @@ processInternalEntity(XML_Parser parser, ENTITY *entity, XML_Bool betweenDecl) {
 
   if (result == XML_ERROR_NONE) {
     if (textEnd != next && parser->m_parsingStatus.parsing == XML_SUSPENDED) {
-      entity->processed = (int)(next - textStart);
+      entity->processed = (int)Py_PtrDiff(next, textStart);
       parser->m_processor = internalEntityProcessor;
     } else {
       entity->open = XML_FALSE;
@@ -5234,7 +5238,7 @@ internalEntityProcessor(XML_Parser parser, const char *s, const char *end,
     return result;
   else if (textEnd != next
            && parser->m_parsingStatus.parsing == XML_SUSPENDED) {
-    entity->processed = (int)(next - (char *)entity->textPtr);
+    entity->processed = (int)Py_PtrDiff(next, (char *)entity->textPtr);
     return result;
   } else {
     entity->open = XML_FALSE;
@@ -5729,13 +5733,13 @@ reportDefault(XML_Parser parser, const ENCODING *enc, const char *s,
           = XmlConvert(enc, &s, end, &dataPtr, (ICHAR *)parser->m_dataBufEnd);
       *eventEndPP = s;
       parser->m_defaultHandler(parser->m_handlerArg, parser->m_dataBuf,
-                               (int)(dataPtr - (ICHAR *)parser->m_dataBuf));
+                               (int)Py_PtrDiff(dataPtr, (ICHAR *)parser->m_dataBuf));
       *eventPP = s;
     } while ((convert_res != XML_CONVERT_COMPLETED)
              && (convert_res != XML_CONVERT_INPUT_INCOMPLETE));
   } else
     parser->m_defaultHandler(parser->m_handlerArg, (XML_Char *)s,
-                             (int)((XML_Char *)end - (XML_Char *)s));
+                             (int)Py_PtrDiff((XML_Char *)end, (XML_Char *)s));
 }
 
 static int
@@ -6617,6 +6621,11 @@ poolStoreString(STRING_POOL *pool, const ENCODING *enc, const char *ptr,
   return pool->start;
 }
 
+# ifdef __VMS
+#  undef offsetof
+#  define offsetof(type, identifier) Py_PtrDiff((char *)&((type*)0L)->identifier, (char *)0L)
+# endif
+
 static size_t
 poolBytesToAllocateFor(int blockSize) {
   /* Unprotected math would be:
@@ -6657,14 +6666,14 @@ poolGrow(STRING_POOL *pool) {
       pool->ptr = pool->start;
       return XML_TRUE;
     }
-    if (pool->end - pool->start < pool->freeBlocks->size) {
+    if (Py_PtrDiff(pool->end, pool->start) < pool->freeBlocks->size) {
       BLOCK *tem = pool->freeBlocks->next;
       pool->freeBlocks->next = pool->blocks;
       pool->blocks = pool->freeBlocks;
       pool->freeBlocks = tem;
       memcpy(pool->blocks->s, pool->start,
-             (pool->end - pool->start) * sizeof(XML_Char));
-      pool->ptr = pool->blocks->s + (pool->ptr - pool->start);
+             Py_PtrDiff(pool->end, pool->start) * sizeof(XML_Char));
+      pool->ptr = pool->blocks->s + Py_PtrDiff(pool->ptr, pool->start);
       pool->start = pool->blocks->s;
       pool->end = pool->start + pool->blocks->size;
       return XML_TRUE;
@@ -6672,12 +6681,12 @@ poolGrow(STRING_POOL *pool) {
   }
   if (pool->blocks && pool->start == pool->blocks->s) {
     BLOCK *temp;
-    int blockSize = (int)((unsigned)(pool->end - pool->start) * 2U);
+    int blockSize = (int)((unsigned)Py_PtrDiff(pool->end, pool->start) * 2U);
     size_t bytesToAllocate;
 
     /* NOTE: Needs to be calculated prior to calling `realloc`
              to avoid dangling pointers: */
-    const ptrdiff_t offsetInsideBlock = pool->ptr - pool->start;
+    const ptrdiff_t offsetInsideBlock = Py_PtrDiff(pool->ptr, pool->start);
 
     if (blockSize < 0) {
       /* This condition traps a situation where either more than
@@ -6704,7 +6713,7 @@ poolGrow(STRING_POOL *pool) {
     pool->end = pool->start + blockSize;
   } else {
     BLOCK *tem;
-    int blockSize = (int)(pool->end - pool->start);
+    int blockSize = (int)Py_PtrDiff(pool->end, pool->start);
     size_t bytesToAllocate;
 
     if (blockSize < 0) {
@@ -6741,8 +6750,8 @@ poolGrow(STRING_POOL *pool) {
     tem->next = pool->blocks;
     pool->blocks = tem;
     if (pool->ptr != pool->start)
-      memcpy(tem->s, pool->start, (pool->ptr - pool->start) * sizeof(XML_Char));
-    pool->ptr = tem->s + (pool->ptr - pool->start);
+      memcpy(tem->s, pool->start, Py_PtrDiff(pool->ptr, pool->start) * sizeof(XML_Char));
+    pool->ptr = tem->s + Py_PtrDiff(pool->ptr, pool->start);
     pool->start = tem->s;
     pool->end = tem->s + blockSize;
   }

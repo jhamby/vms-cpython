@@ -494,7 +494,7 @@ state_fini(SRE_STATE* state)
 
 /* calculate offset from start of string */
 #define STATE_OFFSET(state, member)\
-    (((char*)(member) - (char*)(state)->beginning) / (state)->charsize)
+    (Py_PtrDiff((char*)(member), (char*)(state)->beginning) / (state)->charsize)
 
 LOCAL(PyObject*)
 getslice(int isbytes, const void *ptr,
@@ -1543,7 +1543,7 @@ _sre_compile_impl(PyObject *module, PyObject *pattern, int flags,
         skip = *code;                                   \
         VTRACE(("%lu (skip to %p)\n",                   \
                (unsigned long)skip, code+skip));        \
-        if (skip-adj > (uintptr_t)(end - code))      \
+        if (skip-adj > (uintptr_t)Py_PtrDiff(end, code))      \
             FAIL;                                       \
         code++;                                         \
     } while (0)
@@ -1577,7 +1577,7 @@ _validate_charset(SRE_CODE *code, SRE_CODE *end)
 
         case SRE_OP_CHARSET:
             offset = 256/SRE_CODE_BITS; /* 256-bit bitmap */
-            if (offset > (uintptr_t)(end - code))
+            if (offset > (uintptr_t)Py_PtrDiff(end, code))
                 FAIL;
             code += offset;
             break;
@@ -1585,7 +1585,7 @@ _validate_charset(SRE_CODE *code, SRE_CODE *end)
         case SRE_OP_BIGCHARSET:
             GET_ARG; /* Number of blocks */
             offset = 256/sizeof(SRE_CODE); /* 256-byte table */
-            if (offset > (uintptr_t)(end - code))
+            if (offset > (uintptr_t)Py_PtrDiff(end, code))
                 FAIL;
             /* Make sure that each byte points to a valid block */
             for (i = 0; i < 256; i++) {
@@ -1594,7 +1594,7 @@ _validate_charset(SRE_CODE *code, SRE_CODE *end)
             }
             code += offset;
             offset = arg * (256/SRE_CODE_BITS); /* 256-bit bitmap times arg */
-            if (offset > (uintptr_t)(end - code))
+            if (offset > (uintptr_t)Py_PtrDiff(end, code))
                 FAIL;
             code += offset;
             break;
@@ -1751,11 +1751,11 @@ _validate_inner(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
                     GET_ARG; prefix_len = arg;
                     GET_ARG;
                     /* Here comes the prefix string */
-                    if (prefix_len > (uintptr_t)(newcode - code))
+                    if (prefix_len > (uintptr_t)Py_PtrDiff(newcode, code))
                         FAIL;
                     code += prefix_len;
                     /* And here comes the overlap table */
-                    if (prefix_len > (uintptr_t)(newcode - code))
+                    if (prefix_len > (uintptr_t)Py_PtrDiff(newcode, code))
                         FAIL;
                     /* Each overlap value should be < prefix_len */
                     for (i = 0; i < prefix_len; i++) {
@@ -1886,7 +1886,7 @@ _validate_inner(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
                to allow arbitrary jumps anywhere in the code; so we just look
                for a JUMP opcode preceding our skip target.
             */
-            if (skip >= 3 && skip-3 < (uintptr_t)(end - code) &&
+            if (skip >= 3 && skip-3 < (uintptr_t)Py_PtrDiff(end, code) &&
                 code[skip-3] == SRE_OP_JUMP)
             {
                 VTRACE(("both then and else parts present\n"));
@@ -2449,13 +2449,13 @@ pattern_new_match(_sremodulestate* module_state,
         base = (char*) state->beginning;
         n = state->charsize;
 
-        match->mark[0] = ((char*) state->start - base) / n;
-        match->mark[1] = ((char*) state->ptr - base) / n;
+        match->mark[0] = Py_PtrDiff((char*) state->start, base) / n;
+        match->mark[1] = Py_PtrDiff((char*) state->ptr, base) / n;
 
         for (i = j = 0; i < pattern->groups; i++, j+=2)
             if (j+1 <= state->lastmark && state->mark[j] && state->mark[j+1]) {
-                match->mark[j+2] = ((char*) state->mark[j] - base) / n;
-                match->mark[j+3] = ((char*) state->mark[j+1] - base) / n;
+                match->mark[j+2] = Py_PtrDiff((char*) state->mark[j], base) / n;
+                match->mark[j+3] = Py_PtrDiff((char*) state->mark[j+1], base) / n;
             } else
                 match->mark[j+2] = match->mark[j+3] = -1; /* undefined */
 

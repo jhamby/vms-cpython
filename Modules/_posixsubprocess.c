@@ -62,6 +62,10 @@
 #endif
 
 #ifdef __VMS
+#include "vms/vms_ptr32.h"
+#endif
+
+#ifdef __VMS
 // OpenVMS defines NGROUPS_MAX as 0... WHAT?!
 #undef NGROUPS_MAX
 #define NGROUPS_MAX 64
@@ -530,7 +534,7 @@ exec_dcl(char *const argv[], int p2cread, int c2pwrite) {
     if (p2cread != -1) {
         if (getname(p2cread, input_name, 1)) {
             input.dsc$w_length = strlen(input_name);
-            input.dsc$a_pointer = (char *)input_name;
+            input.dsc$a_pointer = (vms_ptr32)input_name;
             input_ptr = &input;
         }
     }
@@ -538,7 +542,7 @@ exec_dcl(char *const argv[], int p2cread, int c2pwrite) {
     if (c2pwrite != -1) {
         if (getname(c2pwrite, output_name, 1)) {
             output.dsc$w_length = strlen(output_name);
-            output.dsc$a_pointer = (char *)output_name;
+            output.dsc$a_pointer = (vms_ptr32)output_name;
             output_ptr = &output;
         }
     }
@@ -564,7 +568,7 @@ exec_dcl(char *const argv[], int p2cread, int c2pwrite) {
     }
 
     execute.dsc$w_length = strlen(execute_str);
-    execute.dsc$a_pointer = (char *)execute_str;
+    execute.dsc$a_pointer = (vms_ptr32)execute_str;
 
     unsigned int *ppid, *pfinished;
     int *pstatus;
@@ -724,13 +728,46 @@ vms_child_exec(
 
     decc$set_child_standard_streams(p2cread, c2pwrite, errwrite);
     pid = vfork();
+    vms_ptr32_ptr32 argv32 = (vms_ptr32_ptr32)NULL;
+    vms_ptr32_ptr32 envp32 = (vms_ptr32_ptr32)NULL;
     if (pid == 0) {
+#if defined(__VMS) && __INITIAL_POINTER_SIZE == 64
+        int i = 0;
+        while(argv[i]) {
+            ++i;
+        }
+        argv32 = (vms_ptr32_ptr32)_malloc32((i + 1)*sizeof(vms_ptr32));
+        i = 0;
+        while(argv[i]) {
+            argv32[i] = (vms_ptr32)_malloc32(strlen(argv[i]) + 1);
+            strcpy(argv32[i], argv[i]);
+            ++i;
+        }
+        argv32[i] = (vms_ptr32)0;
+        if (envp) {
+            i = 0;
+            while(envp[i]) {
+                ++i;
+            }
+            envp32 = (vms_ptr32_ptr32)_malloc32((i + 1)*sizeof(vms_ptr32));
+            i = 0;
+            while(envp[i]) {
+                envp32[i] = (vms_ptr32)_malloc32(strlen(envp[i]) + 1);
+                strcpy(envp32[i], envp[i]);
+                ++i;
+            }
+            envp32[i] = (vms_ptr32)0;
+        }
+#else
+        argv32 = (vms_ptr32_ptr32)argv;
+        envp32 = (vms_ptr32_ptr32)envp;
+#endif
         for (int i = 0; exec_array[i] != NULL; ++i) {
             const char *executable = exec_array[i];
             if (envp) {
-                execve(executable, argv, envp);
+                execve(executable, (vms_ptr32)argv32, (vms_ptr32)envp32);
             } else {
-                execv(executable, argv);
+                execv(executable, (vms_ptr32)argv32);
             }
             if (errno != ENOENT && errno != ENOTDIR) {
                 break;
@@ -744,6 +781,22 @@ vms_child_exec(
     }
 
 egress:
+#if defined(__VMS) && __INITIAL_POINTER_SIZE == 64
+    if (argv32) {
+        int i = 0;
+        while(argv32[i]) {
+            free(argv32[i]);
+        }
+        free(argv32);
+    }
+    if (envp32) {
+        int i = 0;
+        while(envp32[i]) {
+            free(envp32[i]);
+        }
+        free(envp32);
+    }
+#endif
     // Test if exec() is failed
     if (exec_error) {
         if (pid > 0) {

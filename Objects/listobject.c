@@ -1234,7 +1234,7 @@ binarysort(MergeState *ms, sortslice lo, PyObject **hi, PyObject **start)
          */
         assert(l < r);
         do {
-            p = l + ((r - l) >> 1);
+            p = l + (Py_PtrDiff(r, l) >> 1);
             IFLT(pivot, *p)
                 r = p;
             else
@@ -1252,7 +1252,7 @@ binarysort(MergeState *ms, sortslice lo, PyObject **hi, PyObject **start)
             *p = *(p-1);
         *l = pivot;
         if (lo.values != NULL) {
-            Py_ssize_t offset = lo.values - lo.keys;
+            Py_ssize_t offset = Py_PtrDiff(lo.values, lo.keys);
             p = start + offset;
             pivot = *p;
             l += offset;

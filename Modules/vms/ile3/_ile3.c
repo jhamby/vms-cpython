@@ -7,6 +7,7 @@
 #include <descrip.h>
 #include <starlet.h>
 #include <ssdef.h>
+#include <iledef.h>
 
 #ifndef MIN
 #define MIN(a,b) ((a)<(b)?(a):(b))
@@ -21,13 +22,13 @@ static void ILE3_dealloc(ILE3Object * self)
         self->types = NULL;
     }
     if (self->list != NULL) {
-        ILE3 *ptr = self->list;
+        ILEB_64 *ptr = self->list;
         while(self->size) {
-            if (ptr->ile3$ps_bufaddr) {
-                PyMem_Free(ptr->ile3$ps_bufaddr);
+            if (ptr->ileb_64$pq_bufaddr) {
+                PyMem_Free(ptr->ileb_64$pq_bufaddr);
             }
-            if (ptr->ile3$ps_retlen_addr) {
-                PyMem_Free(ptr->ile3$ps_retlen_addr);
+            if (ptr->ileb_64$pq_retlen_addr) {
+                PyMem_Free(ptr->ileb_64$pq_retlen_addr);
             }
             ++ptr;
             --self->size;
@@ -38,11 +39,13 @@ static void ILE3_dealloc(ILE3Object * self)
     PyObject_Del(self);
 }
 
-static void init_item(ILE3 *item) {
-    item->ile3$w_length = 0;
-    item->ile3$w_code = 0;
-    item->ile3$ps_bufaddr = NULL;
-    item->ile3$ps_retlen_addr = NULL;
+static void init_item(ILEB_64 *item) {
+    item->ileb_64$w_mbo = 1;
+    item->ileb_64$l_mbmo = -1;
+    item->ileb_64$q_length = 0;
+    item->ileb_64$q_length = 0;
+    item->ileb_64$pq_bufaddr = NULL;
+    item->ileb_64$pq_retlen_addr = NULL;
 }
 
 static int size_from_type(int type) {
@@ -114,7 +117,7 @@ ILE3_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         self->allocated = 1;
         self->size = 0;
         self->pos = -1;
-        self->list = PyMem_Calloc(1, sizeof(ILE3));
+        self->list = PyMem_Calloc(1, sizeof(ILEB_64));
         if (self->list == NULL) {
             Py_DECREF(self);
             return NULL;
@@ -140,16 +143,16 @@ static PyObject *ILE3_iter(ILE3Object *self)
 
 static PyObject *
 _value_from_item(
-    ILE3 *item,
+    ILEB_64 *item,
     long type)
 {
     long size = 0;
     if (type == DSC$K_DTYPE_T) {
-        size = *(item->ile3$ps_retlen_addr);
-        return PyUnicode_FromStringAndSize((char*)item->ile3$ps_bufaddr, size);
+        size = *(item->ileb_64$pq_retlen_addr);
+        return PyUnicode_FromStringAndSize((char*)item->ileb_64$pq_bufaddr, size);
     } else if (type == DSC$K_DTYPE_VT) {
-        size = *(unsigned char*)item->ile3$ps_bufaddr;
-        return PyUnicode_FromStringAndSize(((char*)item->ile3$ps_bufaddr)+1, size);
+        size = *(unsigned char*)item->ileb_64$pq_bufaddr;
+        return PyUnicode_FromStringAndSize(((char*)item->ileb_64$pq_bufaddr)+1, size);
     }
     size = size_from_type(type);
     if (size == 0) {
@@ -157,7 +160,7 @@ _value_from_item(
         return NULL;
     }
     return _PyLong_FromByteArray(
-        (unsigned char*)item->ile3$ps_bufaddr,
+        (unsigned char*)item->ileb_64$pq_bufaddr,
         size,
         1,
         sign_from_type(type));
@@ -169,11 +172,11 @@ ILE3_getat_c(
     long pos)
 {
     if ((unsigned int)pos < self->size) {
-        ILE3 *item = self->list + pos;
+        ILEB_64 *item = (ILEB_64*)self->list + pos;
         long type = *(self->types + pos);
         PyObject *pValue = _value_from_item(item, type);
         if (pValue) {
-            return Py_BuildValue("(H,i,O)", item->ile3$w_code, type, pValue);
+            return Py_BuildValue("(H,i,O)", item->ileb_64$q_length, type, pValue);
         }
     } else {
         PyErr_SetNone(PyExc_IndexError);
@@ -197,12 +200,12 @@ static PyObject *ILE3_getat_bytes(ILE3Object *self, PyObject *args) {
     }
     long pos = PyLong_AsLong(args);
     if ((unsigned int)pos < self->size) {
-        ILE3 *item = self->list + pos;
+        ILEB_64 *item = (ILEB_64*)self->list + pos;
         long type = *(self->types + pos);
-        long size = *(item->ile3$ps_retlen_addr);
-        PyObject *pValue = PyBytes_FromStringAndSize((char*)item->ile3$ps_bufaddr, size);
+        long size = *(item->ileb_64$pq_retlen_addr);
+        PyObject *pValue = PyBytes_FromStringAndSize((char*)item->ileb_64$pq_bufaddr, size);
         if (pValue) {
-            return Py_BuildValue("(H,i,O)", item->ile3$w_code, type, pValue);
+            return Py_BuildValue("(H,i,O)", item->ileb_64$q_length, type, pValue);
         }
     } else {
         PyErr_SetNone(PyExc_IndexError);
@@ -228,11 +231,11 @@ static int ILE3_increment(ILE3Object *self) {
     ++self->size;
     if (self->size >= self->allocated) {
         self->allocated *= 2;
-        self->list = PyMem_Realloc(self->list, self->allocated * sizeof(ILE3));
+        self->list = PyMem_Realloc(self->list, self->allocated * sizeof(ILEB_64));
         self->types = PyMem_Realloc(self->types, self->allocated * sizeof(int));
     }
     if (self->list && self->types) {
-        init_item(self->list + self->size);
+        init_item((ILEB_64*)self->list + self->size);
         return 0;
     }
     PyErr_SetNone(PyExc_MemoryError);
@@ -242,14 +245,14 @@ static int ILE3_increment(ILE3Object *self) {
 static int ILE3_decrement(ILE3Object *self) {
     if (self->size > 0) {
         --self->size;
-        ILE3 *ptr = self->list + self->size;
-        if (ptr->ile3$ps_bufaddr) {
-            PyMem_Free(ptr->ile3$ps_bufaddr);
-            ptr->ile3$ps_bufaddr = NULL;
+        ILEB_64 *ptr = (ILEB_64*)self->list + self->size;
+        if (ptr->ileb_64$pq_bufaddr) {
+            PyMem_Free(ptr->ileb_64$pq_bufaddr);
+            ptr->ileb_64$pq_bufaddr = NULL;
         }
-        if (ptr->ile3$ps_retlen_addr) {
-            PyMem_Free(ptr->ile3$ps_retlen_addr);
-            ptr->ile3$ps_retlen_addr = NULL;
+        if (ptr->ileb_64$pq_retlen_addr) {
+            PyMem_Free(ptr->ileb_64$pq_retlen_addr);
+            ptr->ileb_64$pq_retlen_addr = NULL;
         }
         return 0;
     }
@@ -276,11 +279,11 @@ ILE3_append(
         return NULL;
     }
 
-    ILE3 *item = self->list + (self->size - 1);
+    ILEB_64 *item = (ILEB_64*)self->list + (self->size - 1);
 
-    item->ile3$w_code = PyLong_AsLong(args[0]);
-    item->ile3$ps_retlen_addr = PyMem_Malloc(sizeof(short));
-    if (item->ile3$ps_retlen_addr == NULL) {
+    item->ileb_64$q_length = PyLong_AsLong(args[0]);
+    item->ileb_64$pq_retlen_addr = PyMem_Malloc(sizeof(short));
+    if (item->ileb_64$pq_retlen_addr == NULL) {
         ILE3_decrement(self);
         PyErr_SetNone(PyExc_MemoryError);
         return NULL;
@@ -348,10 +351,10 @@ ILE3_append(
         }
     }
 
-    *item->ile3$ps_retlen_addr = size;
-    item->ile3$w_length = size;
-    item->ile3$ps_bufaddr = PyMem_Malloc(size + 1);
-    if (item->ile3$ps_bufaddr == NULL) {
+    *item->ileb_64$pq_retlen_addr = size;
+    item->ileb_64$q_length = size;
+    item->ileb_64$pq_bufaddr = PyMem_Malloc(size + 1);
+    if (item->ileb_64$pq_bufaddr == NULL) {
         PyErr_SetNone(PyExc_MemoryError);
         ILE3_decrement(self);
         return NULL;
@@ -359,23 +362,23 @@ ILE3_append(
 
     if (type == DSC$K_DTYPE_T) {
         if (pvalue) {
-            memcpy(item->ile3$ps_bufaddr, pvalue, size);
+            memcpy(item->ileb_64$pq_bufaddr, pvalue, size);
         } else {
-            memset(item->ile3$ps_bufaddr, ' ', size);
+            memset(item->ileb_64$pq_bufaddr, ' ', size);
         }
-        ((char*)item->ile3$ps_bufaddr)[size] = 0;
+        ((char*)item->ileb_64$pq_bufaddr)[size] = 0;
     } else if (type == DSC$K_DTYPE_VT) {
-        *(unsigned char*)item->ile3$ps_bufaddr = (unsigned char)size;
+        *(unsigned char*)item->ileb_64$pq_bufaddr = (unsigned char)size;
         if (pvalue) {
-            memcpy(((char*)item->ile3$ps_bufaddr) + 1, pvalue, size);
+            memcpy(((char*)item->ileb_64$pq_bufaddr) + 1, pvalue, size);
         } else {
-            memset(((char*)item->ile3$ps_bufaddr) + 1, ' ', size);
+            memset(((char*)item->ileb_64$pq_bufaddr) + 1, ' ', size);
         }
     } else {
         if (pvalue) {
-            memcpy(item->ile3$ps_bufaddr, pvalue, size);
+            memcpy(item->ileb_64$pq_bufaddr, pvalue, size);
         } else {
-            memset(item->ile3$ps_bufaddr, 0, size);
+            memset(item->ileb_64$pq_bufaddr, 0, size);
         }
     }
     *(self->types + (self->size - 1)) = type;
@@ -388,7 +391,7 @@ ILE3_item(
     Py_ssize_t i)
 {
     if ((size_t)i < self->size) {
-        ILE3 *item = self->list + i;
+        ILEB_64 *item = (ILEB_64*)self->list + i;
         long type = *(self->types + i);
         return _value_from_item(item, type);
     }

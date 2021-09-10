@@ -128,8 +128,13 @@ const char *mpd_version(void);
 #define MPD_BITS_PER_UINT 64
 typedef uint64_t mpd_uint_t;  /* unsigned mod type */
 
+#if defined(__VMS) && __INITIAL_POINTER_SIZE == 64
+#define MPD_SIZE_MAX UINT64_MAX
+typedef uint64_t mpd_size_t;
+#else
 #define MPD_SIZE_MAX SIZE_MAX
 typedef size_t mpd_size_t; /* unsigned size type */
+#endif
 
 /* type for exp, digits, len, prec */
 #define MPD_SSIZE_MAX INT64_MAX

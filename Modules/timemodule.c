@@ -62,6 +62,10 @@
 
 #define SEC_TO_NS (1000 * 1000 * 1000)
 
+#ifdef __VMS
+#include "vms/vms_ptr32.h"
+#endif
+
 /* Forward declarations */
 static int pysleep(_PyTime_t);
 
@@ -586,7 +590,7 @@ gettmarg(PyObject *args, struct tm *p, const char *format)
         PyObject *item;
         item = PyStructSequence_GET_ITEM(args, 9);
         if (item != Py_None) {
-            p->tm_zone = (char *)PyUnicode_AsUTF8(item);
+            p->tm_zone = (vms_ptr32)PyUnicode_AsUTF8(item);
             if (p->tm_zone == NULL) {
                 return 0;
             }

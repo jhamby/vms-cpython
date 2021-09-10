@@ -1043,6 +1043,8 @@
    void fprintf(FILE *, char *, ...);) *and* <stdarg.h> */
 #define HAVE_STDARG_PROTOTYPES
 
+#define HAVE_STDDEF_H 1
+
 /* Define to 1 if you have the <stdint.h> header file. */
 #define HAVE_STDINT_H 1
 
@@ -1493,7 +1495,7 @@
 #define SIZEOF_UINTPTR_T 8
 
 /* The size of `void *', as computed by sizeof. */
-#define SIZEOF_VOID_P 4
+#define SIZEOF_VOID_P 8
 
 /* The size of `wchar_t', as computed by sizeof. */
 #define SIZEOF_WCHAR_T 4

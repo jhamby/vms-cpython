@@ -16,6 +16,8 @@
 #include <string.h>
 #include <rms.h>
 
+#include "vms/vms_ptr32.h"
+
 #define PYRMS_M_OPEN 1
 
 typedef struct {
@@ -91,7 +93,7 @@ static void getmsg(unsigned int cond, char *buf, int buflen)
     bufD.dsc$w_length = buflen - 1;
     bufD.dsc$b_dtype = DSC$K_DTYPE_T;
     bufD.dsc$b_class = DSC$K_CLASS_S;
-    bufD.dsc$a_pointer = buf;
+    bufD.dsc$a_pointer = (vms_ptr32)buf;
 
     status = sys$getmsg(cond, &msglen, &bufD, 15, 0);
 
@@ -116,27 +118,27 @@ fill(rms_file_t * self, char *fn, int access, int share, unsigned int fop)
     self->flags = 0;
     self->fab.fab$b_fac = access;
     self->fab.fab$b_shr = share;
-    self->fab.fab$l_fna = (char *) -1;
+    self->fab.fab$l_fna = (vms_ptr32) -1;
     self->fab.fab$b_fns = 0;
     self->fab.fab$l_fop = fop;
-    self->fab.fab$l_xab = (void *) &self->sum;
+    self->fab.fab$l_xab = (vms_ptr32) &self->sum;
 
-    self->fab.fab$l_naml = (void *) &self->naml;
+    self->fab.fab$l_naml = (vms_ptr32) &self->naml;
 
     strncpy(self->long_filename, fn, sizeof(self->long_filename) - 1);
     self->long_filename[sizeof(self->long_filename) - 1] = '\0';
 
-    self->naml.naml$l_long_filename = (void *) self->long_filename;
+    self->naml.naml$l_long_filename = (vms_ptr32) self->long_filename;
     self->naml.naml$l_long_filename_size = strlen(self->long_filename);
 
-    self->naml.naml$l_esa = (void *) self->esa;
+    self->naml.naml$l_esa = (vms_ptr32) self->esa;
     self->naml.naml$b_ess = sizeof(self->esa) - 1;
-    self->naml.naml$l_rsa = (void *) self->rsa;
+    self->naml.naml$l_rsa = (vms_ptr32) self->rsa;
     self->naml.naml$b_rss = sizeof(self->rsa) - 1;
 
-    self->naml.naml$l_long_expand = (void *) self->long_esa;
+    self->naml.naml$l_long_expand = (vms_ptr32) self->long_esa;
     self->naml.naml$l_long_expand_alloc = sizeof(self->long_esa) - 1;
-    self->naml.naml$l_long_result = (void *) self->long_rsa;
+    self->naml.naml$l_long_result = (vms_ptr32) self->long_rsa;
     self->naml.naml$l_long_result_alloc = sizeof(self->long_rsa) - 1;
 
     self->naml.naml$v_synchk = 0;	        // Have $PARSE do directory existence check
@@ -151,9 +153,9 @@ static unsigned int _open(rms_file_t * self)
     int i;
     XABKEYDEF *key;
     XABALLDEF *area;
-    void **xab_chain;
+    vms_ptr32* xab_chain;
 
-    status = sys$open((void *) &self->fab);
+    status = sys$open((vms_ptr32) &self->fab);
 
     if (!OKAY(status)) {
 	return (status);
@@ -163,7 +165,7 @@ static unsigned int _open(rms_file_t * self)
 	return (RMS$_ORG);
     }
 
-    xab_chain = (void *) &self->fab.fab$l_xab;
+    xab_chain = (vms_ptr32*) &self->fab.fab$l_xab;
 
     i = self->sum.xab$b_nok;
 
@@ -172,7 +174,7 @@ static unsigned int _open(rms_file_t * self)
 	*key = cc$rms_xabkey;
 	key->xab$b_ref = i;
 	key->xab$l_nxt = *xab_chain;
-	*xab_chain = key;
+	*xab_chain = (vms_ptr32)key;
 	key++;
     }
 
@@ -182,11 +184,11 @@ static unsigned int _open(rms_file_t * self)
 	*area = cc$rms_xaball;
 	area->xab$b_aid = i;
 	area->xab$l_nxt = *xab_chain;
-	*xab_chain = area;
+	*xab_chain = (vms_ptr32)area;
 	area++;
     }
 
-    status = sys$display((void *) &self->fab);
+    status = sys$display((vms_ptr32) &self->fab);
 
     if (!OKAY(status)) {
 	return (status);
@@ -201,7 +203,7 @@ static unsigned int _open(rms_file_t * self)
 
     self->flags |= PYRMS_M_OPEN;
 
-    self->rab.rab$l_fab = (void *) &self->fab;
+    self->rab.rab$l_fab = (vms_ptr32) &self->fab;
 
     /* default to primary index */
 
@@ -210,7 +212,7 @@ static unsigned int _open(rms_file_t * self)
     self->rab.rab$l_ubf = NULL;
     self->rab.rab$w_usz = self->fab.fab$w_mrs;
 
-    return (sys$connect((void *) &self->rab));
+    return (sys$connect((vms_ptr32) &self->rab));
 }
 
 
@@ -218,31 +220,31 @@ static unsigned int _close(rms_file_t * self)
 {
     unsigned int status;
 
-    status = sys$disconnect((void *) &self->rab);
+    status = sys$disconnect((vms_ptr32) &self->rab);
 
     if (!OKAY(status)) {
 	return (status);
     }
 
-    return (sys$close((void *) &self->fab));
+    return (sys$close((vms_ptr32) &self->fab));
 }
 
 
 static unsigned int _flush(rms_file_t * self)
 {
-    return (sys$flush((void *) &self->rab));
+    return (sys$flush((vms_ptr32) &self->rab));
 }
 
 
 static unsigned int _free(rms_file_t * self)
 {
-    return (sys$free((void *) &self->rab));
+    return (sys$free((vms_ptr32) &self->rab));
 }
 
 
 static unsigned int _release(rms_file_t * self)
 {
-    return (sys$release((void *) &self->rab));
+    return (sys$release((vms_ptr32) &self->rab));
 }
 
 
@@ -260,17 +262,17 @@ static unsigned int _usekey(rms_file_t * self, int keynum)
 static int _put(rms_file_t * self, char *buf, int len)
 {
     self->rab.rab$b_rac = RAB$C_KEY;
-    self->rab.rab$l_rbf = buf;
+    self->rab.rab$l_rbf = (vms_ptr32)buf;
     self->rab.rab$w_rsz = len;
-    return (sys$put((void *) &self->rab));
+    return (sys$put((vms_ptr32) &self->rab));
 }
 
 
 static unsigned int _update(rms_file_t * self, char *buf, int len)
 {
-    self->rab.rab$l_rbf = buf;
+    self->rab.rab$l_rbf = (vms_ptr32)buf;
     self->rab.rab$w_rsz = len;
-    return (sys$update((void *) &self->rab));
+    return (sys$update((vms_ptr32) &self->rab));
 }
 
 
@@ -280,16 +282,16 @@ static unsigned int _fetch(rms_file_t * self, char *key, int len,
     unsigned int status;
 
     if (key) {
-	self->rab.rab$l_kbf = key;
+	self->rab.rab$l_kbf = (vms_ptr32)key;
 	self->rab.rab$b_ksz = len;
 	self->rab.rab$b_rac = RAB$C_KEY;
     } else {
 	self->rab.rab$b_rac = RAB$C_SEQ;
     }
 
-    self->rab.rab$l_ubf = (void *) buf;
+    self->rab.rab$l_ubf = (vms_ptr32) buf;
 
-    status = sys$get((void *) &self->rab);
+    status = sys$get((vms_ptr32) &self->rab);
 
     if (!OKAY(status)) {
 	return (status);
@@ -303,14 +305,14 @@ static unsigned int _fetch(rms_file_t * self, char *key, int len,
 static unsigned int _find(rms_file_t * self, char *key, int len)
 {
     if (key) {
-	self->rab.rab$l_kbf = key;
+	self->rab.rab$l_kbf = (vms_ptr32)key;
 	self->rab.rab$b_ksz = len;
 	self->rab.rab$b_rac = RAB$C_KEY;
     } else {
 	self->rab.rab$b_rac = RAB$C_SEQ;
     }
 
-    return (sys$find((void *) &self->rab));
+    return (sys$find((vms_ptr32) &self->rab));
 }
 
 
@@ -319,11 +321,11 @@ static unsigned int _delete(rms_file_t * self, char *key, int len)
     unsigned int status;
 
     if (key) {
-	self->rab.rab$l_kbf = key;
+	self->rab.rab$l_kbf = (vms_ptr32)key;
 	self->rab.rab$b_ksz = len;
 	self->rab.rab$b_rac = RAB$C_KEY;
 
-	status = sys$find((void *) &self->rab);
+	status = sys$find((vms_ptr32) &self->rab);
 
 	if (!OKAY(status)) {
 	    return (status);
@@ -332,7 +334,7 @@ static unsigned int _delete(rms_file_t * self, char *key, int len)
 	self->rab.rab$b_rac = RAB$C_SEQ;
     }
 
-    return (sys$delete((void *) &self->rab));
+    return (sys$delete((vms_ptr32) &self->rab));
 }
 
 static unsigned int _setrop(rms_file_t * self, int rop)
@@ -559,7 +561,7 @@ static PyObject *RMS_rewind(rms_file_t * self, PyObject * args,
 	}
     }
 
-    status = sys$rewind((void *) &self->rab, 0, 0);
+    status = sys$rewind((vms_ptr32) &self->rab, 0, 0);
 
     if (!OKAY(status)) {
 	getmsg(status, msg, sizeof(msg));
@@ -1172,10 +1174,10 @@ static unsigned int _getrmsattr(char *name, int attr, int *res)
     if (attr == RMSATTR_K_LRL) {
 	adc_Assert((fhc = malloc(sizeof(XABFHCDEF))));
 	*fhc = cc$rms_xabfhc;
-	fo->fab.fab$l_xab = fhc;
+	fo->fab.fab$l_xab = (vms_ptr32)fhc;
     }
 
-    status = sys$open((void *) &fo->fab);
+    status = sys$open((vms_ptr32) &fo->fab);
 
     if (!OKAY(status)) {
 	if (attr == RMSATTR_K_LRL) {
@@ -1185,7 +1187,7 @@ static unsigned int _getrmsattr(char *name, int attr, int *res)
 	return (status);
     }
 
-    status = sys$display((void *) &fo->fab);
+    status = sys$display((vms_ptr32) &fo->fab);
 
     if (!OKAY(status)) {
 	free(fo);
@@ -1215,7 +1217,7 @@ static unsigned int _getrmsattr(char *name, int attr, int *res)
 	break;
     }
 
-    status = sys$close((void *) &fo->fab);
+    status = sys$close((vms_ptr32) &fo->fab);
 
     if (attr == RMSATTR_K_LRL) {
 	free(fhc);
@@ -1272,7 +1274,7 @@ _parse(char *path, char *node, char *dev, char *dir, char *name,
     fo = PyMem_NEW(rms_file_t, 1);
     fill(fo, path, fac, shr, fop);
 
-    status = sys$parse((void *) &fo->fab);
+    status = sys$parse((vms_ptr32) &fo->fab);
 
     if (!OKAY(status)) {
 	PyMem_Free(fo);

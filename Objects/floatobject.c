@@ -943,7 +943,7 @@ double_round(double x, int ndigits) {
 
     /* Get new buffer if shortbuf is too small.  Space needed <= buf_end -
     buf + 8: (1 extra for '0', 1 for sign, 5 for exp, 1 for '\0').  */
-    buflen = buf_end - buf;
+    buflen = Py_PtrDiff(buf_end, buf);
     if (buflen + 8 > mybuflen) {
         mybuflen = buflen+8;
         mybuf = (char *)PyMem_Malloc(mybuflen);
@@ -1379,8 +1379,8 @@ float_fromhex(PyTypeObject *type, PyObject *string)
         coeff_end = s;
 
     /* ndigits = total # of hex digits; fdigits = # after point */
-    ndigits = coeff_end - coeff_start;
-    fdigits = coeff_end - s_store;
+    ndigits = Py_PtrDiff(coeff_end, coeff_start);
+    fdigits = Py_PtrDiff(coeff_end, s_store);
     if (ndigits == 0)
         goto parse_error;
     if (ndigits > Py_MIN(DBL_MIN_EXP - DBL_MANT_DIG - LONG_MIN/2,

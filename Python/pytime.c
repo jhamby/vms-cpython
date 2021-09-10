@@ -1,4 +1,5 @@
 #include "Python.h"
+
 #ifdef MS_WINDOWS
 #include <winsock2.h>         /* struct timeval */
 #endif
@@ -33,6 +34,17 @@
 /* Conversion from nanoseconds */
 #define NS_TO_MS (1000 * 1000)
 #define NS_TO_US (1000)
+
+#ifdef __VMS
+#ifdef __INITIAL_POINTER_SIZE
+#pragma __required_pointer_size __save
+#pragma __required_pointer_size __short
+    typedef struct tm * vms_sys_ptr_to_tm;
+#pragma __required_pointer_size __restore
+#else
+    typedef struct tm * vms_sys_ptr_to_tm;
+#endif
+#endif
 
 static void
 error_time_t_overflow(void)
@@ -1146,7 +1158,7 @@ _PyTime_localtime(time_t t, struct tm *tm)
 #endif
 
     errno = 0;
-    if (localtime_r(&t, tm) == NULL) {
+    if (localtime_r(&t, (vms_sys_ptr_to_tm)tm) == NULL) {
         if (errno == 0) {
             errno = EINVAL;
         }
@@ -1171,7 +1183,7 @@ _PyTime_gmtime(time_t t, struct tm *tm)
     }
     return 0;
 #else /* !MS_WINDOWS */
-    if (gmtime_r(&t, tm) == NULL) {
+    if (gmtime_r(&t, (vms_sys_ptr_to_tm)tm) == NULL) {
 #ifdef EINVAL
         if (errno == 0) {
             errno = EINVAL;

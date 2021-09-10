@@ -15,6 +15,10 @@
 #include <stropts.h>
 #endif
 
+#ifdef __VMS
+#include "vms/vms_ptr32.h"
+#endif
+
 /*[clinic input]
 module fcntl
 [clinic start generated code]*/
@@ -199,11 +203,11 @@ fcntl_ioctl_impl(PyObject *module, int fd, unsigned int code,
             }
             if (buf == arg) {
                 Py_BEGIN_ALLOW_THREADS /* think array.resize() */
-                ret = ioctl(fd, code, arg);
+                ret = ioctl(fd, code, (vms_ptr32)arg);
                 Py_END_ALLOW_THREADS
             }
             else {
-                ret = ioctl(fd, code, arg);
+                ret = ioctl(fd, code, (vms_ptr32)arg);
             }
             if (mutate_arg && (len <= IOCTL_BUFSZ)) {
                 memcpy(str, buf, len);
@@ -256,7 +260,7 @@ fcntl_ioctl_impl(PyObject *module, int fd, unsigned int code,
     }
     Py_BEGIN_ALLOW_THREADS
     #ifdef __VMS
-    ret = ioctl(fd, code, (void*)arg);
+    ret = ioctl(fd, code, (vms_ptr32)arg);
     #else
     ret = ioctl(fd, code, arg);
     #endif

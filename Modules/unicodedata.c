@@ -1240,7 +1240,7 @@ _getcode(PyObject* self,
         pos += len;
         find_syllable(pos, &len, &T, TCount, 2);
         pos += len;
-        if (L != -1 && V != -1 && T != -1 && pos-name == namelen) {
+        if (L != -1 && V != -1 && T != -1 && Py_PtrDiff(pos, name) == namelen) {
             *code = SBase + (L*VCount+V)*TCount + T;
             return 1;
         }

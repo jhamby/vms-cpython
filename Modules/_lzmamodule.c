@@ -995,8 +995,8 @@ decompress(Decompressor *d, uint8_t *data, size_t len, Py_ssize_t max_length)
         size_t avail_now, avail_total;
 
         /* Number of bytes we can append to input buffer */
-        avail_now = (d->input_buffer + d->input_buffer_size)
-            - (lzs->next_in + lzs->avail_in);
+        avail_now = Py_PtrDiff(d->input_buffer + d->input_buffer_size,
+            lzs->next_in + lzs->avail_in);
 
         /* Number of bytes we can append if we move existing
            contents to beginning of buffer (overwriting
@@ -1004,7 +1004,7 @@ decompress(Decompressor *d, uint8_t *data, size_t len, Py_ssize_t max_length)
         avail_total = d->input_buffer_size - lzs->avail_in;
 
         if (avail_total < len) {
-            size_t offset = lzs->next_in - d->input_buffer;
+            size_t offset = Py_PtrDiff(lzs->next_in, d->input_buffer);
             uint8_t *tmp;
             size_t new_size = d->input_buffer_size + len - avail_now;
 

@@ -646,7 +646,7 @@ _Py_DumpDecimal(int fd, size_t value)
         value /= 10;
     } while (value);
 
-    _Py_write_noraise(fd, ptr, end - ptr);
+    _Py_write_noraise(fd, ptr, Py_PtrDiff(end, ptr));
 }
 
 /* Format an integer as hexadecimal with width digits into fd file descriptor.
@@ -669,9 +669,9 @@ _Py_DumpHexadecimal(int fd, uintptr_t value, Py_ssize_t width)
         assert(ptr >= buffer);
         *ptr = Py_hexdigits[value & 15];
         value >>= 4;
-    } while ((end - ptr) < width || value);
+    } while (Py_PtrDiff(end, ptr) < width || value);
 
-    _Py_write_noraise(fd, ptr, end - ptr);
+    _Py_write_noraise(fd, ptr, Py_PtrDiff(end, ptr));
 }
 
 void

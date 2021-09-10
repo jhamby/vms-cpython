@@ -827,7 +827,7 @@ complex_from_string_inner(const char *s, Py_ssize_t len, void *type)
     }
 
     /* we should now be at the end of the string */
-    if (s-start != len)
+    if (Py_PtrDiff(s, start) != len)
         goto parse_error;
 
     return complex_subtype_from_doubles((PyTypeObject *)type, x, y);

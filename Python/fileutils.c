@@ -424,7 +424,7 @@ decode_ascii(const char *arg, wchar_t **wstr, size_t *wlen,
             if (!surrogateescape) {
                 PyMem_RawFree(res);
                 if (wlen) {
-                    *wlen = in - (unsigned char*)arg;
+                    *wlen = Py_PtrDiff(in, (unsigned char*)arg);
                 }
                 if (reason) {
                     *reason = "decoding error";
@@ -437,7 +437,7 @@ decode_ascii(const char *arg, wchar_t **wstr, size_t *wlen,
     *out = 0;
 
     if (wlen != NULL) {
-        *wlen = out - res;
+        *wlen = Py_PtrDiff(out, res);
     }
     *wstr = res;
     return 0;
@@ -546,7 +546,7 @@ decode_current_locale(const char* arg, wchar_t **wstr, size_t *wlen,
         out++;
     }
     if (wlen != NULL) {
-        *wlen = out - res;
+        *wlen = Py_PtrDiff(out, res);
     }
     *wstr = res;
     return 0;
@@ -554,7 +554,7 @@ decode_current_locale(const char* arg, wchar_t **wstr, size_t *wlen,
 decode_error:
     PyMem_RawFree(res);
     if (wlen) {
-        *wlen = in - (unsigned char*)arg;
+        *wlen = Py_PtrDiff(in, (unsigned char*)arg);
     }
     if (reason) {
         *reason = "decoding error";

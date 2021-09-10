@@ -660,7 +660,7 @@ print_error_text(PyObject *f, Py_ssize_t offset, Py_ssize_t end_offset, PyObject
         if (nl == NULL) {
             break;
         }
-        Py_ssize_t inl = nl - text;
+        Py_ssize_t inl = Py_PtrDiff(nl, text);
         if (inl >= offset) {
             break;
         }

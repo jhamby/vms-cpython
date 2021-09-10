@@ -559,7 +559,7 @@ sys_breakpointhook(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyOb
     }
     else if (last_dot != envar) {
         /* Split on the last dot; */
-        modulepath = PyUnicode_FromStringAndSize(envar, last_dot - envar);
+        modulepath = PyUnicode_FromStringAndSize(envar, Py_PtrDiff(last_dot, envar));
         attrname = last_dot + 1;
     }
     else {
@@ -1402,7 +1402,11 @@ get_hash_info(PyThreadState *tstate)
     PyStructSequence_SET_ITEM(hash_info, field++,
                               PyLong_FromLong(8*sizeof(Py_hash_t)));
     PyStructSequence_SET_ITEM(hash_info, field++,
+#if defined(__VMS) && __INITIAL_POINTER_SIZE == 64
+                              PyLong_FromLongLong(_PyHASH_MODULUS));
+#else
                               PyLong_FromSsize_t(_PyHASH_MODULUS));
+#endif
     PyStructSequence_SET_ITEM(hash_info, field++,
                               PyLong_FromLong(_PyHASH_INF));
     PyStructSequence_SET_ITEM(hash_info, field++,
@@ -2352,7 +2356,7 @@ _PySys_AddXOptionWithError(const wchar_t *s)
         Py_INCREF(value);
     }
     else {
-        name = PyUnicode_FromWideChar(s, name_end - s);
+        name = PyUnicode_FromWideChar(s, Py_PtrDiff(name_end, s));
         value = PyUnicode_FromWideChar(name_end + 1, -1);
     }
     if (name == NULL || value == NULL) {
@@ -2889,7 +2893,7 @@ sys_add_xoption(PyObject *opts, const wchar_t *s)
         Py_INCREF(value);
     }
     else {
-        name = PyUnicode_FromWideChar(s, name_end - s);
+        name = PyUnicode_FromWideChar(s, Py_PtrDiff(name_end, s));
         value = PyUnicode_FromWideChar(name_end + 1, -1);
     }
     if (name == NULL || value == NULL) {
@@ -3106,7 +3110,7 @@ makepathobject(const wchar_t *path, wchar_t delim)
         p = wcschr(path, delim);
         if (p == NULL)
             p = path + wcslen(path); /* End of string */
-        w = PyUnicode_FromWideChar(path, (Py_ssize_t)(p - path));
+        w = PyUnicode_FromWideChar(path, (Py_ssize_t)Py_PtrDiff(p, path));
         if (w == NULL) {
             Py_DECREF(v);
             return NULL;

@@ -31,14 +31,14 @@ STRINGLIB(replace_1char_inplace)(STRINGLIB_CHAR* s, STRINGLIB_CHAR* end,
                        use FASTSEARCH() or memchr() */
 #if STRINGLIB_SIZEOF_CHAR == 1
                     s++;
-                    s = memchr(s, u1, end - s);
+                    s = memchr(s, u1, Py_PtrDiff(end, s));
                     if (s == NULL)
                         return;
 #else
                     Py_ssize_t i;
                     STRINGLIB_CHAR ch1 = (STRINGLIB_CHAR) u1;
                     s++;
-                    i = FASTSEARCH(s, end - s, &ch1, 1, 0, FAST_SEARCH);
+                    i = FASTSEARCH(s, Py_PtrDiff(end, s), &ch1, 1, 0, FAST_SEARCH);
                     if (i < 0)
                         return;
                     s += i;

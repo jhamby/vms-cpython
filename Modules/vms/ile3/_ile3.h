@@ -1,14 +1,12 @@
 #ifndef ILE3Object_defined
 #define ILE3Object_defined
 
-#include <iledef.h>
-
 typedef struct {
     PyObject_HEAD
     unsigned int allocated;
     unsigned int size;
     int          pos;
-    ILE3        *list;
+    void        *list;
     int         *types;
 } ILE3Object;
 

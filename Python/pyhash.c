@@ -137,10 +137,14 @@ _Py_HashDouble(PyObject *inst, double v)
 Py_hash_t
 _Py_HashPointerRaw(const void *p)
 {
-    size_t y = (size_t)p;
+#if defined(__VMS) && __INITIAL_POINTER_SIZE == 64
+    Py_hash_t y = (Py_hash_t)((uint64_t)p ^ ((uint64_t)p >> 32));
+#else
+    Py_hash_t y = (Py_hash_t)p;
     /* bottom 3 or 4 bits are likely to be 0; rotate y by 4 to avoid
        excessive hash collisions for dicts and sets */
     y = (y >> 4) | (y << (8 * SIZEOF_VOID_P - 4));
+#endif
     return (Py_hash_t)y;
 }
 

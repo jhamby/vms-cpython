@@ -50,6 +50,14 @@
   #pragma GCC diagnostic ignored "-Wmisleading-indentation"
 #endif
 
+#ifndef Py_PtrDiff
+#ifdef __VMS
+#define Py_PtrDiff(PTR1, PTR2) (((long long)(PTR1) - (long long)(PTR2))/sizeof(*(PTR1)))
+#else
+#define Py_PtrDiff(PTR1, PTR2) (PTR1 - PTR2)
+#endif
+#endif
+
 
 /*
  * Work around the behavior of tolower() and strcasecmp() in certain
@@ -230,7 +238,7 @@ mpd_qset_string(mpd_t *dec, const char *s, const mpd_context_t *ctx,
         /* payload consists entirely of zeros */
         if (*coeff == '\0')
             return;
-        digits = end - coeff;
+        digits = Py_PtrDiff(end, coeff);
         /* prec >= 1, clamp is 0 or 1 */
         if (digits > (size_t)(ctx->prec-ctx->clamp))
             goto conversion_error;
@@ -246,7 +254,7 @@ mpd_qset_string(mpd_t *dec, const char *s, const mpd_context_t *ctx,
         /* payload consists entirely of zeros */
         if (*coeff == '\0')
             return;
-        digits = end - coeff;
+        digits = Py_PtrDiff(end, coeff);
         if (digits > (size_t)(ctx->prec-ctx->clamp))
             goto conversion_error;
     }
@@ -277,9 +285,9 @@ mpd_qset_string(mpd_t *dec, const char *s, const mpd_context_t *ctx,
             }
         }
 
-        digits = end - coeff;
+        digits = Py_PtrDiff(end, coeff);
         if (dpoint) {
-            size_t fracdigits = end-dpoint-1;
+            size_t fracdigits = Py_PtrDiff(end, dpoint) - 1;
             if (dpoint > coeff) digits--;
 
             if (fracdigits > MPD_MAX_PREC) {
@@ -637,11 +645,11 @@ _mpd_to_string(char **result, const mpd_t *dec, int flags, mpd_ssize_t dplace)
     }
 
     assert(cp < decstring+mem);
-    assert(cp-decstring < MPD_SSIZE_MAX);
+    assert(Py_PtrDiff(cp, decstring) < MPD_SSIZE_MAX);
 
     *cp = '\0';
     *result = decstring;
-    return (mpd_ssize_t)(cp-decstring);
+    return (mpd_ssize_t)Py_PtrDiff(cp, decstring);
 }
 
 char *
@@ -1110,14 +1118,14 @@ _mpd_apply_lconv(mpd_mbstr_t *result, const mpd_spec_t *spec, uint32_t *status)
     while (isdigit((unsigned char)*dp)) {
         dp++;
     }
-    n_int = (mpd_ssize_t)(dp-intpart);
+    n_int = (mpd_ssize_t)Py_PtrDiff(dp, intpart);
     /* decimal point */
     if (*dp == '.') {
         dp++; dot = spec->dot;
     }
     /* rest */
     rest = dp;
-    n_rest = result->nbytes - (mpd_ssize_t)(dp-result->data);
+    n_rest = result->nbytes - (mpd_ssize_t)Py_PtrDiff(dp, result->data);
 
     if (dot == NULL && (*spec->sep == '\0' || *spec->grouping == '\0')) {
         /* _mpd_add_sep_dot() would not change anything */
@@ -1483,7 +1491,7 @@ mpd_snprint_flags(char *dest, int nmemb, uint32_t flags)
         *(--cp) = '\0';
     }
 
-    return (int)(cp-dest);
+    return (int)Py_PtrDiff(cp, dest);
 }
 
 /* print conditions to buffer, in list form */
@@ -1519,7 +1527,7 @@ mpd_lsnprint_flags(char *dest, int nmemb, uint32_t flags, const char *flag_strin
     *cp++ = ']';
     *cp = '\0';
 
-    return (int)(cp-dest); /* strlen, without NUL terminator */
+    return (int)Py_PtrDiff(cp, dest); /* strlen, without NUL terminator */
 }
 
 /* print signals to buffer, in list form */
@@ -1563,7 +1571,7 @@ mpd_lsnprint_signals(char *dest, int nmemb, uint32_t flags, const char *signal_s
     *cp++ = ']';
     *cp = '\0';
 
-    return (int)(cp-dest); /* strlen, without NUL terminator */
+    return (int)Py_PtrDiff(cp, dest); /* strlen, without NUL terminator */
 }
 
 /* The following two functions are mainly intended for debugging. */

@@ -84,8 +84,8 @@ block_new(size_t size)
     b->ab_size = size;
     b->ab_mem = (void *)(b + 1);
     b->ab_next = NULL;
-    b->ab_offset = (char *)_Py_ALIGN_UP(b->ab_mem, ALIGNMENT) -
-            (char *)(b->ab_mem);
+    b->ab_offset = Py_PtrDiff((char *)_Py_ALIGN_UP(b->ab_mem, ALIGNMENT),
+            (char *)(b->ab_mem));
     return b;
 }
 

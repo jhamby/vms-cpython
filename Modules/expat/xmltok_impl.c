@@ -36,9 +36,15 @@
 #    define IS_INVALID_CHAR(enc, ptr, n) (0)
 #  endif
 
+#if defined(__VMS) && __INITIAL_POINTER_SIZE == 64
+#define Py_PtrDiff(PTR1, PTR2) (((long long)(PTR1) - (long long)(PTR2))/sizeof(*(PTR1)))
+#else
+#define Py_PtrDiff(PTR1, PTR2) (PTR1 - PTR2)
+#endif
+
 #  define INVALID_LEAD_CASE(n, ptr, nextTokPtr)                                \
   case BT_LEAD##n:                                                             \
-    if (end - ptr < n)                                                         \
+    if (Py_PtrDiff(end, ptr) < n)                                              \
       return XML_TOK_PARTIAL_CHAR;                                             \
     if (IS_INVALID_CHAR(enc, ptr, n)) {                                        \
       *(nextTokPtr) = (ptr);                                                   \
@@ -59,7 +65,7 @@
 
 #  define CHECK_NAME_CASE(n, enc, ptr, end, nextTokPtr)                        \
   case BT_LEAD##n:                                                             \
-    if (end - ptr < n)                                                         \
+    if (Py_PtrDiff(end, ptr) < n)                                              \
       return XML_TOK_PARTIAL_CHAR;                                             \
     if (! IS_NAME_CHAR(enc, ptr, n)) {                                         \
       *nextTokPtr = ptr;                                                       \
@@ -88,7 +94,7 @@
 
 #  define CHECK_NMSTRT_CASE(n, enc, ptr, end, nextTokPtr)                      \
   case BT_LEAD##n:                                                             \
-    if (end - ptr < n)                                                         \
+    if (Py_PtrDiff(end, ptr) < n)                                              \
       return XML_TOK_PARTIAL_CHAR;                                             \
     if (! IS_NMSTRT_CHAR(enc, ptr, n)) {                                       \
       *nextTokPtr = ptr;                                                       \
@@ -116,7 +122,7 @@
 #    define PREFIX(ident) ident
 #  endif
 
-#  define HAS_CHARS(enc, ptr, end, count) (end - ptr >= count * MINBPC(enc))
+#  define HAS_CHARS(enc, ptr, end, count) (Py_PtrDiff(end, ptr) >= count * MINBPC(enc))
 
 #  define HAS_CHAR(enc, ptr, end) HAS_CHARS(enc, ptr, end, 1)
 
@@ -223,7 +229,7 @@ PREFIX(checkPiTarget)(const ENCODING *enc, const char *ptr, const char *end,
   int upper = 0;
   UNUSED_P(enc);
   *tokPtr = XML_TOK_PI;
-  if (end - ptr != MINBPC(enc) * 3)
+  if (Py_PtrDiff(end, ptr) != MINBPC(enc) * 3)
     return 1;
   switch (BYTE_TO_ASCII(enc, ptr)) {
   case ASCII_x:
@@ -347,7 +353,7 @@ PREFIX(cdataSectionTok)(const ENCODING *enc, const char *ptr, const char *end,
   if (ptr >= end)
     return XML_TOK_NONE;
   if (MINBPC(enc) > 1) {
-    size_t n = end - ptr;
+    size_t n = Py_PtrDiff(end, ptr);
     if (n & (MINBPC(enc) - 1)) {
       n &= ~(MINBPC(enc) - 1);
       if (n == 0)
@@ -388,7 +394,7 @@ PREFIX(cdataSectionTok)(const ENCODING *enc, const char *ptr, const char *end,
     switch (BYTE_TYPE(enc, ptr)) {
 #  define LEAD_CASE(n)                                                         \
   case BT_LEAD##n:                                                             \
-    if (end - ptr < n || IS_INVALID_CHAR(enc, ptr, n)) {                       \
+    if (Py_PtrDiff(end, ptr) < n || IS_INVALID_CHAR(enc, ptr, n)) {            \
       *nextTokPtr = ptr;                                                       \
       return XML_TOK_DATA_CHARS;                                               \
     }                                                                          \
@@ -815,7 +821,7 @@ PREFIX(contentTok)(const ENCODING *enc, const char *ptr, const char *end,
   if (ptr >= end)
     return XML_TOK_NONE;
   if (MINBPC(enc) > 1) {
-    size_t n = end - ptr;
+    size_t n = Py_PtrDiff(end, ptr);
     if (n & (MINBPC(enc) - 1)) {
       n &= ~(MINBPC(enc) - 1);
       if (n == 0)
@@ -863,7 +869,7 @@ PREFIX(contentTok)(const ENCODING *enc, const char *ptr, const char *end,
     switch (BYTE_TYPE(enc, ptr)) {
 #  define LEAD_CASE(n)                                                         \
   case BT_LEAD##n:                                                             \
-    if (end - ptr < n || IS_INVALID_CHAR(enc, ptr, n)) {                       \
+    if (Py_PtrDiff(end, ptr) < n || IS_INVALID_CHAR(enc, ptr, n)) {            \
       *nextTokPtr = ptr;                                                       \
       return XML_TOK_DATA_CHARS;                                               \
     }                                                                          \
@@ -1010,7 +1016,7 @@ PREFIX(prologTok)(const ENCODING *enc, const char *ptr, const char *end,
   if (ptr >= end)
     return XML_TOK_NONE;
   if (MINBPC(enc) > 1) {
-    size_t n = end - ptr;
+    size_t n = Py_PtrDiff(end, ptr);
     if (n & (MINBPC(enc) - 1)) {
       n &= ~(MINBPC(enc) - 1);
       if (n == 0)
@@ -1132,7 +1138,7 @@ PREFIX(prologTok)(const ENCODING *enc, const char *ptr, const char *end,
     return PREFIX(scanPoundName)(enc, ptr + MINBPC(enc), end, nextTokPtr);
 #  define LEAD_CASE(n)                                                         \
   case BT_LEAD##n:                                                             \
-    if (end - ptr < n)                                                         \
+    if (Py_PtrDiff(end, ptr) < n)                                              \
       return XML_TOK_PARTIAL_CHAR;                                             \
     if (IS_NMSTRT_CHAR(enc, ptr, n)) {                                         \
       ptr += n;                                                                \
@@ -1384,7 +1390,7 @@ PREFIX(ignoreSectionTok)(const ENCODING *enc, const char *ptr, const char *end,
                          const char **nextTokPtr) {
   int level = 0;
   if (MINBPC(enc) > 1) {
-    size_t n = end - ptr;
+    size_t n = Py_PtrDiff(end, ptr);
     if (n & (MINBPC(enc) - 1)) {
       n &= ~(MINBPC(enc) - 1);
       end = ptr + n;
@@ -1646,7 +1652,7 @@ static int PTRCALL
 PREFIX(predefinedEntityName)(const ENCODING *enc, const char *ptr,
                              const char *end) {
   UNUSED_P(enc);
-  switch ((end - ptr) / MINBPC(enc)) {
+  switch (Py_PtrDiff(end, ptr) / MINBPC(enc)) {
   case 2:
     if (CHAR_MATCHES(enc, ptr + MINBPC(enc), ASCII_t)) {
       switch (BYTE_TO_ASCII(enc, ptr)) {
@@ -1701,7 +1707,7 @@ PREFIX(nameMatchesAscii)(const ENCODING *enc, const char *ptr1,
                          const char *end1, const char *ptr2) {
   UNUSED_P(enc);
   for (; *ptr2; ptr1 += MINBPC(enc), ptr2++) {
-    if (end1 - ptr1 < MINBPC(enc)) {
+    if (Py_PtrDiff(end1, ptr1) < MINBPC(enc)) {
       /* This line cannot be executed.  The incoming data has already
        * been tokenized once, so incomplete characters like this have
        * already been eliminated from the input.  Retaining the
@@ -1740,7 +1746,7 @@ PREFIX(nameLength)(const ENCODING *enc, const char *ptr) {
       ptr += MINBPC(enc);
       break;
     default:
-      return (int)(ptr - start);
+      return (int)Py_PtrDiff(ptr, start);
     }
   }
 }

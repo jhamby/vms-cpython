@@ -319,6 +319,7 @@ corresponding Unix manual entries for more information on calls.");
 #  else
 #  ifdef __VMS
      /* OpenVMS */
+#    include "vms/vms_ptr32.h"
 #    include "vms/vms_spawn_helper.h"
 #    include "vms/vms_sleep.h"
 #    include "vms/vms_fcntl.h"
@@ -357,6 +358,12 @@ corresponding Unix manual entries for more information on calls.");
 #  endif  /* __VMS */
 #  endif  /* _MSC_VER */
 #endif  /* ! __WATCOMC__ || __QNX__ */
+
+#if defined(__VMS) && __INITIAL_POINTER_SIZE == 64
+    typedef struct __iovec64 Py_iovec;
+#else 
+    typedef struct iovec Py_iovec;
+#endif 
 
 _Py_IDENTIFIER(__fspath__);
 
@@ -1617,7 +1624,7 @@ convertenviron(void)
 #ifdef MS_WINDOWS
     wchar_t **e;
 #else
-    char **e;
+    vms_ptr32_ptr32 e;
 #endif
 
     d = PyDict_New();
@@ -1634,7 +1641,7 @@ convertenviron(void)
        variables between calls to Py_Initialize, so don't cache the value. */
     e = *_NSGetEnviron();
 #else
-    e = environ;
+    e = (vms_ptr32_ptr32)environ;
 #endif
     if (e == NULL)
         return d;
@@ -1651,7 +1658,7 @@ convertenviron(void)
 #ifdef MS_WINDOWS
         k = PyUnicode_FromWideChar(*e, (Py_ssize_t)(p-*e));
 #else
-        k = PyBytes_FromStringAndSize(*e, (int)(p-*e));
+        k = PyBytes_FromStringAndSize(*e, (int)Py_PtrDiff(p, *e));
 #endif
         if (k == NULL) {
             Py_DECREF(d);
@@ -5088,7 +5095,7 @@ extern int decc$to_vms(const char *, int (*)(char *, int, void *), int, int, ...
 int delete_non_unlinkable_link_callback(char *name, int flag, void* userdata) {
     struct dsc$descriptor_s file_name = {0, DSC$K_DTYPE_T, DSC$K_CLASS_S, 0};
     file_name.dsc$w_length = strlen(name);
-    file_name.dsc$a_pointer = name;
+    file_name.dsc$a_pointer = (vms_ptr32)name;
     *(int*)userdata = lib$delete_file(&file_name);
     return 0;
 }
@@ -5985,7 +5992,7 @@ os_execv_impl(PyObject *module, path_t *path, PyObject *argv)
 #ifdef HAVE_WEXECV
     _wexecv(path->wide, argvlist);
 #else
-    execv(path->narrow, argvlist);
+    execv(path->narrow, (vms_ptr32)argvlist);
 #endif
     _Py_END_SUPPRESS_IPH
 
@@ -6065,7 +6072,7 @@ os_execve_impl(PyObject *module, path_t *path, PyObject *argv, PyObject *env)
 #ifdef HAVE_WEXECV
         _wexecve(path->wide, argvlist, envlist);
 #else
-        execve(path->narrow, argvlist, envlist);
+        execve(path->narrow, (vms_ptr32)argvlist, (vms_ptr32)envlist);
 #endif
     _Py_END_SUPPRESS_IPH
 
@@ -9814,11 +9821,11 @@ os_read_impl(PyObject *module, int fd, Py_ssize_t length)
     || defined(HAVE_READV) || defined(HAVE_PREADV) || defined (HAVE_PREADV2) \
     || defined(HAVE_WRITEV) || defined(HAVE_PWRITEV) || defined (HAVE_PWRITEV2)
 static int
-iov_setup(struct iovec **iov, Py_buffer **buf, PyObject *seq, Py_ssize_t cnt, int type)
+iov_setup(Py_iovec **iov, Py_buffer **buf, PyObject *seq, Py_ssize_t cnt, int type)
 {
     Py_ssize_t i, j;
 
-    *iov = PyMem_New(struct iovec, cnt);
+    *iov = PyMem_New(Py_iovec, cnt);
     if (*iov == NULL) {
         PyErr_NoMemory();
         return -1;
@@ -9855,7 +9862,7 @@ fail:
 }
 
 static void
-iov_cleanup(struct iovec *iov, Py_buffer *buf, int cnt)
+iov_cleanup(Py_iovec *iov, Py_buffer *buf, int cnt)
 {
     int i;
     PyMem_Free(iov);
@@ -9892,7 +9899,7 @@ os_readv_impl(PyObject *module, int fd, PyObject *buffers)
 {
     Py_ssize_t cnt, n;
     int async_err = 0;
-    struct iovec *iov;
+    Py_iovec *iov;
     Py_buffer *buf;
 
     if (!PySequence_Check(buffers)) {
@@ -10009,7 +10016,7 @@ os_preadv_impl(PyObject *module, int fd, PyObject *buffers, Py_off_t offset,
 {
     Py_ssize_t cnt, n;
     int async_err = 0;
-    struct iovec *iov;
+    Py_iovec *iov;
     Py_buffer *buf;
 
     if (!PySequence_Check(buffers)) {
@@ -10595,7 +10602,7 @@ os_writev_impl(PyObject *module, int fd, PyObject *buffers)
     Py_ssize_t cnt;
     Py_ssize_t result;
     int async_err = 0;
-    struct iovec *iov;
+    Py_iovec *iov;
     Py_buffer *buf;
 
     if (!PySequence_Check(buffers)) {
@@ -10699,7 +10706,7 @@ os_pwritev_impl(PyObject *module, int fd, PyObject *buffers, Py_off_t offset,
     Py_ssize_t cnt;
     Py_ssize_t result;
     int async_err = 0;
-    struct iovec *iov;
+    Py_iovec *iov;
     Py_buffer *buf;
 
     if (!PySequence_Check(buffers)) {

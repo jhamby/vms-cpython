@@ -52,7 +52,7 @@ decode_utf8(const char **sPtr, const char *end)
         s++;
     }
     *sPtr = s;
-    return PyUnicode_DecodeUTF8(t, s - t, NULL);
+    return PyUnicode_DecodeUTF8(t, Py_PtrDiff(s, t), NULL);
 }
 
 static PyObject *
@@ -110,14 +110,14 @@ decode_unicode_with_escapes(Parser *parser, const char *s, size_t len, Token *t)
                 p += 10;
             }
             /* Should be impossible to overflow */
-            assert(p - buf <= PyBytes_GET_SIZE(u));
+            assert(Py_PtrDiff(p, buf) <= PyBytes_GET_SIZE(u));
             Py_DECREF(w);
         }
         else {
             *p++ = *s++;
         }
     }
-    len = p - buf;
+    len = Py_PtrDiff(p, buf);
     s = buf;
 
     const char *first_invalid_escape;
@@ -320,7 +320,7 @@ fstring_find_expr_location(Token *parent, char *expr_str, int *p_lines, int *p_c
                 while (start > parent_str && *start != '\n') {
                     start--;
                 }
-                *p_cols += (int)(substr - start);
+                *p_cols += (int)Py_PtrDiff(substr, start);
             }
             /* adjust the start based on the number of newlines encountered
                before the f-string expression */
@@ -369,7 +369,7 @@ fstring_compile_expr(Parser *p, const char *expr_start, const char *expr_end,
         return NULL;
     }
 
-    len = expr_end - expr_start;
+    len = Py_PtrDiff(expr_end, expr_start);
     /* Allocate 3 extra bytes: open paren, close paren, null byte. */
     str = PyMem_Malloc(len + 3);
     if (str == NULL) {
@@ -500,11 +500,11 @@ done:
     if (literal_start != s) {
         if (raw) {
             *literal = PyUnicode_DecodeUTF8Stateful(literal_start,
-                                                    s - literal_start,
+                                                    Py_PtrDiff(s, literal_start),
                                                     NULL, NULL);
         } else {
             *literal = decode_unicode_with_escapes(p, literal_start,
-                                                   s - literal_start, t);
+                                                   Py_PtrDiff(s, literal_start), t);
         }
         if (!*literal) {
             return -1;
@@ -756,7 +756,7 @@ fstring_find_expr(Parser *p, const char **str, const char *end, int raw, int rec
         }
 
         /* Set *expr_text to the text of the expression. */
-        *expr_text = PyUnicode_FromStringAndSize(expr_start, *str-expr_start);
+        *expr_text = PyUnicode_FromStringAndSize(expr_start, Py_PtrDiff(*str, expr_start));
         if (!*expr_text) {
             goto error;
         }

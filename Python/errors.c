@@ -1107,7 +1107,7 @@ PyErr_NewException(const char *name, PyObject *base, PyObject *dict)
     }
     if (r == 0) {
         modulename = PyUnicode_FromStringAndSize(name,
-                                             (Py_ssize_t)(dot-name));
+                                             (Py_ssize_t)Py_PtrDiff(dot, name));
         if (modulename == NULL)
             goto failure;
         if (_PyDict_SetItemId(dict, &PyId___module__, modulename) != 0)

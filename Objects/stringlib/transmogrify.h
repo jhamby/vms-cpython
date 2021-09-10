@@ -262,7 +262,7 @@ countchar(const char *target, Py_ssize_t target_len, char c,
     const char *start = target;
     const char *end = target + target_len;
 
-    while ((start = findchar(start, end - start, c)) != NULL) {
+    while ((start = findchar(start, Py_PtrDiff(end, start), c)) != NULL) {
         count++;
         if (count >= maxcount)
             break;
@@ -376,14 +376,14 @@ stringlib_replace_delete_single_character(PyObject *self,
     start = self_s;
     end = self_s + self_len;
     while (count-- > 0) {
-        next = findchar(start, end - start, from_c);
+        next = findchar(start, Py_PtrDiff(end, start), from_c);
         if (next == NULL)
             break;
-        memcpy(result_s, start, next - start);
-        result_s += (next - start);
+        memcpy(result_s, start, Py_PtrDiff(next, start));
+        result_s += Py_PtrDiff(next, start);
         start = next + 1;
     }
-    memcpy(result_s, start, end - start);
+    memcpy(result_s, start, Py_PtrDiff(end, start));
 
     return result;
 }
@@ -425,19 +425,19 @@ stringlib_replace_delete_substring(PyObject *self,
     start = self_s;
     end = self_s + self_len;
     while (count-- > 0) {
-        offset = stringlib_find(start, end - start,
+        offset = stringlib_find(start, Py_PtrDiff(end, start),
                                 from_s, from_len,
                                 0);
         if (offset == -1)
             break;
         next = start + offset;
 
-        memcpy(result_s, start, next - start);
+        memcpy(result_s, start, Py_PtrDiff(next, start));
 
-        result_s += (next - start);
+        result_s += Py_PtrDiff(next, start);
         start = next + from_len;
     }
-    memcpy(result_s, start, end - start);
+    memcpy(result_s, start, Py_PtrDiff(end, start));
     return result;
 }
 
@@ -472,13 +472,13 @@ stringlib_replace_single_character_in_place(PyObject *self,
     memcpy(result_s, self_s, self_len);
 
     /* change everything in-place, starting with this one */
-    start =  result_s + (next - self_s);
+    start =  result_s + Py_PtrDiff(next, self_s);
     *start = to_c;
     start++;
     end = result_s + self_len;
 
     while (--maxcount > 0) {
-        next = findchar(start, end - start, from_c);
+        next = findchar(start, Py_PtrDiff(end, start), from_c);
         if (next == NULL)
             break;
         *next = to_c;
@@ -528,7 +528,7 @@ stringlib_replace_substring_in_place(PyObject *self,
     end = result_s + self_len;
 
     while ( --maxcount > 0) {
-        offset = stringlib_find(start, end - start,
+        offset = stringlib_find(start, Py_PtrDiff(end, start),
                                 from_s, from_len,
                                 0);
         if (offset == -1)
@@ -580,7 +580,7 @@ stringlib_replace_single_character(PyObject *self,
     start = self_s;
     end = self_s + self_len;
     while (count-- > 0) {
-        next = findchar(start, end - start, from_c);
+        next = findchar(start, Py_PtrDiff(end, start), from_c);
         if (next == NULL)
             break;
 
@@ -591,15 +591,15 @@ stringlib_replace_single_character(PyObject *self,
             start += 1;
         } else {
             /* copy the unchanged old then the 'to' */
-            memcpy(result_s, start, next - start);
-            result_s += (next - start);
+            memcpy(result_s, start, Py_PtrDiff(next, start));
+            result_s += Py_PtrDiff(next, start);
             memcpy(result_s, to_s, to_len);
             result_s += to_len;
             start = next + 1;
         }
     }
     /* Copy the remainder of the remaining bytes */
-    memcpy(result_s, start, end - start);
+    memcpy(result_s, start, Py_PtrDiff(end, start));
 
     return result;
 }
@@ -647,7 +647,7 @@ stringlib_replace_substring(PyObject *self,
     start = self_s;
     end = self_s + self_len;
     while (count-- > 0) {
-        offset = stringlib_find(start, end - start,
+        offset = stringlib_find(start, Py_PtrDiff(end, start),
                                 from_s, from_len,
                                 0);
         if (offset == -1)
@@ -660,15 +660,15 @@ stringlib_replace_substring(PyObject *self,
             start += from_len;
         } else {
             /* copy the unchanged old then the 'to' */
-            memcpy(result_s, start, next - start);
-            result_s += (next - start);
+            memcpy(result_s, start, Py_PtrDiff(next, start));
+            result_s += Py_PtrDiff(next, start);
             memcpy(result_s, to_s, to_len);
             result_s += to_len;
             start = next + from_len;
         }
     }
     /* Copy the remainder of the remaining bytes */
-    memcpy(result_s, start, end - start);
+    memcpy(result_s, start, Py_PtrDiff(end, start));
 
     return result;
 }

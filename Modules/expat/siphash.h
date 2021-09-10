@@ -232,9 +232,17 @@ sip24_update(struct siphash *H, const void *src, size_t len) {
   return H;
 } /* sip24_update() */
 
+#ifndef Py_PtrDiff
+#if defined(__VMS) && __INITIAL_POINTER_SIZE == 64
+#define Py_PtrDiff(PTR1, PTR2) (((long long)(PTR1) - (long long)(PTR2))/sizeof(*(PTR1)))
+#else
+#define Py_PtrDiff(PTR1, PTR2) (PTR1 - PTR2)
+#endif
+#endif
+
 static uint64_t
 sip24_final(struct siphash *H) {
-  const char left = (char)(H->p - H->buf);
+  const char left = (char)Py_PtrDiff(H->p, H->buf);
   uint64_t b = (H->c + left) << 56;
 
   switch (left) {

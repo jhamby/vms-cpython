@@ -323,6 +323,12 @@ extern "C" {
 #define Py_SAFE_DOWNCAST(VALUE, WIDE, NARROW) (NARROW)(VALUE)
 #endif
 
+#if defined(__VMS) && __INITIAL_POINTER_SIZE == 64
+#define Py_PtrDiff(PTR1, PTR2) (((long long)(PTR1) - (long long)(PTR2))/sizeof(*(PTR1)))
+#else
+#define Py_PtrDiff(PTR1, PTR2) (PTR1 - PTR2)
+#endif
+
 /* Py_SET_ERRNO_ON_MATH_ERROR(x)
  * If a libm function did not set errno, but it looks like the result
  * overflowed or not-a-number, set errno to ERANGE or EDOM.  Set errno

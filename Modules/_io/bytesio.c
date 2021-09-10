@@ -91,7 +91,7 @@ scan_eol(bytesio *self, Py_ssize_t len)
         if (n)
             /* Get the length from the current position to the end of
                the line. */
-            len = n - start + 1;
+            len = Py_PtrDiff(n, start) + 1;
     }
     assert(len >= 0);
     assert(self->pos < PY_SSIZE_T_MAX - len);

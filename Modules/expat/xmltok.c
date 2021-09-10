@@ -363,8 +363,8 @@ utf8_toUtf8(const ENCODING *enc, const char **fromP, const char *fromLim,
   bool output_exhausted = false;
 
   /* Avoid copying partial characters (due to limited space). */
-  const ptrdiff_t bytesAvailable = fromLim - *fromP;
-  const ptrdiff_t bytesStorable = toLim - *toP;
+  const ptrdiff_t bytesAvailable = Py_PtrDiff(fromLim, *fromP);
+  const ptrdiff_t bytesStorable = Py_PtrDiff(toLim, *toP);
   UNUSED_P(enc);
   if (bytesAvailable > bytesStorable) {
     fromLim = *fromP + bytesStorable;
@@ -381,7 +381,7 @@ utf8_toUtf8(const ENCODING *enc, const char **fromP, const char *fromLim,
   }
 
   {
-    const ptrdiff_t bytesToCopy = fromLim - *fromP;
+    const ptrdiff_t bytesToCopy = Py_PtrDiff(fromLim, *fromP);
     memcpy(*toP, *fromP, bytesToCopy);
     *fromP += bytesToCopy;
     *toP += bytesToCopy;
@@ -404,7 +404,7 @@ utf8_toUtf16(const ENCODING *enc, const char **fromP, const char *fromLim,
   while (from < fromLim && to < toLim) {
     switch (((struct normal_encoding *)enc)->type[(unsigned char)*from]) {
     case BT_LEAD2:
-      if (fromLim - from < 2) {
+      if (Py_PtrDiff(fromLim, from) < 2) {
         res = XML_CONVERT_INPUT_INCOMPLETE;
         goto after;
       }
@@ -412,7 +412,7 @@ utf8_toUtf16(const ENCODING *enc, const char **fromP, const char *fromLim,
       from += 2;
       break;
     case BT_LEAD3:
-      if (fromLim - from < 3) {
+      if (Py_PtrDiff(fromLim, from) < 3) {
         res = XML_CONVERT_INPUT_INCOMPLETE;
         goto after;
       }
@@ -422,11 +422,11 @@ utf8_toUtf16(const ENCODING *enc, const char **fromP, const char *fromLim,
       break;
     case BT_LEAD4: {
       unsigned long n;
-      if (toLim - to < 2) {
+      if (Py_PtrDiff(toLim, to) < 2) {
         res = XML_CONVERT_OUTPUT_EXHAUSTED;
         goto after;
       }
-      if (fromLim - from < 4) {
+      if (Py_PtrDiff(fromLim, from) < 4) {
         res = XML_CONVERT_INPUT_INCOMPLETE;
         goto after;
       }
@@ -503,7 +503,7 @@ latin1_toUtf8(const ENCODING *enc, const char **fromP, const char *fromLim,
       return XML_CONVERT_COMPLETED;
     c = (unsigned char)**fromP;
     if (c & 0x80) {
-      if (toLim - *toP < 2)
+      if (Py_PtrDiff(toLim, *toP) < 2)
         return XML_CONVERT_OUTPUT_EXHAUSTED;
       *(*toP)++ = (char)((c >> 6) | UTF8_cval2);
       *(*toP)++ = (char)((c & 0x3f) | 0x80);
@@ -618,7 +618,7 @@ unicode_byte_type(char hi, char lo) {
       char **toP, const char *toLim) {                                         \
     const char *from = *fromP;                                                 \
     UNUSED_P(enc);                                                             \
-    fromLim = from + (((fromLim - from) >> 1) << 1); /* shrink to even */      \
+    fromLim = from + ((Py_PtrDiff(fromLim, from) >> 1) << 1); /* shrink to even */\
     for (; from < fromLim; from += 2) {                                        \
       int plane;                                                               \
       unsigned char lo2;                                                       \
@@ -642,7 +642,7 @@ unicode_byte_type(char hi, char lo) {
       case 0x5:                                                                \
       case 0x6:                                                                \
       case 0x7:                                                                \
-        if (toLim - *toP < 2) {                                                \
+        if (Py_PtrDiff(toLim, *toP) < 2) {                                     \
           *fromP = from;                                                       \
           return XML_CONVERT_OUTPUT_EXHAUSTED;                                 \
         }                                                                      \
@@ -650,7 +650,7 @@ unicode_byte_type(char hi, char lo) {
         *(*toP)++ = ((lo & 0x3f) | 0x80);                                      \
         break;                                                                 \
       default:                                                                 \
-        if (toLim - *toP < 3) {                                                \
+        if (Py_PtrDiff(toLim, *toP) < 3) {                                     \
           *fromP = from;                                                       \
           return XML_CONVERT_OUTPUT_EXHAUSTED;                                 \
         }                                                                      \
@@ -663,11 +663,11 @@ unicode_byte_type(char hi, char lo) {
       case 0xD9:                                                               \
       case 0xDA:                                                               \
       case 0xDB:                                                               \
-        if (toLim - *toP < 4) {                                                \
+        if (Py_PtrDiff(toLim, *toP) < 4) {                                     \
           *fromP = from;                                                       \
           return XML_CONVERT_OUTPUT_EXHAUSTED;                                 \
         }                                                                      \
-        if (fromLim - from < 4) {                                              \
+        if (Py_PtrDiff(fromLim, from) < 4) {                                   \
           *fromP = from;                                                       \
           return XML_CONVERT_INPUT_INCOMPLETE;                                 \
         }                                                                      \
@@ -695,9 +695,9 @@ unicode_byte_type(char hi, char lo) {
       unsigned short **toP, const unsigned short *toLim) {                     \
     enum XML_Convert_Result res = XML_CONVERT_COMPLETED;                       \
     UNUSED_P(enc);                                                             \
-    fromLim = *fromP + (((fromLim - *fromP) >> 1) << 1); /* shrink to even */  \
+    fromLim = *fromP + ((Py_PtrDiff(fromLim, *fromP) >> 1) << 1); /* shrink to even */\
     /* Avoid copying first half only of surrogate */                           \
-    if (fromLim - *fromP > ((toLim - *toP) << 1)                               \
+    if (Py_PtrDiff(fromLim, *fromP) > (Py_PtrDiff(toLim, *toP) << 1)           \
         && (GET_HI(fromLim - 2) & 0xF8) == 0xD8) {                             \
       fromLim -= 2;                                                            \
       res = XML_CONVERT_INPUT_INCOMPLETE;                                      \
@@ -1361,13 +1361,13 @@ unknown_toUtf8(const ENCODING *enc, const char **fromP, const char *fromLim,
     if (n == 0) {
       int c = uenc->convert(uenc->userData, *fromP);
       n = XmlUtf8Encode(c, buf);
-      if (n > toLim - *toP)
+      if (n > Py_PtrDiff(toLim, *toP))
         return XML_CONVERT_OUTPUT_EXHAUSTED;
       utf8 = buf;
       *fromP += (AS_NORMAL_ENCODING(enc)->type[(unsigned char)**fromP]
                  - (BT_LEAD2 - 2));
     } else {
-      if (n > toLim - *toP)
+      if (n > Py_PtrDiff(toLim, *toP))
         return XML_CONVERT_OUTPUT_EXHAUSTED;
       (*fromP)++;
     }

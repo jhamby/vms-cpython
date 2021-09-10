@@ -2087,7 +2087,7 @@ long_from_binary_base(const char **str, int base, PyLongObject **res)
         bits_in_accum += bits_per_char;
         if (bits_in_accum >= PyLong_SHIFT) {
             *pdigit++ = (digit)(accum & PyLong_MASK);
-            assert(pdigit - z->ob_digit <= n);
+            assert(Py_PtrDiff(pdigit, z->ob_digit) <= n);
             accum >>= PyLong_SHIFT;
             bits_in_accum -= PyLong_SHIFT;
             assert(bits_in_accum < PyLong_SHIFT);
@@ -2096,9 +2096,9 @@ long_from_binary_base(const char **str, int base, PyLongObject **res)
     if (bits_in_accum) {
         assert(bits_in_accum <= PyLong_SHIFT);
         *pdigit++ = (digit)accum;
-        assert(pdigit - z->ob_digit <= n);
+        assert(Py_PtrDiff(pdigit, z->ob_digit) <= n);
     }
-    while (pdigit - z->ob_digit < n)
+    while (Py_PtrDiff(pdigit, z->ob_digit) < n)
         *pdigit++ = 0;
     *res = long_normalize(z);
     return 0;

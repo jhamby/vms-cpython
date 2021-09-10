@@ -283,7 +283,7 @@ config_init_module_search_paths(PyConfig *config, _PyPathConfig *pathconfig)
             p = sys_path + wcslen(sys_path); /* End of string */
         }
 
-        size_t path_len = (p - sys_path);
+        size_t path_len = Py_PtrDiff(p, sys_path);
         wchar_t *path = PyMem_RawMalloc((path_len + 1) * sizeof(wchar_t));
         if (path == NULL) {
             return _PyStatus_NO_MEMORY();
@@ -739,7 +739,7 @@ _PyPathConfig_ComputeSysPath0(const PyWideStringList *argv, PyObject **path0_p)
         p = wcsrchr(path0, SEP);
     }
     if (p != NULL) {
-        n = p + 1 - path0;
+        n = Py_PtrDiff(p + 1, path0);
 #if SEP == '/' /* Special case for Unix filename syntax */
         if (n > 1) {
             /* Drop trailing separator */

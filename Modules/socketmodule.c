@@ -306,6 +306,10 @@ if_indextoname(index) -- return the corresponding interface name\n\
 // For if_nametoindex() and if_indextoname()
 #include <iphlpapi.h>
 
+#ifdef __VMS
+#include "vms/vms_ptr32.h"
+#endif
+
 /* remove some flags on older version Windows during run-time.
    https://msdn.microsoft.com/en-us/library/windows/desktop/ms738596.aspx */
 typedef struct {
@@ -589,6 +593,18 @@ select_error(void)
 static int support_wsa_no_inherit = -1;
 #endif
 
+#ifdef __VMS
+#include "vms/vms_ptr32.h"
+#endif
+
+#if defined(__VMS) && __INITIAL_POINTER_SIZE == 64
+    typedef struct __iovec64 Py_iovec;
+    typedef struct __addrinfo64 Py_addrinfo;
+#else 
+    typedef struct iovec Py_iovec;
+    typedef struct addrinfo Py_addrinfo;
+#endif
+
 /* Convenience function to raise an error according to errno
    and return a NULL pointer from a function. */
 
@@ -669,7 +685,7 @@ internal_setblocking(PySocketSockObject *s, int block)
 #ifndef MS_WINDOWS
 #if (defined(HAVE_SYS_IOCTL_H) && defined(FIONBIO))
     block = !block;
-    if (ioctl(s->sock_fd, FIONBIO, (unsigned int *)&block) == -1)
+    if (ioctl(s->sock_fd, FIONBIO, (vms_ptr32)(unsigned int *)&block) == -1)
         goto done;
 #else
     delay_flag = fcntl(s->sock_fd, F_GETFL, 0);
@@ -1036,7 +1052,7 @@ static PyThread_type_lock netdb_lock;
 static int
 setipaddr(const char *name, struct sockaddr *addr_ret, size_t addr_ret_size, int af)
 {
-    struct addrinfo hints, *res;
+    Py_addrinfo hints, *res;
     int error;
 
     memset((void *) addr_ret, '\0', sizeof(*addr_ret));
@@ -3836,7 +3852,7 @@ sock_recvmsg_impl(PySocketSockObject *s, void *data)
  * SCM_RIGHTS.
  */
 static PyObject *
-sock_recvmsg_guts(PySocketSockObject *s, struct iovec *iov, int iovlen,
+sock_recvmsg_guts(PySocketSockObject *s, Py_iovec *iov, int iovlen,
                   int flags, Py_ssize_t controllen,
                   PyObject *(*makeval)(ssize_t, void *), void *makeval_data)
 {
@@ -3986,7 +4002,7 @@ sock_recvmsg(PySocketSockObject *s, PyObject *args)
 {
     Py_ssize_t bufsize, ancbufsize = 0;
     int flags = 0;
-    struct iovec iov;
+    Py_iovec iov;
     PyObject *buf = NULL, *retval = NULL;
 
     if (!PyArg_ParseTuple(args, "n|ni:recvmsg", &bufsize, &ancbufsize, &flags))
@@ -4053,7 +4069,7 @@ sock_recvmsg_into(PySocketSockObject *s, PyObject *args)
 {
     Py_ssize_t ancbufsize = 0;
     int flags = 0;
-    struct iovec *iovs = NULL;
+    Py_iovec *iovs = NULL;
     Py_ssize_t i, nitems, nbufs = 0;
     Py_buffer *bufs = NULL;
     PyObject *buffers_arg, *fast, *retval = NULL;
@@ -4074,7 +4090,7 @@ sock_recvmsg_into(PySocketSockObject *s, PyObject *args)
 
     /* Fill in an iovec for each item, and save the Py_buffer
        structs to release afterwards. */
-    if (nitems > 0 && ((iovs = PyMem_New(struct iovec, nitems)) == NULL ||
+    if (nitems > 0 && ((iovs = PyMem_New(Py_iovec, nitems)) == NULL ||
                        (bufs = PyMem_New(Py_buffer, nitems)) == NULL)) {
         PyErr_NoMemory();
         goto finally;
@@ -4381,7 +4397,7 @@ sock_sendmsg_iovec(PySocketSockObject *s, PyObject *data_arg,
                    Py_buffer **databufsout, Py_ssize_t *ndatabufsout) {
     Py_ssize_t ndataparts, ndatabufs = 0;
     int result = -1;
-    struct iovec *iovs = NULL;
+    Py_iovec *iovs = NULL;
     PyObject *data_fast = NULL;
     Py_buffer *databufs = NULL;
 
@@ -4402,7 +4418,7 @@ sock_sendmsg_iovec(PySocketSockObject *s, PyObject *data_arg,
 
     msg->msg_iovlen = ndataparts;
     if (ndataparts > 0) {
-        iovs = PyMem_New(struct iovec, ndataparts);
+        iovs = PyMem_New(Py_iovec, ndataparts);
         if (iovs == NULL) {
             PyErr_NoMemory();
             goto finally;
@@ -5545,7 +5561,7 @@ sock_decode_hostname(const char *name)
 static PyObject *
 gethost_common(struct hostent *h, struct sockaddr *addr, size_t alen, int af)
 {
-    char **pch;
+    vms_ptr32_ptr32 pch;
     PyObject *rtn_tuple = (PyObject *)NULL;
     PyObject *name_list = (PyObject *)NULL;
     PyObject *addr_list = (PyObject *)NULL;
@@ -5589,7 +5605,7 @@ gethost_common(struct hostent *h, struct sockaddr *addr, size_t alen, int af)
 
     /* SF #1511317: h_aliases can be NULL */
     if (h->h_aliases) {
-        for (pch = h->h_aliases; *pch != NULL; pch++) {
+        for (pch = (vms_ptr32_ptr32)h->h_aliases; *pch != NULL; pch++) {
             int status;
             tmp = PyUnicode_FromString(*pch);
             if (tmp == NULL)
@@ -5603,7 +5619,7 @@ gethost_common(struct hostent *h, struct sockaddr *addr, size_t alen, int af)
         }
     }
 
-    for (pch = h->h_addr_list; *pch != NULL; pch++) {
+    for (pch = (vms_ptr32_ptr32)h->h_addr_list; *pch != NULL; pch++) {
         int status;
 
         switch (af) {
@@ -5619,7 +5635,7 @@ gethost_common(struct hostent *h, struct sockaddr *addr, size_t alen, int af)
             memcpy(&sin.sin_addr, *pch, sizeof(sin.sin_addr));
             tmp = make_ipv4_addr(&sin);
 
-            if (pch == h->h_addr_list && alen >= sizeof(sin))
+            if (pch == (vms_ptr32_ptr32)h->h_addr_list && alen >= sizeof(sin))
                 memcpy((char *) addr, &sin, sizeof(sin));
             break;
             }
@@ -5636,7 +5652,7 @@ gethost_common(struct hostent *h, struct sockaddr *addr, size_t alen, int af)
             memcpy(&sin6.sin6_addr, *pch, sizeof(sin6.sin6_addr));
             tmp = make_ipv6_addr(&sin6);
 
-            if (pch == h->h_addr_list && alen >= sizeof(sin6))
+            if (pch == (vms_ptr32_ptr32)h->h_addr_list && alen >= sizeof(sin6))
                 memcpy((char *) addr, &sin6, sizeof(sin6));
             break;
             }
@@ -6458,8 +6474,8 @@ socket_getaddrinfo(PyObject *self, PyObject *args, PyObject* kwargs)
 {
     static char* kwnames[] = {"host", "port", "family", "type", "proto",
                               "flags", 0};
-    struct addrinfo hints, *res;
-    struct addrinfo *res0 = NULL;
+    Py_addrinfo hints, *res;
+    Py_addrinfo *res0 = NULL;
     PyObject *hobj = NULL;
     PyObject *pobj = (PyObject *)NULL;
     char pbuf[30];
@@ -6590,7 +6606,7 @@ socket_getnameinfo(PyObject *self, PyObject *args)
     int port;
     unsigned int flowinfo, scope_id;
     char hbuf[NI_MAXHOST], pbuf[NI_MAXSERV];
-    struct addrinfo hints, *res = NULL;
+    Py_addrinfo hints, *res = NULL;
     int error;
     PyObject *ret = (PyObject *)NULL;
     PyObject *name;
@@ -6794,13 +6810,13 @@ socket_if_nameindex(PyObject *self, PyObject *arg)
         if (ni_tuple == NULL || PyList_Append(list, ni_tuple) == -1) {
             Py_XDECREF(ni_tuple);
             Py_DECREF(list);
-            if_freenameindex(ni);
+            if_freenameindex((vms_ptr32)ni);
             return NULL;
         }
         Py_DECREF(ni_tuple);
     }
 
-    if_freenameindex(ni);
+    if_freenameindex((vms_ptr32)ni);
     return list;
 #endif
 }
@@ -6823,7 +6839,7 @@ socket_if_nametoindex(PyObject *self, PyObject *args)
                           PyUnicode_FSConverter, &oname))
         return NULL;
 
-    index = if_nametoindex(PyBytes_AS_STRING(oname));
+    index = if_nametoindex((vms_ptr32)PyBytes_AS_STRING(oname));
     Py_DECREF(oname);
     if (index == 0) {
         /* if_nametoindex() doesn't set errno */

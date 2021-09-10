@@ -1837,7 +1837,7 @@ allocate_from_new_pool(uint size)
         pool = (poolp)usable_arenas->pool_address;
         assert((block*)pool <= (block*)usable_arenas->address +
                                  ARENA_SIZE - POOL_SIZE);
-        pool->arenaindex = (uint)(usable_arenas - arenas);
+        pool->arenaindex = (uint)Py_PtrDiff(usable_arenas, arenas);
         assert(&arenas[pool->arenaindex] == usable_arenas);
         pool->szidx = DUMMY_SIZE_IDX;
         usable_arenas->pool_address += POOL_SIZE;
@@ -2808,7 +2808,7 @@ _PyObject_DebugDumpAddress(const void *p)
         }
         /* and up to 8 at the end */
         if (q < tail) {
-            if (tail - q > 8) {
+            if (Py_PtrDiff(tail, q) > 8) {
                 fputs(" ...", stderr);
                 q = tail - 8;
             }

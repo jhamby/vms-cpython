@@ -183,7 +183,7 @@ pysqlite_build_row_cast_map(pysqlite_Cursor* self)
                     type_start = pos + 1;
                 }
                 else if (*pos == ']' && type_start != NULL) {
-                    converter = _pysqlite_get_converter(type_start, pos - type_start);
+                    converter = _pysqlite_get_converter(type_start, Py_PtrDiff(pos, type_start));
                     if (!converter && PyErr_Occurred()) {
                         Py_CLEAR(self->row_cast_map);
                         return -1;
@@ -202,7 +202,7 @@ pysqlite_build_row_cast_map(pysqlite_Cursor* self)
                      * 'NUMBER(10)' to be treated as 'NUMBER', for example.
                      * In other words, it will work as people expect it to work.*/
                     if (*pos == ' ' || *pos == '(' || *pos == 0) {
-                        converter = _pysqlite_get_converter(decltype, pos - decltype);
+                        converter = _pysqlite_get_converter(decltype, Py_PtrDiff(pos, decltype));
                         if (!converter && PyErr_Occurred()) {
                             Py_CLEAR(self->row_cast_map);
                             return -1;
@@ -241,7 +241,7 @@ _pysqlite_build_column_name(pysqlite_Cursor *self, const char *colname)
                 break;
             }
         }
-        len = pos - colname;
+        len = Py_PtrDiff(pos, colname);
     }
     else {
         len = strlen(colname);

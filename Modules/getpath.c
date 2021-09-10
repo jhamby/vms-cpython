@@ -886,7 +886,7 @@ calculate_which(const wchar_t *path_env, wchar_t *program_name,
         wchar_t *abs_path;
 
         if (delim) {
-            wchar_t *path = substring(path_env, delim - path_env);
+            wchar_t *path = substring(path_env, Py_PtrDiff(delim, path_env));
             if (path == NULL) {
                 return _PyStatus_NO_MEMORY();
             }
@@ -1353,7 +1353,7 @@ calculate_module_search_path(PyCalculatePath *calculate,
         }
 
         if (delim) {
-            bufsz += delim - defpath + 1;
+            bufsz += Py_PtrDiff(delim, defpath) + 1;
         }
         else {
             bufsz += wcslen(defpath) + 1;
@@ -1400,7 +1400,7 @@ calculate_module_search_path(PyCalculatePath *calculate,
         }
 
         if (delim) {
-            size_t len = delim - defpath + 1;
+            size_t len = Py_PtrDiff(delim, defpath) + 1;
             size_t end = wcslen(buf) + len;
             wcsncat(buf, defpath, len);
             buf[end] = '\0';

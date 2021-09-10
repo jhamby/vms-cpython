@@ -8,6 +8,8 @@
 #include <ssdef.h>
 #include <stsdef.h>
 
+#include "vms/vms_ptr32.h"
+
 #define ConvertArgToStr(arg, value, size, func_name)            \
     if (PyUnicode_CheckExact(arg)) {                            \
         (value) = (char*)PyUnicode_AsUTF8AndSize(arg, &(size)); \
@@ -208,7 +210,7 @@ LIB_getjpi(
         prn_dsc.dsc$w_length = proc_size;
         prn_dsc.dsc$b_class = DSC$K_CLASS_S;
         prn_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-        prn_dsc.dsc$a_pointer = proc_name;
+        prn_dsc.dsc$a_pointer = (vms_ptr32)proc_name;
         pprn_dsc = &prn_dsc;
     }
 
@@ -294,7 +296,7 @@ LIB_getsyi(
         node_dsc.dsc$w_length = node_size;
         node_dsc.dsc$b_class = DSC$K_CLASS_S;
         node_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-        node_dsc.dsc$a_pointer = node;
+        node_dsc.dsc$a_pointer = (vms_ptr32)node;
         pnode_dsc = &node_dsc;
     }
 
@@ -387,7 +389,7 @@ LIB_spawn(
         cmd_dsc.dsc$w_length = cmd_size;
         cmd_dsc.dsc$b_class = DSC$K_CLASS_S;
         cmd_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-        cmd_dsc.dsc$a_pointer = cmd;
+        cmd_dsc.dsc$a_pointer = (vms_ptr32)cmd;
         pcmd_dsc = &cmd_dsc;
     }
 
@@ -395,7 +397,7 @@ LIB_spawn(
         in_dsc.dsc$w_length = in_size;
         in_dsc.dsc$b_class = DSC$K_CLASS_S;
         in_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-        in_dsc.dsc$a_pointer = in_file;
+        in_dsc.dsc$a_pointer = (vms_ptr32)in_file;
         pin_dsc = &in_dsc;
     }
 
@@ -403,7 +405,7 @@ LIB_spawn(
         out_dsc.dsc$w_length = out_size;
         out_dsc.dsc$b_class = DSC$K_CLASS_S;
         out_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-        out_dsc.dsc$a_pointer = out_file;
+        out_dsc.dsc$a_pointer = (vms_ptr32)out_file;
         pout_dsc = &out_dsc;
     }
 
@@ -411,7 +413,7 @@ LIB_spawn(
         prn_dsc.dsc$w_length = proc_size;
         prn_dsc.dsc$b_class = DSC$K_CLASS_S;
         prn_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-        prn_dsc.dsc$a_pointer = proc_name;
+        prn_dsc.dsc$a_pointer = (vms_ptr32)proc_name;
         pprn_dsc = &prn_dsc;
     }
 
@@ -463,7 +465,7 @@ LIB_do_command(
     cmd_dsc.dsc$w_length = size;
     cmd_dsc.dsc$b_class = DSC$K_CLASS_S;
     cmd_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-    cmd_dsc.dsc$a_pointer = value;
+    cmd_dsc.dsc$a_pointer = (vms_ptr32)value;
 
     int status = 0;
 
@@ -495,7 +497,7 @@ LIB_put_common(
     str_dsc.dsc$w_length = size;
     str_dsc.dsc$b_class = DSC$K_CLASS_S;
     str_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-    str_dsc.dsc$a_pointer = value;
+    str_dsc.dsc$a_pointer = (vms_ptr32)value;
 
     int status = 0;
 
@@ -597,7 +599,7 @@ LIB_create_dir(
     spec_dsc.dsc$w_length = spec_size;
     spec_dsc.dsc$b_class = DSC$K_CLASS_S;
     spec_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-    spec_dsc.dsc$a_pointer = spec;
+    spec_dsc.dsc$a_pointer = (vms_ptr32)spec;
 
     int status = 0;
 
@@ -641,12 +643,12 @@ LIB_set_symbol(
     sym_dsc.dsc$w_length = name_size;
     sym_dsc.dsc$b_class = DSC$K_CLASS_S;
     sym_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-    sym_dsc.dsc$a_pointer = name;
+    sym_dsc.dsc$a_pointer = (vms_ptr32)name;
 
     val_dsc.dsc$w_length = value_size;
     val_dsc.dsc$b_class = DSC$K_CLASS_S;
     val_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-    val_dsc.dsc$a_pointer = value;
+    val_dsc.dsc$a_pointer = (vms_ptr32)value;
 
     int status = 0;
 
@@ -673,7 +675,7 @@ LIB_get_symbol(
     symbol_name.dsc$w_length = size;
     symbol_name.dsc$b_class = DSC$K_CLASS_S;
     symbol_name.dsc$b_dtype = DSC$K_DTYPE_T;
-    symbol_name.dsc$a_pointer = name;
+    symbol_name.dsc$a_pointer = (vms_ptr32)name;
 
     char buffer[256];
     buffer[0] = 0;
@@ -681,7 +683,7 @@ LIB_get_symbol(
     symbol_value.dsc$w_length = 255;
     symbol_value.dsc$b_class = DSC$K_CLASS_S;
     symbol_value.dsc$b_dtype = DSC$K_DTYPE_T;
-    symbol_value.dsc$a_pointer = buffer;
+    symbol_value.dsc$a_pointer = (vms_ptr32)buffer;
 
     short result_len = 0;
     int status = 0;
@@ -727,7 +729,7 @@ LIB_delete_symbol(
     symbol_name.dsc$w_length = size;
     symbol_name.dsc$b_class = DSC$K_CLASS_S;
     symbol_name.dsc$b_dtype = DSC$K_DTYPE_T;
-    symbol_name.dsc$a_pointer = name;
+    symbol_name.dsc$a_pointer = (vms_ptr32)name;
 
     int status = 0;
 
@@ -758,7 +760,7 @@ unsigned int get_crc_code(
     crc_stream.dsc$w_length = len;
     crc_stream.dsc$b_dtype = DSC$K_DTYPE_T;
     crc_stream.dsc$b_class = DSC$K_CLASS_S;
-    crc_stream.dsc$a_pointer = name;
+    crc_stream.dsc$a_pointer = (vms_ptr32)name;
 
     crc_result = lib$crc((int *) _crc_table,
         &initial_crc,

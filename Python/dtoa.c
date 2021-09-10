@@ -1477,7 +1477,7 @@ _Py_dg_strtod(const char *s00, char **se)
     s0 = s1 = s;
     while ('0' <= c && c <= '9')
         c = *++s;
-    ndigits = s - s1;
+    ndigits = Py_PtrDiff(s, s1);
     fraclen = 0;
 
     /* Parse decimal point and following digits. */
@@ -1488,14 +1488,14 @@ _Py_dg_strtod(const char *s00, char **se)
             while (c == '0')
                 c = *++s;
             lz = lz || s != s1;
-            fraclen += (s - s1);
+            fraclen += (Py_PtrDiff(s, s1));
             s0 = s;
         }
         s1 = s;
         while ('0' <= c && c <= '9')
             c = *++s;
-        ndigits += s - s1;
-        fraclen += s - s1;
+        ndigits += Py_PtrDiff(s, s1);
+        fraclen += Py_PtrDiff(s, s1);
     }
 
     /* Now lz is true if and only if there were leading zero digits, and
@@ -1550,7 +1550,7 @@ _Py_dg_strtod(const char *s00, char **se)
         /* abs_exp will be correct modulo 2**32.  But 10**9 < 2**32, so if
            there are at most 9 significant exponent digits then overflow is
            impossible. */
-        if (s - s1 > 9 || abs_exp > MAX_ABS_EXP)
+        if (Py_PtrDiff(s, s1) > 9 || abs_exp > MAX_ABS_EXP)
             e = (int)MAX_ABS_EXP;
         else
             e = (int)abs_exp;

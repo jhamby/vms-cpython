@@ -1084,9 +1084,9 @@ _buffered_readline(buffered *self, Py_ssize_t limit)
     start = self->buffer + self->pos;
     s = memchr(start, '\n', n);
     if (s != NULL) {
-        res = PyBytes_FromStringAndSize(start, s - start + 1);
+        res = PyBytes_FromStringAndSize(start, Py_PtrDiff(s, start) + 1);
         if (res != NULL)
-            self->pos += s - start + 1;
+            self->pos += Py_PtrDiff(s, start) + 1;
         goto end_unlocked;
     }
     if (n == limit) {
@@ -1138,10 +1138,10 @@ _buffered_readline(buffered *self, Py_ssize_t limit)
         s = start;
         while (s < end) {
             if (*s++ == '\n') {
-                res = PyBytes_FromStringAndSize(start, s - start);
+                res = PyBytes_FromStringAndSize(start, Py_PtrDiff(s, start));
                 if (res == NULL)
                     goto end;
-                self->pos = s - start;
+                self->pos = Py_PtrDiff(s, start);
                 goto found;
             }
         }

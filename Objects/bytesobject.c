@@ -289,7 +289,7 @@ PyBytes_FromFormatV(const char *format, va_list vargs)
 
         /* subtract bytes preallocated for the format string
            (ex: 2 for "%s") */
-        writer.min_size -= (f - p + 1);
+        writer.min_size -= Py_PtrDiff(f, p) + 1;
 
         switch (*f) {
         case 'c':
@@ -655,7 +655,7 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
 
             pos = (char *)memchr(fmt + 1, '%', fmtcnt);
             if (pos != NULL)
-                len = pos - fmt;
+                len = Py_PtrDiff(pos, fmt);
             else
                 len = fmtcnt + 1;
             assert(len != 0);
@@ -709,7 +709,7 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
                         ++pcount;
                     fmt++;
                 }
-                keylen = fmt - keystart - 1;
+                keylen = Py_PtrDiff(fmt, keystart) - 1;
                 if (fmtcnt < 0 || pcount > 0) {
                     PyErr_SetString(PyExc_ValueError,
                                "incomplete format key");
@@ -962,7 +962,7 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
                   "unsupported format character '%c' (0x%x) "
                   "at index %zd",
                   c, c,
-                  (Py_ssize_t)(fmt - 1 - format));
+                  (Py_ssize_t)Py_PtrDiff(fmt - 1, format));
                 goto error;
             }
 
@@ -1058,7 +1058,7 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
 
 #ifndef NDEBUG
             /* check that we computed the exact size for this write */
-            assert((res - before) == alloc);
+            assert(Py_PtrDiff(res, before) == alloc);
 #endif
         } /* '%' */
 
@@ -1159,7 +1159,7 @@ PyObject *_PyBytes_DecodeEscape(const char *s,
             if (!errors || strcmp(errors, "strict") == 0) {
                 PyErr_Format(PyExc_ValueError,
                              "invalid \\x escape at position %zd",
-                             s - 2 - (end - len));
+                             Py_PtrDiff(s - 2, (end - len)));
                 goto failed;
             }
             if (strcmp(errors, "replace") == 0) {
@@ -2139,7 +2139,7 @@ bytes_translate_impl(PyBytesObject *self, PyObject *table,
     }
     /* Fix the size of the resulting byte string */
     if (inlen > 0)
-        _PyBytes_Resize(&result, output - output_start);
+        _PyBytes_Resize(&result, Py_PtrDiff(output, output_start));
     return result;
 }
 
@@ -2407,14 +2407,14 @@ _PyBytes_FromHex(PyObject *string, int use_bytearray)
 
         top = _PyLong_DigitValue[*str];
         if (top >= 16) {
-            invalid_char = str - PyUnicode_1BYTE_DATA(string);
+            invalid_char = Py_PtrDiff(str, PyUnicode_1BYTE_DATA(string));
             goto error;
         }
         str++;
 
         bot = _PyLong_DigitValue[*str];
         if (bot >= 16) {
-            invalid_char = str - PyUnicode_1BYTE_DATA(string);
+            invalid_char = Py_PtrDiff(str, PyUnicode_1BYTE_DATA(string));
             goto error;
         }
         str++;
@@ -3285,8 +3285,8 @@ _PyBytesWriter_GetSize(_PyBytesWriter *writer, char *str)
     const char *start = _PyBytesWriter_AsString(writer);
     assert(str != NULL);
     assert(str >= start);
-    assert(str - start <= writer->allocated);
-    return str - start;
+    assert(Py_PtrDiff(str, start) <= writer->allocated);
+    return Py_PtrDiff(str, start);
 }
 
 #ifndef NDEBUG

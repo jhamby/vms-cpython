@@ -272,8 +272,8 @@ mmap_read_line_method(mmap_object *self,
         eol = self->data + self->size;
     else
         ++eol; /* advance past newline */
-    result = PyBytes_FromStringAndSize(start, (eol - start));
-    self->pos += (eol - start);
+    result = PyBytes_FromStringAndSize(start, Py_PtrDiff(eol, start));
+    self->pos += Py_PtrDiff(eol, start);
     return result;
 }
 
@@ -340,7 +340,7 @@ mmap_gfind(mmap_object *self,
                 /* nothing */;
             if (i == len) {
                 PyBuffer_Release(&view);
-                return PyLong_FromSsize_t(p - self->data);
+                return PyLong_FromSsize_t((Py_ssize_t)Py_PtrDiff(p, self->data));
             }
         }
         PyBuffer_Release(&view);
