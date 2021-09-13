@@ -1376,7 +1376,7 @@ prepare_s(PyStructObject *self)
     }
 
     #ifdef __VMS
-    size += size % strict_align;
+    // size += size % strict_align;
     #endif
 
     /* check for overflow */
