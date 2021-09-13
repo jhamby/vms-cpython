@@ -50,45 +50,45 @@ static void init_item(ILEB_64 *item) {
 
 static int size_from_type(int type) {
     switch (type) {
-        case DSC$K_DTYPE_Z:
+        case DSC64$K_DTYPE_Z:
             return 0;           /* unspecified */
-        case DSC$K_DTYPE_BU:
+        case DSC64$K_DTYPE_BU:
             return 1;           /* byte (unsigned);  8-bit unsigned quantity */
-        case DSC$K_DTYPE_WU:
+        case DSC64$K_DTYPE_WU:
             return 2;           /* word (unsigned);  16-bit unsigned quantity */
-        case DSC$K_DTYPE_LU:
+        case DSC64$K_DTYPE_LU:
             return 4;           /* longword (unsigned);  32-bit unsigned quantity */
-        case DSC$K_DTYPE_QU:
+        case DSC64$K_DTYPE_QU:
             return 8;           /* quadword (unsigned);  64-bit unsigned quantity */
-        case DSC$K_DTYPE_OU:
+        case DSC64$K_DTYPE_OU:
             return 16;          /* octaword (unsigned);  128-bit unsigned quantity */
-        case DSC$K_DTYPE_B:
+        case DSC64$K_DTYPE_B:
             return 1;           /* byte integer (signed);  8-bit signed 2's-complement integer */
-        case DSC$K_DTYPE_W:
+        case DSC64$K_DTYPE_W:
             return 2;           /* word integer (signed);  16-bit signed 2's-complement integer */
-        case DSC$K_DTYPE_L:
+        case DSC64$K_DTYPE_L:
             return 4;           /* longword integer (signed);  32-bit signed 2's-complement integer */
-        case DSC$K_DTYPE_Q:
+        case DSC64$K_DTYPE_Q:
             return 8;           /* quadword integer (signed);  64-bit signed 2's-complement integer */
-        case DSC$K_DTYPE_O:
+        case DSC64$K_DTYPE_O:
             return 16;          /* octaword integer (signed);  128-bit signed 2's-complement integer */
-        case DSC$K_DTYPE_F:
+        case DSC64$K_DTYPE_F:
             return 4;           /* F_floating;  32-bit single-precision floating point */
-        case DSC$K_DTYPE_D:
+        case DSC64$K_DTYPE_D:
             return 8;           /* D_floating;  64-bit double-precision floating point */
-        case DSC$K_DTYPE_G:
+        case DSC64$K_DTYPE_G:
             return 8;           /* G_floating;  64-bit double-precision floating point */
-        case DSC$K_DTYPE_H:
+        case DSC64$K_DTYPE_H:
             return 16;          /* H_floating;  128-bit quadruple-precision floating point */
-        case DSC$K_DTYPE_FC:
+        case DSC64$K_DTYPE_FC:
             return 4*2;         /* F_floating complex */
-        case DSC$K_DTYPE_DC:
+        case DSC64$K_DTYPE_DC:
             return 8*2;         /* D_floating complex */
-        case DSC$K_DTYPE_GC:
+        case DSC64$K_DTYPE_GC:
             return 8*2;         /* G_floating complex */
-        case DSC$K_DTYPE_HC:
+        case DSC64$K_DTYPE_HC:
             return 16*2;        /* H_floating complex */
-        case DSC$K_DTYPE_CIT:
+        case DSC64$K_DTYPE_CIT:
             return 0;           /* COBOL Intermediate Temporary */
         default:
             return 0;
@@ -97,11 +97,11 @@ static int size_from_type(int type) {
 
 static int sign_from_type(int type) {
     switch (type) {
-        case DSC$K_DTYPE_B:
-        case DSC$K_DTYPE_W:
-        case DSC$K_DTYPE_L:
-        case DSC$K_DTYPE_Q:
-        case DSC$K_DTYPE_O:
+        case DSC64$K_DTYPE_B:
+        case DSC64$K_DTYPE_W:
+        case DSC64$K_DTYPE_L:
+        case DSC64$K_DTYPE_Q:
+        case DSC64$K_DTYPE_O:
             return 1;
         default:
             return 0;
@@ -147,10 +147,10 @@ _value_from_item(
     long type)
 {
     long size = 0;
-    if (type == DSC$K_DTYPE_T) {
+    if (type == DSC64$K_DTYPE_T) {
         size = *(item->ileb_64$pq_retlen_addr);
         return PyUnicode_FromStringAndSize((char*)item->ileb_64$pq_bufaddr, size);
-    } else if (type == DSC$K_DTYPE_VT) {
+    } else if (type == DSC64$K_DTYPE_VT) {
         size = *(unsigned char*)item->ileb_64$pq_bufaddr;
         return PyUnicode_FromStringAndSize(((char*)item->ileb_64$pq_bufaddr)+1, size);
     }
@@ -289,7 +289,7 @@ ILE3_append(
         return NULL;
     }
 
-    long type = DSC$K_DTYPE_Z;
+    long type = DSC64$K_DTYPE_Z;
     if (!PyLong_Check(args[1])) {
         _PyArg_BadArgument("append", "args[1]", "long", args[1]);
         ILE3_decrement(self);
@@ -301,7 +301,7 @@ ILE3_append(
     char *pvalue = NULL;
     long long value = 0;
 
-    if (type == DSC$K_DTYPE_T || type == DSC$K_DTYPE_VT) {
+    if (type == DSC64$K_DTYPE_T || type == DSC64$K_DTYPE_VT) {
         // try to append text
         if (nargs > 2) {
             if (PyUnicode_CheckExact(args[2])) {
@@ -317,7 +317,7 @@ ILE3_append(
             ILE3_decrement(self);
             return NULL;
         }
-        if (type == DSC$K_DTYPE_VT && size > 255) {
+        if (type == DSC64$K_DTYPE_VT && size > 255) {
             PyErr_Format(PyExc_ValueError, "String size is %i, must be in range [1, 255] ", size);
             ILE3_decrement(self);
             return NULL;
@@ -360,14 +360,14 @@ ILE3_append(
         return NULL;
     }
 
-    if (type == DSC$K_DTYPE_T) {
+    if (type == DSC64$K_DTYPE_T) {
         if (pvalue) {
             memcpy(item->ileb_64$pq_bufaddr, pvalue, size);
         } else {
             memset(item->ileb_64$pq_bufaddr, ' ', size);
         }
         ((char*)item->ileb_64$pq_bufaddr)[size] = 0;
-    } else if (type == DSC$K_DTYPE_VT) {
+    } else if (type == DSC64$K_DTYPE_VT) {
         *(unsigned char*)item->ileb_64$pq_bufaddr = (unsigned char)size;
         if (pvalue) {
             memcpy(((char*)item->ileb_64$pq_bufaddr) + 1, pvalue, size);

@@ -1120,6 +1120,8 @@ class BaseTest:
 
     @support.cpython_only
     def test_sizeof_with_buffer(self):
+        if sys.platform == 'OpenVMS':
+            raise unittest.SkipTest("incorrect test: sizeof(struct) != offsetof(last) + sizeof(last)")
         a = array.array(self.typecode, self.example)
         basesize = support.calcvobjsize('Pn2Pi')
         buffer_size = a.buffer_info()[1] * a.itemsize
@@ -1127,6 +1129,8 @@ class BaseTest:
 
     @support.cpython_only
     def test_sizeof_without_buffer(self):
+        if sys.platform == 'OpenVMS':
+            raise unittest.SkipTest("incorrect test: sizeof(struct) != offsetof(last) + sizeof(last)")
         a = array.array(self.typecode)
         basesize = support.calcvobjsize('Pn2Pi')
         support.check_sizeof(self, a, basesize)

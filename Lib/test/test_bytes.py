@@ -1106,8 +1106,10 @@ class BytesTest(BaseBytesTest, unittest.TestCase):
             (b'%zu', c_size_t, size_max, str),
             (b'%p', c_char_p, size_max, ptr_formatter),
         ):
+            if sys.platform == 'OpenVMS' and ctypes_type in (c_size_t, c_char_p): # sizeof(void*) != sizeof(size_t)
+                continue
             self.assertEqual(PyBytes_FromFormat(formatstr, ctypes_type(value)),
-                             py_formatter(value).encode('ascii')),
+                             py_formatter(value).encode('ascii'), str(ctypes_type)),
 
         # width and precision (width is currently ignored)
         self.assertEqual(PyBytes_FromFormat(b'%5s', b'a'),

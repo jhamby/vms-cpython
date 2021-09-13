@@ -523,26 +523,26 @@ exec_dcl(char *const argv[], int p2cread, int c2pwrite) {
     int pid = -1;
     unsigned char efn = EFN$C_ENF;
     int flags = CLI$M_NOWAIT;
-    struct dsc$descriptor_s execute = {0, DSC$K_DTYPE_T, DSC$K_CLASS_S, 0};
-    struct dsc$descriptor_s input = {0, DSC$K_DTYPE_T, DSC$K_CLASS_S, 0};
-    struct dsc$descriptor_s output = {0, DSC$K_DTYPE_T, DSC$K_CLASS_S, 0};
+    $DESCRIPTOR64(execute, "");
+    $DESCRIPTOR64(input, "");
+    $DESCRIPTOR64(output, "");
     char input_name[PATH_MAX + 1] = "";
     char output_name[PATH_MAX + 1] = "";
-    struct dsc$descriptor_s *input_ptr = NULL;
-    struct dsc$descriptor_s *output_ptr = NULL;
+    struct dsc64$descriptor_s *input_ptr = NULL;
+    struct dsc64$descriptor_s *output_ptr = NULL;
 
     if (p2cread != -1) {
         if (getname(p2cread, input_name, 1)) {
-            input.dsc$w_length = strlen(input_name);
-            input.dsc$a_pointer = (vms_ptr32)input_name;
+            input.dsc64$q_length = strlen(input_name);
+            input.dsc64$pq_pointer = input_name;
             input_ptr = &input;
         }
     }
 
     if (c2pwrite != -1) {
         if (getname(c2pwrite, output_name, 1)) {
-            output.dsc$w_length = strlen(output_name);
-            output.dsc$a_pointer = (vms_ptr32)output_name;
+            output.dsc64$q_length = strlen(output_name);
+            output.dsc64$pq_pointer = output_name;
             output_ptr = &output;
         }
     }
@@ -567,8 +567,8 @@ exec_dcl(char *const argv[], int p2cread, int c2pwrite) {
         ++i;
     }
 
-    execute.dsc$w_length = strlen(execute_str);
-    execute.dsc$a_pointer = (vms_ptr32)execute_str;
+    execute.dsc64$q_length = strlen(execute_str);
+    execute.dsc64$pq_pointer = execute_str;
 
     unsigned int *ppid, *pfinished;
     int *pstatus;
