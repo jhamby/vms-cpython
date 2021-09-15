@@ -319,7 +319,6 @@ corresponding Unix manual entries for more information on calls.");
 #  else
 #  ifdef __VMS
      /* OpenVMS */
-#    include "vms/vms_ptr32.h"
 #    include "vms/vms_spawn_helper.h"
 #    include "vms/vms_sleep.h"
 #    include "vms/vms_fcntl.h"
@@ -1624,7 +1623,7 @@ convertenviron(void)
 #ifdef MS_WINDOWS
     wchar_t **e;
 #else
-    vms_ptr32_ptr32 e;
+    __char_ptr_ptr32 e;
 #endif
 
     d = PyDict_New();
@@ -1641,7 +1640,7 @@ convertenviron(void)
        variables between calls to Py_Initialize, so don't cache the value. */
     e = *_NSGetEnviron();
 #else
-    e = (vms_ptr32_ptr32)environ;
+    e = (__char_ptr_ptr32)environ;
 #endif
     if (e == NULL)
         return d;
@@ -5095,8 +5094,9 @@ extern int decc$to_vms(const char *, int (*)(char *, int, void *), int, int, ...
 int delete_non_unlinkable_link_callback(char *name, int flag, void* userdata) {
     struct dsc$descriptor_s file_name = {0, DSC$K_DTYPE_T, DSC$K_CLASS_S, 0};
     file_name.dsc$w_length = strlen(name);
-    file_name.dsc$a_pointer = (vms_ptr32)name;
+    file_name.dsc$a_pointer = dup32(name, file_name.dsc$w_length+1);
     *(int*)userdata = lib$delete_file(&file_name);
+    free(file_name.dsc$a_pointer);
     return 0;
 }
 
@@ -5992,7 +5992,19 @@ os_execv_impl(PyObject *module, path_t *path, PyObject *argv)
 #ifdef HAVE_WEXECV
     _wexecv(path->wide, argvlist);
 #else
-    execv(path->narrow, (vms_ptr32)argvlist);
+#ifdef __VMS
+    __char_ptr_ptr32 argvlist32 = malloc32(argc * sizeof(__char_ptr32));
+    for(int a = 0; a < argc; ++a) {
+        argvlist32[a] = dup32(argvlist[a], strlen(argvlist[a]) + 1);
+    }
+    execv(path->narrow, argvlist32);
+    for(int a = 0; a < argc; ++a) {
+        free(argvlist32[a]);
+    }
+    free(argvlist32);
+#else
+    execv(path->narrow, argvlist);
+#endif
 #endif
     _Py_END_SUPPRESS_IPH
 
@@ -6072,7 +6084,27 @@ os_execve_impl(PyObject *module, path_t *path, PyObject *argv, PyObject *env)
 #ifdef HAVE_WEXECV
         _wexecve(path->wide, argvlist, envlist);
 #else
-        execve(path->narrow, (vms_ptr32)argvlist, (vms_ptr32)envlist);
+#ifdef __VMS
+        __char_ptr_ptr32 argvlist32 = malloc32(argc * sizeof(__char_ptr32));
+        for(int a = 0; a < argc; ++a) {
+            argvlist32[a] = dup32(argvlist[a], strlen(argvlist[a]) + 1);
+        }
+        __char_ptr_ptr32 envlist32 = malloc32(envc * sizeof(__char_ptr32));
+        for(int a = 0; a < envc; ++a) {
+            envlist32[a] = dup32(envlist[a], strlen(envlist[a]) + 1);
+        }
+        execve(path->narrow, argvlist32, envlist32);
+        for(int a = 0; a < argc; ++a) {
+            free(argvlist32[a]);
+        }
+        free(argvlist32);
+        for(int a = 0; a < envc; ++a) {
+            free(envlist32[a]);
+        }
+        free(envlist32);
+#else
+        execve(path->narrow, argvlist, envlist);
+#endif
 #endif
     _Py_END_SUPPRESS_IPH
 
@@ -9387,41 +9419,47 @@ dir_fd may not be implemented on your platform.
 
 #ifdef __VMS
 
+static void freeLibCallArgv(__char_ptr_ptr32 argv) {
+    if (argv) {
+        for(int i = 4; i <= (int)argv[0]; ++i) {
+            free(argv[i]);
+        }
+        free(argv);
+    }
+}
 /*
 argv[0] = number of arguments after argv[0]
 */
-static unsigned int * PyObject2argv(PyObject *pyobj, unsigned int *argv) {
+static __char_ptr_ptr32 PyObject2LibCallArgv(PyObject *pyobj, __char_ptr_ptr32 argv) {
     if (!argv) {
-        return (unsigned int *)PyErr_NoMemory();
+        return (__char_ptr_ptr32)PyErr_NoMemory();
     }
+    const char *s = NULL;
     if (PyUnicode_CheckExact(pyobj)) {
-        ++argv[0];
-        argv = realloc(argv, (argv[0] + 1) * sizeof(unsigned int));
-        if (!argv) {
-            return (unsigned int *)PyErr_NoMemory();
-        }
-        argv[argv[0]] = (unsigned int)PyUnicode_AsUTF8(pyobj);
+        s = PyUnicode_AsUTF8(pyobj);
     } else if (PyBytes_CheckExact(pyobj)) {
-        ++argv[0];
-        argv = realloc(argv, (argv[0] + 1) * sizeof(unsigned int));
-        if (!argv) {
-            return (unsigned int *)PyErr_NoMemory();
-        }
-        argv[argv[0]] = (unsigned int)PyBytes_AS_STRING(pyobj);
+        s = PyBytes_AS_STRING(pyobj);
     } else if (PyTuple_CheckExact(pyobj)) {
         int imax = PyTuple_GET_SIZE(pyobj);
         for(int i = 0; i < imax; ++i) {
-            argv = PyObject2argv(PyTuple_GET_ITEM(pyobj, i), argv);
+            argv = PyObject2LibCallArgv(PyTuple_GET_ITEM(pyobj, i), argv);
             if (!argv) {
                 return NULL;
             }
         }
     } else {
         PyErr_SetString(PyExc_ValueError, "rms must be a string or tuple of strings");
-        if (argv) {
-            free(argv);
-        }
+        freeLibCallArgv(argv);
         return NULL;
+    }
+    if (s) {
+        ++argv[0];
+        __char_ptr_ptr32 nargv = realloc32(argv, (argv[0] + 1) * sizeof(__char_ptr32));
+        if (!argv) {
+            freeLibCallArgv(argv);
+            return (__char_ptr_ptr32)PyErr_NoMemory();
+        }
+        argv[argv[0]] = dup32(s, -1);
     }
     return argv;
 }
@@ -9440,7 +9478,7 @@ os_open_impl(PyObject *module, path_t *path, int flags, int mode, int dir_fd)
     int openat_unavailable = 0;
 #endif
 #ifdef __VMS
-    unsigned int *argv = NULL;
+    __char_ptr32 argv = NULL;
 #endif
 
 #ifdef O_CLOEXEC
@@ -9461,12 +9499,12 @@ os_open_impl(PyObject *module, path_t *path, int flags, int mode, int dir_fd)
 
 #ifdef __VMS
         if (rms && rms != Py_None) {
-            argv = malloc(4 * sizeof(unsigned int));
+            argv = malloc32(4 * sizeof(__char_ptr32));
             argv[0] = 3;
-            argv[1] = (unsigned int)path->narrow;
-            argv[2] = (unsigned int)flags;
-            argv[3] = (unsigned int)mode;
-            argv = PyObject2argv(rms, argv);
+            argv[1] = (__char_ptr32)path->narrow;
+            argv[2] = (__char_ptr32)flags;
+            argv[3] = (__char_ptr32)mode;
+            argv = PyObject2LibCallArgv(rms, argv);
             if (!argv) {
                 return -1;
             }
@@ -9483,7 +9521,7 @@ os_open_impl(PyObject *module, path_t *path, int flags, int mode, int dir_fd)
         if (argv) {
             // we have option arguments
             fd = (int)lib$callg(argv, (int (*)(void)) open);
-            free(argv);
+            freeLibCallArgv(argv);
             argv = NULL;
         } else
 #endif

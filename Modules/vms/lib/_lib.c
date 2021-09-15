@@ -8,8 +8,6 @@
 #include <ssdef.h>
 #include <stsdef.h>
 
-#include "vms/vms_ptr32.h"
-
 #define ConvertArgToStr(arg, value, size, func_name)            \
     if (PyUnicode_CheckExact(arg)) {                            \
         (value) = (char*)PyUnicode_AsUTF8AndSize(arg, &(size)); \
@@ -37,12 +35,7 @@ LIB_date_time(
     PyObject * args)
 {
     char buffer[32];
-    struct dsc$descriptor_s val_dsc;
-
-    val_dsc.dsc$w_length = sizeof(buffer) - 1;
-    val_dsc.dsc$b_class = DSC$K_CLASS_S;
-    val_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-    val_dsc.dsc$a_pointer = buffer;
+    $DESCRIPTOR64(val_dsc, buffer);
 
     int status = 0;
 
@@ -140,11 +133,7 @@ LIB_get_hostname(
     }
 
     char buffer[256];
-    struct dsc$descriptor_s val_dsc;
-    val_dsc.dsc$w_length = sizeof(buffer) - 1;
-    val_dsc.dsc$b_class = DSC$K_CLASS_S;
-    val_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-    val_dsc.dsc$a_pointer = buffer;
+    $DESCRIPTOR(val_dsc, buffer);   // must be 32 bit
 
     int status = 0;
     int result_len = 0;
@@ -203,21 +192,15 @@ LIB_getjpi(
     }
 
     char buffer[256];
-    struct dsc$descriptor_s prn_dsc, val_dsc;
-    struct dsc$descriptor_s *pprn_dsc = NULL;
+    $DESCRIPTOR64(prn_dsc, buffer);
+    $DESCRIPTOR64(val_dsc, buffer);
+    struct dsc64$descriptor_s *pprn_dsc = NULL;
 
     if (proc_name && proc_size) {
-        prn_dsc.dsc$w_length = proc_size;
-        prn_dsc.dsc$b_class = DSC$K_CLASS_S;
-        prn_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-        prn_dsc.dsc$a_pointer = (vms_ptr32)proc_name;
+        prn_dsc.dsc64$q_length = proc_size;
+        prn_dsc.dsc64$pq_pointer = proc_name;
         pprn_dsc = &prn_dsc;
     }
-
-    val_dsc.dsc$w_length = sizeof(buffer) - 1;
-    val_dsc.dsc$b_class = DSC$K_CLASS_S;
-    val_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-    val_dsc.dsc$a_pointer = buffer;
 
     int status = 0;
     int result_len = 0;
@@ -282,21 +265,15 @@ LIB_getsyi(
     }
 
     char buffer[256];
-    struct dsc$descriptor_s node_dsc, val_dsc;
-    struct dsc$descriptor_s *pnode_dsc = NULL;
+    $DESCRIPTOR64(node_dsc, buffer);
+    $DESCRIPTOR64(val_dsc, buffer);
+    struct dsc64$descriptor_s *pnode_dsc = NULL;
 
     long csid = 0;
 
-    val_dsc.dsc$w_length = sizeof(buffer) - 1;
-    val_dsc.dsc$b_class = DSC$K_CLASS_S;
-    val_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-    val_dsc.dsc$a_pointer = buffer;
-
     if (node && node_size) {
-        node_dsc.dsc$w_length = node_size;
-        node_dsc.dsc$b_class = DSC$K_CLASS_S;
-        node_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-        node_dsc.dsc$a_pointer = (vms_ptr32)node;
+        node_dsc.dsc64$q_length = node_size;
+        node_dsc.dsc64$pq_pointer = node;
         pnode_dsc = &node_dsc;
     }
 
@@ -382,38 +359,33 @@ LIB_spawn(
         ConvertArgToStr(args[2], proc_name, proc_size, "spawn");
     }
 
-    struct dsc$descriptor_s cmd_dsc, in_dsc, out_dsc, prn_dsc;
-    struct dsc$descriptor_s *pcmd_dsc = NULL, *pin_dsc = NULL, *pout_dsc = NULL, *pprn_dsc = NULL;
+    $DESCRIPTOR64(cmd_dsc, "");
+    $DESCRIPTOR64(in_dsc, "");
+    $DESCRIPTOR64(out_dsc, "");
+    $DESCRIPTOR64(prn_dsc, "");
+    struct dsc64$descriptor_s *pcmd_dsc = NULL, *pin_dsc = NULL, *pout_dsc = NULL, *pprn_dsc = NULL;
 
     if (cmd && cmd_size) {
-        cmd_dsc.dsc$w_length = cmd_size;
-        cmd_dsc.dsc$b_class = DSC$K_CLASS_S;
-        cmd_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-        cmd_dsc.dsc$a_pointer = (vms_ptr32)cmd;
+        cmd_dsc.dsc64$q_length = cmd_size;
+        cmd_dsc.dsc64$pq_pointer = cmd;
         pcmd_dsc = &cmd_dsc;
     }
 
     if (in_file && in_size) {
-        in_dsc.dsc$w_length = in_size;
-        in_dsc.dsc$b_class = DSC$K_CLASS_S;
-        in_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-        in_dsc.dsc$a_pointer = (vms_ptr32)in_file;
+        in_dsc.dsc64$q_length = in_size;
+        in_dsc.dsc64$pq_pointer = in_file;
         pin_dsc = &in_dsc;
     }
 
     if (out_file && out_size) {
-        out_dsc.dsc$w_length = out_size;
-        out_dsc.dsc$b_class = DSC$K_CLASS_S;
-        out_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-        out_dsc.dsc$a_pointer = (vms_ptr32)out_file;
+        out_dsc.dsc64$q_length = out_size;
+        out_dsc.dsc64$pq_pointer = out_file;
         pout_dsc = &out_dsc;
     }
 
     if (proc_name && proc_size) {
-        prn_dsc.dsc$w_length = proc_size;
-        prn_dsc.dsc$b_class = DSC$K_CLASS_S;
-        prn_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-        prn_dsc.dsc$a_pointer = (vms_ptr32)proc_name;
+        prn_dsc.dsc64$q_length = proc_size;
+        prn_dsc.dsc64$pq_pointer = proc_name;
         pprn_dsc = &prn_dsc;
     }
 
@@ -461,11 +433,9 @@ LIB_do_command(
 
     ConvertArgToStr(args, value, size, "do_command");
 
-    struct dsc$descriptor_s cmd_dsc;
-    cmd_dsc.dsc$w_length = size;
-    cmd_dsc.dsc$b_class = DSC$K_CLASS_S;
-    cmd_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-    cmd_dsc.dsc$a_pointer = (vms_ptr32)value;
+    $DESCRIPTOR64(cmd_dsc, "");
+    cmd_dsc.dsc64$q_length = size;
+    cmd_dsc.dsc64$pq_pointer = value;
 
     int status = 0;
 
@@ -492,12 +462,10 @@ LIB_put_common(
 
     ConvertArgToStr(args, value, size, "put_common");
 
-    struct dsc$descriptor_s str_dsc;
+    $DESCRIPTOR64(str_dsc, "");
 
-    str_dsc.dsc$w_length = size;
-    str_dsc.dsc$b_class = DSC$K_CLASS_S;
-    str_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-    str_dsc.dsc$a_pointer = (vms_ptr32)value;
+    str_dsc.dsc64$q_length = size;
+    str_dsc.dsc64$pq_pointer = value;
 
     int status = 0;
 
@@ -522,11 +490,10 @@ LIB_get_common(
 
     char buffer[MAX_GET_COMMON_SIZE + 1];
 
-    struct dsc$descriptor_s str_dsc;
-    str_dsc.dsc$w_length = MAX_GET_COMMON_SIZE;
-    str_dsc.dsc$b_class = DSC$K_CLASS_S;
-    str_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-    str_dsc.dsc$a_pointer = buffer;
+    $DESCRIPTOR64(str_dsc, "");
+    
+    str_dsc.dsc64$q_length = MAX_GET_COMMON_SIZE;
+    str_dsc.dsc64$pq_pointer = buffer;
 
     unsigned short len = 0;
 
@@ -594,12 +561,10 @@ LIB_create_dir(
         ConvertArgToLong(args[3], pv, "create_dir");
     }
 
-    struct dsc$descriptor_s spec_dsc;
+    $DESCRIPTOR64(spec_dsc, "");
 
-    spec_dsc.dsc$w_length = spec_size;
-    spec_dsc.dsc$b_class = DSC$K_CLASS_S;
-    spec_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-    spec_dsc.dsc$a_pointer = (vms_ptr32)spec;
+    spec_dsc.dsc64$q_length = spec_size;
+    spec_dsc.dsc64$pq_pointer = spec;
 
     int status = 0;
 
@@ -638,17 +603,14 @@ LIB_set_symbol(
 
     ConvertArgToStr(args[1], value, value_size, "set_symbol");
 
-    struct dsc$descriptor_s sym_dsc, val_dsc;
+    $DESCRIPTOR64(sym_dsc, "");
+    $DESCRIPTOR64(val_dsc, "");
 
-    sym_dsc.dsc$w_length = name_size;
-    sym_dsc.dsc$b_class = DSC$K_CLASS_S;
-    sym_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-    sym_dsc.dsc$a_pointer = (vms_ptr32)name;
+    sym_dsc.dsc64$q_length = name_size;
+    sym_dsc.dsc64$pq_pointer = name;
 
-    val_dsc.dsc$w_length = value_size;
-    val_dsc.dsc$b_class = DSC$K_CLASS_S;
-    val_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-    val_dsc.dsc$a_pointer = (vms_ptr32)value;
+    val_dsc.dsc64$q_length = value_size;
+    val_dsc.dsc64$pq_pointer = value;
 
     int status = 0;
 
@@ -671,19 +633,14 @@ LIB_get_symbol(
 
     ConvertArgToStr(args, name, size, "get_symbol");
 
-    struct dsc$descriptor_s symbol_name;
-    symbol_name.dsc$w_length = size;
-    symbol_name.dsc$b_class = DSC$K_CLASS_S;
-    symbol_name.dsc$b_dtype = DSC$K_DTYPE_T;
-    symbol_name.dsc$a_pointer = (vms_ptr32)name;
+    $DESCRIPTOR64(symbol_name, "");
+    
+    symbol_name.dsc64$q_length = size;
+    symbol_name.dsc64$pq_pointer = name;
 
     char buffer[256];
     buffer[0] = 0;
-    struct dsc$descriptor_s symbol_value;
-    symbol_value.dsc$w_length = 255;
-    symbol_value.dsc$b_class = DSC$K_CLASS_S;
-    symbol_value.dsc$b_dtype = DSC$K_DTYPE_T;
-    symbol_value.dsc$a_pointer = (vms_ptr32)buffer;
+    $DESCRIPTOR64(symbol_value, buffer);
 
     short result_len = 0;
     int status = 0;
@@ -725,11 +682,10 @@ LIB_delete_symbol(
 
     ConvertArgToStr(args, name, size, "delete_symbol");
 
-    struct dsc$descriptor_s symbol_name;
-    symbol_name.dsc$w_length = size;
-    symbol_name.dsc$b_class = DSC$K_CLASS_S;
-    symbol_name.dsc$b_dtype = DSC$K_DTYPE_T;
-    symbol_name.dsc$a_pointer = (vms_ptr32)name;
+    $DESCRIPTOR64(symbol_name, "");
+    
+    symbol_name.dsc64$q_length = size;
+    symbol_name.dsc64$pq_pointer = name;
 
     int status = 0;
 
@@ -753,14 +709,13 @@ unsigned int get_crc_code(
         0x9B64C2B0, 0x86D3D2D4, 0xA00AE278, 0xBDBDF21C
         };
 
-    struct dsc$descriptor_s crc_stream;
+    $DESCRIPTOR64(crc_stream, "");
+    
     unsigned   crc_result  = 0;
     int       initial_crc = -1;
 
-    crc_stream.dsc$w_length = len;
-    crc_stream.dsc$b_dtype = DSC$K_DTYPE_T;
-    crc_stream.dsc$b_class = DSC$K_CLASS_S;
-    crc_stream.dsc$a_pointer = (vms_ptr32)name;
+    crc_stream.dsc64$q_length = len;
+    crc_stream.dsc64$pq_pointer = name;
 
     crc_result = lib$crc((int *) _crc_table,
         &initial_crc,

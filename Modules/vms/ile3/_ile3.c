@@ -18,22 +18,22 @@
 static void ILE3_dealloc(ILE3Object * self)
 {
     if (self->types != NULL) {
-        PyMem_Free(self->types);
+        free(self->types);
         self->types = NULL;
     }
     if (self->list != NULL) {
         ILEB_64 *ptr = self->list;
         while(self->size) {
             if (ptr->ileb_64$pq_bufaddr) {
-                PyMem_Free(ptr->ileb_64$pq_bufaddr);
+                free(ptr->ileb_64$pq_bufaddr);
             }
             if (ptr->ileb_64$pq_retlen_addr) {
-                PyMem_Free(ptr->ileb_64$pq_retlen_addr);
+                free(ptr->ileb_64$pq_retlen_addr);
             }
             ++ptr;
             --self->size;
         }
-        PyMem_Free(self->list);
+        free(self->list);
         self->list = NULL;
     }
     PyObject_Del(self);
@@ -43,7 +43,7 @@ static void init_item(ILEB_64 *item) {
     item->ileb_64$w_mbo = 1;
     item->ileb_64$l_mbmo = -1;
     item->ileb_64$q_length = 0;
-    item->ileb_64$q_length = 0;
+    item->ileb_64$w_code = 0;
     item->ileb_64$pq_bufaddr = NULL;
     item->ileb_64$pq_retlen_addr = NULL;
 }
@@ -117,14 +117,14 @@ ILE3_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         self->allocated = 1;
         self->size = 0;
         self->pos = -1;
-        self->list = PyMem_Calloc(1, sizeof(ILEB_64));
+        self->list = malloc32(sizeof(ILEB_64));
         if (self->list == NULL) {
             Py_DECREF(self);
             return NULL;
         }
-        self->types = PyMem_Calloc(1, sizeof(int));
+        self->types = malloc32(sizeof(int));
         if (self->types == NULL) {
-            PyMem_Free(self->list);
+            free(self->list);
             self->list = NULL;
             Py_DECREF(self);
             return NULL;
@@ -146,12 +146,12 @@ _value_from_item(
     ILEB_64 *item,
     long type)
 {
-    long size = 0;
+    Py_ssize_t size = 0;
     if (type == DSC64$K_DTYPE_T) {
-        size = *(item->ileb_64$pq_retlen_addr);
+        size = (Py_ssize_t)*(item->ileb_64$pq_retlen_addr);
         return PyUnicode_FromStringAndSize((char*)item->ileb_64$pq_bufaddr, size);
     } else if (type == DSC64$K_DTYPE_VT) {
-        size = *(unsigned char*)item->ileb_64$pq_bufaddr;
+        size = (Py_ssize_t)*(unsigned char*)item->ileb_64$pq_bufaddr;
         return PyUnicode_FromStringAndSize(((char*)item->ileb_64$pq_bufaddr)+1, size);
     }
     size = size_from_type(type);
@@ -176,7 +176,7 @@ ILE3_getat_c(
         long type = *(self->types + pos);
         PyObject *pValue = _value_from_item(item, type);
         if (pValue) {
-            return Py_BuildValue("(H,i,O)", item->ileb_64$q_length, type, pValue);
+            return Py_BuildValue("(H,i,O)", item->ileb_64$w_code, type, pValue);
         }
     } else {
         PyErr_SetNone(PyExc_IndexError);
@@ -202,10 +202,10 @@ static PyObject *ILE3_getat_bytes(ILE3Object *self, PyObject *args) {
     if ((unsigned int)pos < self->size) {
         ILEB_64 *item = (ILEB_64*)self->list + pos;
         long type = *(self->types + pos);
-        long size = *(item->ileb_64$pq_retlen_addr);
+        Py_ssize_t size = (Py_ssize_t)*(item->ileb_64$pq_retlen_addr);
         PyObject *pValue = PyBytes_FromStringAndSize((char*)item->ileb_64$pq_bufaddr, size);
         if (pValue) {
-            return Py_BuildValue("(H,i,O)", item->ileb_64$q_length, type, pValue);
+            return Py_BuildValue("(H,i,O)", item->ileb_64$w_code, type, pValue);
         }
     } else {
         PyErr_SetNone(PyExc_IndexError);
@@ -231,8 +231,8 @@ static int ILE3_increment(ILE3Object *self) {
     ++self->size;
     if (self->size >= self->allocated) {
         self->allocated *= 2;
-        self->list = PyMem_Realloc(self->list, self->allocated * sizeof(ILEB_64));
-        self->types = PyMem_Realloc(self->types, self->allocated * sizeof(int));
+        self->list = realloc32((p32void_t)self->list, self->allocated * sizeof(ILEB_64));
+        self->types = realloc32((p32void_t)self->types, self->allocated * sizeof(int));
     }
     if (self->list && self->types) {
         init_item((ILEB_64*)self->list + self->size);
@@ -247,11 +247,11 @@ static int ILE3_decrement(ILE3Object *self) {
         --self->size;
         ILEB_64 *ptr = (ILEB_64*)self->list + self->size;
         if (ptr->ileb_64$pq_bufaddr) {
-            PyMem_Free(ptr->ileb_64$pq_bufaddr);
+            free(ptr->ileb_64$pq_bufaddr);
             ptr->ileb_64$pq_bufaddr = NULL;
         }
         if (ptr->ileb_64$pq_retlen_addr) {
-            PyMem_Free(ptr->ileb_64$pq_retlen_addr);
+            free(ptr->ileb_64$pq_retlen_addr);
             ptr->ileb_64$pq_retlen_addr = NULL;
         }
         return 0;
@@ -281,8 +281,8 @@ ILE3_append(
 
     ILEB_64 *item = (ILEB_64*)self->list + (self->size - 1);
 
-    item->ileb_64$q_length = PyLong_AsLong(args[0]);
-    item->ileb_64$pq_retlen_addr = PyMem_Malloc(sizeof(short));
+    item->ileb_64$w_code = PyLong_AsLong(args[0]);
+    item->ileb_64$pq_retlen_addr = malloc32(sizeof(__int64));
     if (item->ileb_64$pq_retlen_addr == NULL) {
         ILE3_decrement(self);
         PyErr_SetNone(PyExc_MemoryError);
@@ -353,7 +353,7 @@ ILE3_append(
 
     *item->ileb_64$pq_retlen_addr = size;
     item->ileb_64$q_length = size;
-    item->ileb_64$pq_bufaddr = PyMem_Malloc(size + 1);
+    item->ileb_64$pq_bufaddr = malloc32(size + 1);
     if (item->ileb_64$pq_bufaddr == NULL) {
         PyErr_SetNone(PyExc_MemoryError);
         ILE3_decrement(self);

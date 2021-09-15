@@ -19,7 +19,6 @@
 #include <stsdef.h>
 
 #include "modules/vms/ile3/_ile3.h"
-#include "vms/vms_ptr32.h"
 
 #ifndef DEF_TABNAM
 #define DEF_TABNAM "LNM$FILE_DEV"
@@ -139,17 +138,12 @@ SYS_asctim(
     }
 
     char buffer[64];
-    struct dsc$descriptor_s val_dsc;
+    $DESCRIPTOR(val_dsc, buffer);
     int status = 0;
     unsigned short result_len = 0;
 
-    val_dsc.dsc$w_length = sizeof(buffer) - 1;
-    val_dsc.dsc$b_class = DSC$K_CLASS_S;
-    val_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-    val_dsc.dsc$a_pointer = buffer;
-
     Py_BEGIN_ALLOW_THREADS
-    status = sys$asctim(&result_len, &val_dsc, (struct _generic_64 *) &vms_time, cvt_flag);
+    status = sys$asctim(&result_len, &val_dsc, (__int64_ptr32) &vms_time, cvt_flag);
     Py_END_ALLOW_THREADS
 
     if (!$VMS_STATUS_SUCCESS(status)) {
@@ -170,18 +164,18 @@ SYS_bintim(
     Py_ssize_t time_str_size = 0;
     ConvertArgToStr(args, time_str, time_str_size, "bintim");
 
-    struct dsc$descriptor_s tim_dsc;
+    $DESCRIPTOR(tim_dsc, "");
 
     tim_dsc.dsc$w_length = time_str_size;
-    tim_dsc.dsc$b_class = DSC$K_CLASS_S;
-    tim_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-    tim_dsc.dsc$a_pointer = (vms_ptr32)time_str;
+    tim_dsc.dsc$a_pointer = dup32(time_str, time_str_size + 1);
 
     int status = 0;
     long long vms_time = 0;
     Py_BEGIN_ALLOW_THREADS
     status = sys$bintim(&tim_dsc, (struct _generic_64 *) &vms_time);
     Py_END_ALLOW_THREADS
+
+    free(tim_dsc.dsc$a_pointer);
 
     return Py_BuildValue("(i,L)", status, vms_time);
 }
@@ -241,19 +235,21 @@ SYS_schdwk(
     }
 
     int status = 0;
-    struct dsc$descriptor_s prcnam_dsc, *pprcnam_dsc = NULL;
+    $DESCRIPTOR(prcnam_dsc, "");
+    p32void_t pprcnam_dsc = NULL;
 
     if (prcnam && prcnam_size) {
         prcnam_dsc.dsc$w_length = prcnam_size;
-        prcnam_dsc.dsc$b_class = DSC$K_CLASS_S;
-        prcnam_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-        prcnam_dsc.dsc$a_pointer = (vms_ptr32)prcnam;
-        pprcnam_dsc = &prcnam_dsc;
+        prcnam_dsc.dsc$a_pointer = dup32(prcnam, prcnam_size+1);
     }
 
     Py_BEGIN_ALLOW_THREADS
-    status = sys$schdwk(&pid, (vms_ptr32)pprcnam_dsc, (vms_ptr32)(struct _generic_64 *)&vms_time, (vms_ptr32)(struct _generic_64 *)&rep_time);
+    status = sys$schdwk(&pid, pprcnam_dsc, (__int64_ptr32)&vms_time, (__int64_ptr32)&rep_time);
     Py_END_ALLOW_THREADS
+
+    if (prcnam && prcnam_size) {
+        free(prcnam_dsc.dsc$a_pointer);
+    }
 
     return Py_BuildValue("(i,k)", status, pid);
 }
@@ -298,27 +294,29 @@ SYS_assign(
         }
     }
 
-    struct dsc$descriptor_s dev_dsc;
-    struct dsc$descriptor_s mbx_dsc, *pmbx_dsc = NULL;
+    $DESCRIPTOR(dev_dsc, "");
+    $DESCRIPTOR(mbx_dsc, "");
+    p32void_t pmbx_dsc = NULL;
     int status = 0;
     unsigned short chan = 0;
 
     dev_dsc.dsc$w_length = devnam_size;
-    dev_dsc.dsc$b_class = DSC$K_CLASS_S;
-    dev_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-    dev_dsc.dsc$a_pointer = (vms_ptr32)devnam;
+    dev_dsc.dsc$a_pointer = dup32(devnam, devnam_size+1);
 
     if (mbxnam != NULL && mbxnam_size) {
         mbx_dsc.dsc$w_length = mbxnam_size;
-        mbx_dsc.dsc$b_class = DSC$K_CLASS_S;
-        mbx_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-        mbx_dsc.dsc$a_pointer = (vms_ptr32)mbxnam;
+        mbx_dsc.dsc$a_pointer = dup32(mbxnam, mbxnam_size+1);
         pmbx_dsc = &mbx_dsc;
     }
 
     Py_BEGIN_ALLOW_THREADS
     status = sys$assign(&dev_dsc, &chan, acmode, pmbx_dsc, flags);
     Py_END_ALLOW_THREADS
+
+    free(dev_dsc.dsc$a_pointer);
+    if (mbxnam != NULL && mbxnam_size) {
+        free(mbx_dsc.dsc$a_pointer);
+    }
 
     return Py_BuildValue("(i,H)", status, chan);
 }
@@ -392,7 +390,7 @@ SYS_find_held(
         _PyArg_BadArgument("find_held", "args[0]", "unsigned long", args[0]);
         return NULL;
     }
-    unsigned long long holder = PyLong_AsUnsignedLongLong(args[0]);
+    struct _generic_64 holder = (struct _generic_64)PyLong_AsUnsignedLongLong(args[0]);
 
     unsigned int context = 0;
     if (nargs > 1) {
@@ -407,7 +405,7 @@ SYS_find_held(
     int status = 0;
 
     Py_BEGIN_ALLOW_THREADS
-    status = sys$find_held((vms_ptr32)(struct _generic_64 *) &holder, &id, &attrib, &context);
+    status = sys$find_held(&holder, &id, &attrib, &context);
     Py_END_ALLOW_THREADS
 
     return Py_BuildValue("(i,I,I,I)", status, id, attrib, context);
@@ -423,20 +421,21 @@ SYS_asctoid(
     Py_ssize_t name_size = 0;
     ConvertArgToStr(args, name, name_size, "asctoid");
 
-    struct dsc$descriptor_s name_dsc;
+    $DESCRIPTOR(name_dsc, "");
+    
     unsigned int id = 0;
     unsigned int attrib = 0;
 
     name_dsc.dsc$w_length = name_size;
-    name_dsc.dsc$b_class = DSC$K_CLASS_S;
-    name_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-    name_dsc.dsc$a_pointer = (vms_ptr32)name;
+    name_dsc.dsc$a_pointer = dup32(name, name_size+1);
 
     int status = 0;
 
     Py_BEGIN_ALLOW_THREADS
     status = sys$asctoid(&name_dsc, &id, &attrib);
     Py_END_ALLOW_THREADS
+
+    free(name_dsc.dsc$a_pointer);
 
     return Py_BuildValue("(i,I,I)", status, id, attrib);
 }
@@ -466,15 +465,10 @@ SYS_getmsg(
     }
 
     char buffer[257];
-    struct dsc$descriptor_s val_dsc;
+    $DESCRIPTOR(val_dsc, buffer);
     int status = 0;
     unsigned short result_len = 0;
     unsigned char out[4];
-
-    val_dsc.dsc$w_length = sizeof(buffer) - 1;
-    val_dsc.dsc$b_class = DSC$K_CLASS_S;
-    val_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-    val_dsc.dsc$a_pointer = buffer;
 
     Py_BEGIN_ALLOW_THREADS
     status = sys$getmsg(msgid, &result_len, &val_dsc, flags, out);
@@ -513,16 +507,11 @@ SYS_idtoasc(
     }
 
     char buffer[256];
-    struct dsc$descriptor_s val_dsc;
+    $DESCRIPTOR(val_dsc, buffer);
     int status = 0;
     unsigned short result_len = 0;
     unsigned int resid = 0;
     unsigned int attrib = 0;
-
-    val_dsc.dsc$w_length = sizeof(buffer) - 1;
-    val_dsc.dsc$b_class = DSC$K_CLASS_S;
-    val_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-    val_dsc.dsc$a_pointer = buffer;
 
     Py_BEGIN_ALLOW_THREADS
     status = sys$idtoasc(id, &result_len, &val_dsc, &resid, &attrib, &context);
@@ -575,21 +564,24 @@ SYS_crembx(
     unsigned int flags = 0;
     ConvertPosArgToUnsignedLong(6, flags, "crembx");
 
-    struct dsc$descriptor_s lnm_dsc, *plnm_dsc = NULL;
+    $DESCRIPTOR(lnm_dsc, "");
+    p32void_t plnm_dsc = NULL;
     int status = 0;
     unsigned short chan = 0;
 
     if (logname != NULL && logname_size) {
         lnm_dsc.dsc$w_length = logname_size;
-        lnm_dsc.dsc$b_class = DSC$K_CLASS_S;
-        lnm_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-        lnm_dsc.dsc$a_pointer = (vms_ptr32)logname;
+        lnm_dsc.dsc$a_pointer = dup32(logname, logname_size+1);
         plnm_dsc = &lnm_dsc;
     }
 
     Py_BEGIN_ALLOW_THREADS
-    status = sys$crembx(prmflg, &chan, maxmsg, bufquo, promsk, acmode, (vms_ptr32)plnm_dsc, flags, 0);
+    status = sys$crembx(prmflg, &chan, maxmsg, bufquo, promsk, acmode, plnm_dsc, flags, 0);
     Py_END_ALLOW_THREADS
+
+    if (logname != NULL && logname_size) {
+        free(lnm_dsc.dsc$a_pointer);
+    }
 
     return Py_BuildValue("(i,H)", status, chan);
 }
@@ -631,7 +623,7 @@ SYS_getrmi(
     Py_END_ALLOW_THREADS
     if ($VMS_STATUS_SUCCESS(status)) {
         Py_BEGIN_ALLOW_THREADS
-        status = sys$getrmi(efn, 0, 0, (vms_ptr32)pILE3->list, &iosb, 0, 0);
+        status = sys$getrmi(efn, 0, 0, (p32void_t)pILE3->list, &iosb, 0, 0);
         Py_END_ALLOW_THREADS
         if ($VMS_STATUS_SUCCESS(status)) {
             Py_BEGIN_ALLOW_THREADS
@@ -673,16 +665,16 @@ SYS_getuai(
     }
     ILE3Object *pILE3 = (ILE3Object *)args[1];
     int status = 0;
-    struct dsc$descriptor_s user_dsc;
+    $DESCRIPTOR(user_dsc, "");
 
     user_dsc.dsc$w_length = user_size;
-    user_dsc.dsc$b_class = DSC$K_CLASS_S;
-    user_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-    user_dsc.dsc$a_pointer = (vms_ptr32)user;
+    user_dsc.dsc$a_pointer = dup32(user, user_size+1);
 
     Py_BEGIN_ALLOW_THREADS
-    status = sys$getuai(0, NULL, &user_dsc, (vms_ptr32)pILE3->list, NULL, NULL, 0);
+    status = sys$getuai(0, NULL, &user_dsc, (p32void_t)pILE3->list, NULL, NULL, 0);
     Py_END_ALLOW_THREADS
+
+    free(user_dsc.dsc$a_pointer);
 
     return PyLong_FromLong(status);
 }
@@ -707,16 +699,16 @@ SYS_setuai(
     }
     ILE3Object *pILE3 = (ILE3Object *)args[1];
     int status = 0;
-    struct dsc$descriptor_s user_dsc;
+    $DESCRIPTOR(user_dsc, "");
 
     user_dsc.dsc$w_length = user_size;
-    user_dsc.dsc$b_class = DSC$K_CLASS_S;
-    user_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-    user_dsc.dsc$a_pointer = (vms_ptr32)user;
+    user_dsc.dsc$a_pointer = dup32(user, user_size+1);
 
     Py_BEGIN_ALLOW_THREADS
-    status = sys$setuai(0, NULL, &user_dsc, (vms_ptr32)pILE3->list, NULL, NULL, 0);
+    status = sys$setuai(0, NULL, &user_dsc, (p32void_t)pILE3->list, NULL, NULL, 0);
     Py_END_ALLOW_THREADS
+
+    free(user_dsc.dsc$a_pointer);
 
     return PyLong_FromLong(status);
 }
@@ -754,7 +746,7 @@ SYS_getqui(
     IOSB iosb;
 
     Py_BEGIN_ALLOW_THREADS
-    status = sys$getquiw(EFN$C_ENF, func, (vms_ptr32)(unsigned int*)&context, pILE3 ? (vms_ptr32)pILE3->list : (vms_ptr32)NULL, &iosb, NULL, 0);
+    status = sys$getquiw(EFN$C_ENF, func, (p32uint_t)&context, (p32void_t)(pILE3 ? pILE3->list : NULL), &iosb, NULL, 0);
     Py_END_ALLOW_THREADS
 
     if ($VMS_STATUS_SUCCESS(status)) {
@@ -800,20 +792,23 @@ SYS_getsyi(
     }
 
     int status = 0;
-    struct dsc$descriptor_s node_dsc, *pnode_dsc = NULL;
+    $DESCRIPTOR(node_dsc, "");
+    p32void_t pnode_dsc = NULL;
     IOSB iosb;
 
     if (node && node_size) {
         node_dsc.dsc$w_length = node_size;
-        node_dsc.dsc$b_class = DSC$K_CLASS_S;
-        node_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-        node_dsc.dsc$a_pointer = (vms_ptr32)node;
+        node_dsc.dsc$a_pointer = dup32(node, node_size+1);
         pnode_dsc = &node_dsc;
     }
 
     Py_BEGIN_ALLOW_THREADS
     status = sys$getsyiw(EFN$C_ENF, (unsigned int*)pcsi, pnode_dsc, pILE3->list, &iosb, NULL, 0);
     Py_END_ALLOW_THREADS
+
+    if (node && node_size) {
+        free(node_dsc.dsc$a_pointer);
+    }
 
     if ($VMS_STATUS_SUCCESS(status)) {
         if (!$VMS_STATUS_SUCCESS(iosb.iosb$l_getxxi_status)) {
@@ -859,20 +854,23 @@ SYS_getjpi(
 
     int status = 0;
 
-    struct dsc$descriptor_s prcnam_dsc, *pprcnam_dsc = NULL;
+    $DESCRIPTOR(prcnam_dsc, "");
+    p32void_t pprcnam_dsc = NULL;
     IOSB iosb;
 
     if (prcnam && prcnam_size) {
         prcnam_dsc.dsc$w_length = prcnam_size;
-        prcnam_dsc.dsc$b_class = DSC$K_CLASS_S;
-        prcnam_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-        prcnam_dsc.dsc$a_pointer = (vms_ptr32)prcnam;
+        prcnam_dsc.dsc$a_pointer = dup32(prcnam, prcnam_size+1);
         pprcnam_dsc = &prcnam_dsc;
     }
 
     Py_BEGIN_ALLOW_THREADS
     status = sys$getjpiw(EFN$C_ENF, ppid, pprcnam_dsc, pILE3->list, &iosb, NULL, 0);
     Py_END_ALLOW_THREADS
+
+    if (prcnam && prcnam_size) {
+        free(prcnam_dsc.dsc$a_pointer);
+    }
 
     if ($VMS_STATUS_SUCCESS(status)) {
         if (!$VMS_STATUS_SUCCESS(iosb.iosb$l_getxxi_status)) {
@@ -904,18 +902,18 @@ SYS_getdvi(
     }
     ILE3Object *pILE3 = (ILE3Object *)args[1];
 
-    struct dsc$descriptor_s dev_dsc;
+    $DESCRIPTOR(dev_dsc, "");
     IOSB iosb;
     int status = 0;
 
     dev_dsc.dsc$w_length = dev_size;
-    dev_dsc.dsc$b_class = DSC$K_CLASS_S;
-    dev_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-    dev_dsc.dsc$a_pointer = (vms_ptr32)dev;
+    dev_dsc.dsc$a_pointer = dup32(dev, dev_size+1);
 
     Py_BEGIN_ALLOW_THREADS
-    status = sys$getdviw(EFN$C_ENF, 0, &dev_dsc, (vms_ptr32)pILE3->list, &iosb, NULL, 0, NULL);
+    status = sys$getdviw(EFN$C_ENF, 0, &dev_dsc, (p32void_t)pILE3->list, &iosb, NULL, 0, NULL);
     Py_END_ALLOW_THREADS
+
+    free(dev_dsc.dsc$a_pointer);
 
     if ($VMS_STATUS_SUCCESS(status)) {
         if (!$VMS_STATUS_SUCCESS(iosb.iosb$l_getxxi_status)) {
@@ -951,28 +949,26 @@ SYS_device_scan(
     long long ctxt = 0;
     ConvertPosArgToLongLong(2, ctxt, "device_scan");
 
-    char buffer[128];
-    struct dsc$descriptor_s dev_dsc, *pdev_dsc = NULL;
-    struct dsc$descriptor_s ret_dsc;
+    char buffer[65];
+    $DESCRIPTOR(ret_dsc, buffer);
+    $DESCRIPTOR(dev_dsc, "");
+    p32void_t pdev_dsc = NULL;
     unsigned short result_len = 0;
     int status = 0;
 
     if (patt && patt_size) {
         dev_dsc.dsc$w_length = patt_size;
-        dev_dsc.dsc$b_class = DSC$K_CLASS_S;
-        dev_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-        dev_dsc.dsc$a_pointer = (vms_ptr32)patt;
+        dev_dsc.dsc$a_pointer = dup32(patt, patt_size+1);
         pdev_dsc = &dev_dsc;
     }
 
-    ret_dsc.dsc$w_length = sizeof(buffer) - 1;
-    ret_dsc.dsc$b_class = DSC$K_CLASS_S;
-    ret_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-    ret_dsc.dsc$a_pointer = buffer;
-
     Py_BEGIN_ALLOW_THREADS
-    status = sys$device_scan(&ret_dsc, &result_len, (vms_ptr32)pdev_dsc, pILE3 ? (vms_ptr32)pILE3->list : (vms_ptr32)NULL, (vms_ptr32)(struct _generic_64 *) &ctxt);
+    status = sys$device_scan(&ret_dsc, &result_len, pdev_dsc, (p32void_t)(pILE3 ? pILE3->list : NULL), (__int64_ptr32) &ctxt);
     Py_END_ALLOW_THREADS
+
+    if (patt && patt_size) {
+        free(dev_dsc.dsc$a_pointer);
+    }
 
     if (!$VMS_STATUS_SUCCESS(status)) {
         result_len = 0;
@@ -1014,19 +1010,16 @@ SYS_dellnm(
         acmode = PyLong_AsUnsignedLong(args[2]);
         pacmode = &acmode;
     }
-    struct dsc$descriptor_s tabnam_dsc;
-    struct dsc$descriptor_s lognam_dsc, *plognam_dsc = NULL;
+    $DESCRIPTOR(tabnam_dsc, "");
+    $DESCRIPTOR(lognam_dsc, "");
+    p32void_t plognam_dsc = NULL;
 
     tabnam_dsc.dsc$w_length = tabnam_size;
-    tabnam_dsc.dsc$b_class = DSC$K_CLASS_S;
-    tabnam_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-    tabnam_dsc.dsc$a_pointer = (vms_ptr32)tabnam;
+    tabnam_dsc.dsc$a_pointer = dup32(tabnam, tabnam_size+1);
 
     if (lognam && lognam_size) {
         lognam_dsc.dsc$w_length = lognam_size;
-        lognam_dsc.dsc$b_class = DSC$K_CLASS_S;
-        lognam_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-        lognam_dsc.dsc$a_pointer = (vms_ptr32)lognam;
+        lognam_dsc.dsc$a_pointer = dup32(lognam, lognam_size+1);
         plognam_dsc = &lognam_dsc;
     }
 
@@ -1035,6 +1028,11 @@ SYS_dellnm(
     Py_BEGIN_ALLOW_THREADS
     status = sys$dellnm(&tabnam_dsc, plognam_dsc, pacmode);
     Py_END_ALLOW_THREADS
+
+    free(tabnam_dsc.dsc$a_pointer);
+    if (lognam && lognam_size) {
+        free(lognam_dsc.dsc$a_pointer);
+    }
 
     return PyLong_FromLong(status);
 }
@@ -1090,19 +1088,16 @@ SYS_trnlnm(
         pattr = &attr;
     }
 
-    struct dsc$descriptor_s tabnam_dsc;
-    struct dsc$descriptor_s lognam_dsc, *plognam_dsc = NULL;
+    $DESCRIPTOR(tabnam_dsc, "");
+    $DESCRIPTOR(lognam_dsc, "");
+    p32void_t plognam_dsc = NULL;
 
     tabnam_dsc.dsc$w_length = tabnam_size;
-    tabnam_dsc.dsc$b_class = DSC$K_CLASS_S;
-    tabnam_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-    tabnam_dsc.dsc$a_pointer = (vms_ptr32)tabnam;
+    tabnam_dsc.dsc$a_pointer = dup32(tabnam, tabnam_size+1);
 
     if (lognam && lognam_size) {
         lognam_dsc.dsc$w_length = lognam_size;
-        lognam_dsc.dsc$b_class = DSC$K_CLASS_S;
-        lognam_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-        lognam_dsc.dsc$a_pointer = (vms_ptr32)lognam;
+        lognam_dsc.dsc$a_pointer = dup32(lognam, lognam_size+1);
         plognam_dsc = &lognam_dsc;
     }
 
@@ -1111,6 +1106,11 @@ SYS_trnlnm(
     Py_BEGIN_ALLOW_THREADS
     status = sys$trnlnm(pattr, &tabnam_dsc, plognam_dsc, pacmode, pILE3 ? pILE3->list : NULL);
     Py_END_ALLOW_THREADS
+
+    free(tabnam_dsc.dsc$a_pointer);
+    if (lognam && lognam_size) {
+        free(lognam_dsc.dsc$a_pointer);
+    }
 
     return PyLong_FromLong(status);
 }
@@ -1165,19 +1165,16 @@ SYS_crelnm(
         pattr = &attr;
     }
 
-    struct dsc$descriptor_s tabnam_dsc;
-    struct dsc$descriptor_s lognam_dsc, *plognam_dsc = NULL;
+    $DESCRIPTOR(tabnam_dsc, "");
+    $DESCRIPTOR(lognam_dsc, "");
+    p32void_t plognam_dsc = NULL;
 
     tabnam_dsc.dsc$w_length = tabnam_size;
-    tabnam_dsc.dsc$b_class = DSC$K_CLASS_S;
-    tabnam_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-    tabnam_dsc.dsc$a_pointer = (vms_ptr32)tabnam;
+    tabnam_dsc.dsc$a_pointer = dup32(tabnam, tabnam_size+1);
 
     if (lognam && lognam_size) {
         lognam_dsc.dsc$w_length = lognam_size;
-        lognam_dsc.dsc$b_class = DSC$K_CLASS_S;
-        lognam_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-        lognam_dsc.dsc$a_pointer = (vms_ptr32)lognam;
+        lognam_dsc.dsc$a_pointer = dup32(lognam, lognam_size=1);
         plognam_dsc = &lognam_dsc;
     }
 
@@ -1186,6 +1183,11 @@ SYS_crelnm(
     Py_BEGIN_ALLOW_THREADS
     status = sys$crelnm(pattr, &tabnam_dsc, plognam_dsc, pacmode, pILE3 ? pILE3->list : NULL);
     Py_END_ALLOW_THREADS
+
+    free(tabnam_dsc.dsc$a_pointer);
+    if (lognam && lognam_size) {
+        free(lognam_dsc.dsc$a_pointer);
+    }
 
     return PyLong_FromLong(status);
 }
@@ -1221,19 +1223,22 @@ SYS_forcex(
         }
     }
 
-    struct dsc$descriptor_s prcnam_dsc, *pprcnam_dsc = NULL;
+    $DESCRIPTOR(prcnam_dsc, "");
+    p32void_t pprcnam_dsc = NULL;
     if (prcnam && prcnam_size) {
         prcnam_dsc.dsc$w_length = prcnam_size;
-        prcnam_dsc.dsc$b_class = DSC$K_CLASS_S;
-        prcnam_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-        prcnam_dsc.dsc$a_pointer = (vms_ptr32)prcnam;
+        prcnam_dsc.dsc$a_pointer = dup32(prcnam, prcnam_size+1);
         pprcnam_dsc = &prcnam_dsc;
     }
 
     int status = 0;
     Py_BEGIN_ALLOW_THREADS
-    status = sys$forcex((vms_ptr32)ppid, (vms_ptr32)pprcnam_dsc, code);
+    status = sys$forcex((p32uint_t)ppid, pprcnam_dsc, code);
     Py_END_ALLOW_THREADS
+
+    if (prcnam && prcnam_size) {
+        free(prcnam_dsc.dsc$a_pointer);
+    }
 
     return PyLong_FromLong(status);
 }
@@ -1265,19 +1270,22 @@ SYS_delprc(
         }
     }
 
-    struct dsc$descriptor_s prcnam_dsc, *pprcnam_dsc = NULL;
+    $DESCRIPTOR(prcnam_dsc, "");
+    p32void_t pprcnam_dsc = NULL;
     if (prcnam && prcnam_size) {
         prcnam_dsc.dsc$w_length = prcnam_size;
-        prcnam_dsc.dsc$b_class = DSC$K_CLASS_S;
-        prcnam_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-        prcnam_dsc.dsc$a_pointer = (vms_ptr32)prcnam;
+        prcnam_dsc.dsc$a_pointer = dup32(prcnam, prcnam_size+1);
         pprcnam_dsc = &prcnam_dsc;
     }
 
     int status = 0;
     Py_BEGIN_ALLOW_THREADS
-    status = sys$delprc((vms_ptr32)ppid, (vms_ptr32)pprcnam_dsc, DELPRC$M_NOEXIT);
+    status = sys$delprc((p32uint_t)ppid, pprcnam_dsc, DELPRC$M_NOEXIT);
     Py_END_ALLOW_THREADS
+
+    if (prcnam && prcnam_size) {
+        free(prcnam_dsc.dsc$a_pointer);
+    }
 
     return PyLong_FromLong(status);
 }
@@ -1325,16 +1333,16 @@ SYS_add_ident(
     unsigned int resid = 0;
     int status = 0;
 
-    struct dsc$descriptor_s name_dsc;
+    $DESCRIPTOR(name_dsc, "");
 
     name_dsc.dsc$w_length = name_size;
-    name_dsc.dsc$b_class = DSC$K_CLASS_S;
-    name_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-    name_dsc.dsc$a_pointer = (vms_ptr32)name;
+    name_dsc.dsc$a_pointer = dup32(name, name_size+1);
 
     Py_BEGIN_ALLOW_THREADS
     status = sys$add_ident(&name_dsc, id, attrib, &resid);
     Py_END_ALLOW_THREADS
+
+    free(name_dsc.dsc$a_pointer);
 
     return Py_BuildValue("(i,I)", status, resid);
 }
@@ -1358,7 +1366,7 @@ SYS_rem_holder(
 
     int status = 0;
     Py_BEGIN_ALLOW_THREADS
-    status = sys$rem_holder(id, (vms_ptr32)(struct _generic_64 *) &holder);
+    status = sys$rem_holder(id, (__int64_ptr32) &holder);
     Py_END_ALLOW_THREADS
 
     return PyLong_FromLong(status);
@@ -1386,7 +1394,7 @@ SYS_add_holder(
 
     int status = 0;
     Py_BEGIN_ALLOW_THREADS
-    status = sys$add_holder(id, (vms_ptr32)(struct _generic_64 *) &holder, attrib);
+    status = sys$add_holder(id, (__int64_ptr32) &holder, attrib);
     Py_END_ALLOW_THREADS
 
     return PyLong_FromLong(status);
@@ -1413,7 +1421,7 @@ SYS_getlki(
     int status = 0;
 
     Py_BEGIN_ALLOW_THREADS
-    status = sys$getlkiw(EFN$C_ENF, &lkid, (vms_ptr32)pILE3->list, &iosb, NULL, 0, 0);
+    status = sys$getlkiw(EFN$C_ENF, &lkid, (p32void_t)pILE3->list, &iosb, NULL, 0, 0);
     Py_END_ALLOW_THREADS
 
     if ($VMS_STATUS_SUCCESS(status)) {
@@ -1454,7 +1462,8 @@ SYS_uicstr(
     }
 
     char buffer[32], fmt[16];
-    struct dsc$descriptor_s str_dsc, fmt_dsc;
+    $DESCRIPTOR(str_dsc, buffer);
+    $DESCRIPTOR(fmt_dsc, fmt);
     unsigned short result_len = 0;
     int status = 0;
 
@@ -1463,16 +1472,6 @@ SYS_uicstr(
     } else {
         strcpy(fmt, "!%I");
     }
-
-    fmt_dsc.dsc$w_length = sizeof(fmt) - 1;
-    fmt_dsc.dsc$b_class = DSC$K_CLASS_S;
-    fmt_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-    fmt_dsc.dsc$a_pointer = fmt;
-
-    str_dsc.dsc$w_length = sizeof(buffer) - 1;
-    str_dsc.dsc$b_class = DSC$K_CLASS_S;
-    str_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-    str_dsc.dsc$a_pointer = buffer;
 
     Py_BEGIN_ALLOW_THREADS
     status = sys$fao(&fmt_dsc, &result_len, &str_dsc, val);
@@ -1550,22 +1549,20 @@ SYS_show_intrusion(
     unsigned int context = 0;
     ConvertPosArgToUnsignedLong(2, context, "show_intrusion");
 
-    void *pcriteria = NULL;
-    struct dsc$descriptor_s criteria_dsc;
+    p32void_t pcriteria = NULL;
+    $DESCRIPTOR(criteria_dsc, "");
     if (match && match_size) {
         flags &= ~CIA$M_ITEMLIST;
         criteria_dsc.dsc$w_length = match_size;
-        criteria_dsc.dsc$b_class = DSC$K_CLASS_S;
-        criteria_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-        criteria_dsc.dsc$a_pointer = (vms_ptr32)match;
+        criteria_dsc.dsc$a_pointer = dup32(match, match_size+1);
         pcriteria = &criteria_dsc;
     } else if (pILE3) {
         flags |= CIA$M_ITEMLIST;
-        pcriteria = pILE3;
+        pcriteria = (p32void_t)pILE3->list;
     }
 
-    struct dsc$descriptor_s intruder_dsc;
     char buffer[1059];
+    $DESCRIPTOR(intruder_dsc, buffer);
     unsigned short result_len = 0;
     struct {
         unsigned int type;
@@ -1573,15 +1570,14 @@ SYS_show_intrusion(
         unsigned long long expires;
     } blk = {0};
 
-    intruder_dsc.dsc$w_length = sizeof(buffer) - 1;
-    intruder_dsc.dsc$b_class = DSC$K_CLASS_S;
-    intruder_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-    intruder_dsc.dsc$a_pointer = buffer;
-
     int status = 0;
     Py_BEGIN_ALLOW_THREADS
-    status = sys$show_intrusion((vms_ptr32)pcriteria, &intruder_dsc, &result_len, &blk, flags, &context);
+    status = sys$show_intrusion(pcriteria, &intruder_dsc, &result_len, &blk, flags, &context);
     Py_END_ALLOW_THREADS
+
+    if (match && match_size) {
+        free(criteria_dsc.dsc$a_pointer);
+    }
 
     if (!$VMS_STATUS_SUCCESS(status)) {
         result_len = 0;
@@ -1636,7 +1632,7 @@ SYS_setprv(
     int status = 0;
     unsigned long long previous = 0;
     Py_BEGIN_ALLOW_THREADS
-    status = sys$setprv(enbflg, (vms_ptr32)(struct _generic_64 *)&prv, prmflg, (vms_ptr32)(struct _generic_64 *)&previous);
+    status = sys$setprv(enbflg, (__int64_ptr32)&prv, prmflg, (__int64_ptr32)&previous);
     Py_END_ALLOW_THREADS
     return Py_BuildValue("(i,K)", status, previous);
 }
@@ -1757,8 +1753,8 @@ SYS_sndopr(
     Py_ssize_t message_size = 0;
     ConvertArgToStr(args, message, message_size, "sndopr");
 
-    struct dsc$descriptor_s         msg_dsc;
-    OPCDEF                          msg;
+    $DESCRIPTOR(msg_dsc, "");
+    OPCDEF  msg;
 
     msg.opc$b_ms_type   = OPC$_RQ_RQST;
     msg.opc$b_ms_target = OPC$M_NM_CENTRL;
@@ -1766,12 +1762,10 @@ SYS_sndopr(
 
     message_size = min(message_size, 128);
 
-    memcpy((char *) &msg.opc$l_ms_text, message, message_size);
+    memcpy((p32void_t) &msg.opc$l_ms_text, message, message_size);
 
     msg_dsc.dsc$w_length = message_size + 8;
-    msg_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-    msg_dsc.dsc$b_class = DSC$K_CLASS_S;
-    msg_dsc.dsc$a_pointer = (vms_ptr32) &msg;
+    msg_dsc.dsc$a_pointer = (__char_ptr32)&msg;
 
     int status = 0;
     Py_BEGIN_ALLOW_THREADS

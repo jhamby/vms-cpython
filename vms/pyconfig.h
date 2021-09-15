@@ -1425,7 +1425,9 @@
 #undef PY_SSL_DEFAULT_CIPHER_STRING
 
 /* Define if you want to build an interpreter with many run-time checks. */
-#undef Py_DEBUG
+#ifdef _DEBUG
+#       define Py_DEBUG
+#endif
 
 /* Defined if Python is built as a shared library. */
 #undef Py_ENABLE_SHARED

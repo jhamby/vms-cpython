@@ -46,10 +46,6 @@
 #include <stdio.h>  /* fprintf */
 #include <stdlib.h> /* getenv, rand_s */
 
-#ifdef __VMS
-#include "vms/vms_ptr32.h"
-#endif
-
 #ifdef _WIN32
 #  define getpid GetCurrentProcessId
 #else

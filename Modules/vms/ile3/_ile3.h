@@ -6,7 +6,7 @@ typedef struct {
     unsigned int allocated;
     unsigned int size;
     int          pos;
-    void        *list;
+    void        *list;  // in low memory
     int         *types;
 } ILE3Object;
 

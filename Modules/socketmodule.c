@@ -306,10 +306,6 @@ if_indextoname(index) -- return the corresponding interface name\n\
 // For if_nametoindex() and if_indextoname()
 #include <iphlpapi.h>
 
-#ifdef __VMS
-#include "vms/vms_ptr32.h"
-#endif
-
 /* remove some flags on older version Windows during run-time.
    https://msdn.microsoft.com/en-us/library/windows/desktop/ms738596.aspx */
 typedef struct {
@@ -593,10 +589,6 @@ select_error(void)
 static int support_wsa_no_inherit = -1;
 #endif
 
-#ifdef __VMS
-#include "vms/vms_ptr32.h"
-#endif
-
 #if defined(__VMS) && __INITIAL_POINTER_SIZE == 64
     typedef struct __iovec64 Py_iovec;
     typedef struct __addrinfo64 Py_addrinfo;
@@ -685,7 +677,7 @@ internal_setblocking(PySocketSockObject *s, int block)
 #ifndef MS_WINDOWS
 #if (defined(HAVE_SYS_IOCTL_H) && defined(FIONBIO))
     block = !block;
-    if (ioctl(s->sock_fd, FIONBIO, (vms_ptr32)(unsigned int *)&block) == -1)
+    if (ioctl(s->sock_fd, FIONBIO, &block) == -1)
         goto done;
 #else
     delay_flag = fcntl(s->sock_fd, F_GETFL, 0);
@@ -6810,13 +6802,13 @@ socket_if_nameindex(PyObject *self, PyObject *arg)
         if (ni_tuple == NULL || PyList_Append(list, ni_tuple) == -1) {
             Py_XDECREF(ni_tuple);
             Py_DECREF(list);
-            if_freenameindex((vms_ptr32)ni);
+            if_freenameindex((p32void_t)ni);
             return NULL;
         }
         Py_DECREF(ni_tuple);
     }
 
-    if_freenameindex((vms_ptr32)ni);
+    if_freenameindex((p32void_t)ni);
     return list;
 #endif
 }
@@ -6839,7 +6831,10 @@ socket_if_nametoindex(PyObject *self, PyObject *args)
                           PyUnicode_FSConverter, &oname))
         return NULL;
 
-    index = if_nametoindex((vms_ptr32)PyBytes_AS_STRING(oname));
+    __char_ptr32 name32 = dup32(PyBytes_AS_STRING(oname), -1);
+    index = if_nametoindex(name32);
+    free(name32);
+
     Py_DECREF(oname);
     if (index == 0) {
         /* if_nametoindex() doesn't set errno */

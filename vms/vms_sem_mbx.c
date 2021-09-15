@@ -24,8 +24,6 @@
 #include <ssdef.h>
 #include <starlet.h>
 
-#include "vms/vms_ptr32.h"
-
 #undef _USE_EFN_
 
 /* Open a named semaphore */
@@ -54,10 +52,9 @@ sem_t_mbx *sem_open_mbx (const char *name, int oflag, ...) {
         }
     }
 
-    dsc_name.dsc$a_pointer = (vms_ptr32)name;
+    $DESCRIPTOR(dsc_name, "");
     dsc_name.dsc$w_length = strlen(name);
-    dsc_name.dsc$b_dtype = DSC$K_DTYPE_T;
-    dsc_name.dsc$b_class = DSC$K_CLASS_S;
+    dsc_name.dsc$a_pointer = dup32(name, dsc_name.dsc$w_length+1);
 
     status = SYS$CREMBX(
         0,              // temporary
@@ -69,6 +66,8 @@ sem_t_mbx *sem_open_mbx (const char *name, int oflag, ...) {
         &dsc_name,      // lognam
         0,              // flags
         0);             // nullarg
+    
+    free(dsc_name.dsc$a_pointer);
 
     if (SS$_NORMAL == status) {
         if (oflag == 0) {

@@ -16,7 +16,7 @@
 #endif
 
 #ifdef __VMS
-#include "vms/vms_ptr32.h"
+#include "vms/__char_ptr32.h"
 #endif
 
 /*[clinic input]
@@ -203,11 +203,11 @@ fcntl_ioctl_impl(PyObject *module, int fd, unsigned int code,
             }
             if (buf == arg) {
                 Py_BEGIN_ALLOW_THREADS /* think array.resize() */
-                ret = ioctl(fd, code, (vms_ptr32)arg);
+                ret = ioctl(fd, code, (__char_ptr32)arg);
                 Py_END_ALLOW_THREADS
             }
             else {
-                ret = ioctl(fd, code, (vms_ptr32)arg);
+                ret = ioctl(fd, code, (__char_ptr32)arg);
             }
             if (mutate_arg && (len <= IOCTL_BUFSZ)) {
                 memcpy(str, buf, len);
@@ -260,7 +260,7 @@ fcntl_ioctl_impl(PyObject *module, int fd, unsigned int code,
     }
     Py_BEGIN_ALLOW_THREADS
     #ifdef __VMS
-    ret = ioctl(fd, code, (vms_ptr32)arg);
+    ret = ioctl(fd, code, (__char_ptr32)arg);
     #else
     ret = ioctl(fd, code, arg);
     #endif

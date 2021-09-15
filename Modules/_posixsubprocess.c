@@ -62,7 +62,7 @@
 #endif
 
 #ifdef __VMS
-#include "vms/vms_ptr32.h"
+#include "vms/__char_ptr32.h"
 #endif
 
 #ifdef __VMS
@@ -728,46 +728,46 @@ vms_child_exec(
 
     decc$set_child_standard_streams(p2cread, c2pwrite, errwrite);
     pid = vfork();
-    vms_ptr32_ptr32 argv32 = (vms_ptr32_ptr32)NULL;
-    vms_ptr32_ptr32 envp32 = (vms_ptr32_ptr32)NULL;
+    __char_ptr_ptr32 argv32 = (__char_ptr_ptr32)NULL;
+    __char_ptr_ptr32 envp32 = (__char_ptr_ptr32)NULL;
     if (pid == 0) {
 #if defined(__VMS) && __INITIAL_POINTER_SIZE == 64
         int i = 0;
         while(argv[i]) {
             ++i;
         }
-        argv32 = (vms_ptr32_ptr32)_malloc32((i + 1)*sizeof(vms_ptr32));
+        argv32 = (__char_ptr_ptr32)_malloc32((i + 1)*sizeof(__char_ptr32));
         i = 0;
         while(argv[i]) {
-            argv32[i] = (vms_ptr32)_malloc32(strlen(argv[i]) + 1);
+            argv32[i] = (__char_ptr32)_malloc32(strlen(argv[i]) + 1);
             strcpy(argv32[i], argv[i]);
             ++i;
         }
-        argv32[i] = (vms_ptr32)0;
+        argv32[i] = (__char_ptr32)0;
         if (envp) {
             i = 0;
             while(envp[i]) {
                 ++i;
             }
-            envp32 = (vms_ptr32_ptr32)_malloc32((i + 1)*sizeof(vms_ptr32));
+            envp32 = (__char_ptr_ptr32)_malloc32((i + 1)*sizeof(__char_ptr32));
             i = 0;
             while(envp[i]) {
-                envp32[i] = (vms_ptr32)_malloc32(strlen(envp[i]) + 1);
+                envp32[i] = (__char_ptr32)_malloc32(strlen(envp[i]) + 1);
                 strcpy(envp32[i], envp[i]);
                 ++i;
             }
-            envp32[i] = (vms_ptr32)0;
+            envp32[i] = (__char_ptr32)0;
         }
 #else
-        argv32 = (vms_ptr32_ptr32)argv;
-        envp32 = (vms_ptr32_ptr32)envp;
+        argv32 = (__char_ptr_ptr32)argv;
+        envp32 = (__char_ptr_ptr32)envp;
 #endif
         for (int i = 0; exec_array[i] != NULL; ++i) {
             const char *executable = exec_array[i];
             if (envp) {
-                execve(executable, (vms_ptr32)argv32, (vms_ptr32)envp32);
+                execve(executable, (__char_ptr32)argv32, (__char_ptr32)envp32);
             } else {
-                execv(executable, (vms_ptr32)argv32);
+                execv(executable, (__char_ptr32)argv32);
             }
             if (errno != ENOENT && errno != ENOTDIR) {
                 break;

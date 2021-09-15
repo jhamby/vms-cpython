@@ -2144,6 +2144,8 @@ _Py_wgetcwd=PROCEDURE,-
 _Py_wreadlink=PROCEDURE,-
 _Py_write=PROCEDURE,-
 _Py_write_noraise=PROCEDURE,-
+_Py_RefTotal=DATA,-
+_Py_NegativeRefcount=PROCEDURE,-
 delete_non_unlinkable_l0otqmgc$=PROCEDURE,-
 delete_non_unlinkable_link=PROCEDURE-
 )
