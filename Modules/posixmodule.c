@@ -9418,17 +9418,12 @@ dir_fd may not be implemented on your platform.
 
 #ifdef __VMS
 
-#if __INITIAL_POINTER_SIZE == 64
-#   define  malloc_low      _malloc32
-#   define  realloc_low     _realloc32
-#else
-#   define  malloc_low      malloc
-#   define  realloc_low     realloc
-#endif
-
 static void free_libcallg_arg(__u_long_ptr32 argv) {
     if (argv) {
 #if __INITIAL_POINTER_SIZE == 64
+        // free allocated path
+        free((__void_ptr32)argv[1]);
+        // free any allocated string
         for(int i = 4; i <= argv[0]; ++i) {
             free((__void_ptr32)argv[i]);
         }
@@ -9463,7 +9458,11 @@ static __u_long_ptr32 PyObject2LibCallgArg(PyObject *pyobj, __u_long_ptr32 argv)
     }
     if (str_add) {
         ++argv[0];
-        __u_long_ptr32 new_argv = realloc_low(argv, (argv[0] + 1) * sizeof(__u_long));
+#if __INITIAL_POINTER_SIZE == 64
+        __u_long_ptr32 new_argv = _realloc32(argv, (argv[0] + 1) * sizeof(__u_long));
+#else
+        __u_long_ptr32 new_argv = realloc(argv, (argv[0] + 1) * sizeof(__u_long));
+#endif
         if (!new_argv) {
             free_libcallg_arg(argv);
             return (__u_long_ptr32)PyErr_NoMemory();
@@ -9513,9 +9512,17 @@ os_open_impl(PyObject *module, path_t *path, int flags, int mode, int dir_fd)
 
 #ifdef __VMS
     if (rms && rms != Py_None) {
-        argv = (__u_long_ptr32)malloc_low(4 * sizeof(__u_long));
+#if __INITIAL_POINTER_SIZE == 64
+        argv = (__u_long_ptr32)_malloc32(4 * sizeof(__u_long));
+#else
+        argv = (__u_long_ptr32)malloc(4 * sizeof(__u_long));
+#endif
         argv[0] = 3;
+#if __INITIAL_POINTER_SIZE == 64
+        argv[1] = (__u_long)_strdup32(path->narrow);
+#else
         argv[1] = (__u_long)path->narrow;
+#endif
         argv[2] = (__u_long)flags;
         argv[3] = (__u_long)mode;
         argv = PyObject2LibCallgArg(rms, argv);
