@@ -6,7 +6,10 @@
 #include <descrip.h>
 #include <lib$routines.h>
 #include <ssdef.h>
+#include <stdlib.h>
 #include <stsdef.h>
+
+#include "vms/vms_dsc.h"
 
 #define ConvertArgToStr(arg, value, size, func_name)            \
     if (PyUnicode_CheckExact(arg)) {                            \
@@ -201,21 +204,15 @@ LIB_getjpi(
     }
 
     char buffer[256];
-    struct dsc$descriptor_s prn_dsc, val_dsc;
-    struct dsc$descriptor_s *pprn_dsc = NULL;
+    $DESCRIPTOR(prn_dsc, "");
+    $DESCRIPTOR(val_dsc, buffer);
+    __void_ptr32 pprn_dsc = NULL;
 
     if (proc_name && proc_size) {
         prn_dsc.dsc$w_length = proc_size;
-        prn_dsc.dsc$b_class = DSC$K_CLASS_S;
-        prn_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-        prn_dsc.dsc$a_pointer = proc_name;
+        set_dsc_string(prn_dsc, proc_name);
         pprn_dsc = &prn_dsc;
     }
-
-    val_dsc.dsc$w_length = sizeof(buffer) - 1;
-    val_dsc.dsc$b_class = DSC$K_CLASS_S;
-    val_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-    val_dsc.dsc$a_pointer = buffer;
 
     int status = 0;
     int result_len = 0;
@@ -225,6 +222,8 @@ LIB_getjpi(
     status = lib$getjpi(&item, &pid, pprn_dsc, 0, &val_dsc, &result_len);
 
     Py_END_ALLOW_THREADS
+
+    free_dsc_string(prn_dsc);
 
     if (!$VMS_STATUS_SUCCESS(status)) {
         result_len = 0;
@@ -280,21 +279,15 @@ LIB_getsyi(
     }
 
     char buffer[256];
-    struct dsc$descriptor_s node_dsc, val_dsc;
-    struct dsc$descriptor_s *pnode_dsc = NULL;
+    $DESCRIPTOR(val_dsc, buffer);
+    $DESCRIPTOR(node_dsc, "");
+    __void_ptr32 pnode_dsc = NULL;
 
     long csid = 0;
 
-    val_dsc.dsc$w_length = sizeof(buffer) - 1;
-    val_dsc.dsc$b_class = DSC$K_CLASS_S;
-    val_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-    val_dsc.dsc$a_pointer = buffer;
-
     if (node && node_size) {
         node_dsc.dsc$w_length = node_size;
-        node_dsc.dsc$b_class = DSC$K_CLASS_S;
-        node_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-        node_dsc.dsc$a_pointer = node;
+        set_dsc_string(node_dsc, node);
         pnode_dsc = &node_dsc;
     }
 
@@ -306,6 +299,8 @@ LIB_getsyi(
     status = lib$getsyi(&item, NULL, &val_dsc, &result_len, &csid, pnode_dsc);
 
     Py_END_ALLOW_THREADS
+
+    free_dsc_string(node_dsc);
 
     if (!$VMS_STATUS_SUCCESS(status)) {
         result_len = 0;
@@ -380,38 +375,33 @@ LIB_spawn(
         ConvertArgToStr(args[2], proc_name, proc_size, "spawn");
     }
 
-    struct dsc$descriptor_s cmd_dsc, in_dsc, out_dsc, prn_dsc;
-    struct dsc$descriptor_s *pcmd_dsc = NULL, *pin_dsc = NULL, *pout_dsc = NULL, *pprn_dsc = NULL;
+    $DESCRIPTOR(cmd_dsc, "");
+    $DESCRIPTOR(in_dsc, "");
+    $DESCRIPTOR(out_dsc, "");
+    $DESCRIPTOR(prn_dsc, "");
+    __void_ptr32 pcmd_dsc = NULL, pin_dsc = NULL, pout_dsc = NULL, pprn_dsc = NULL;
 
     if (cmd && cmd_size) {
         cmd_dsc.dsc$w_length = cmd_size;
-        cmd_dsc.dsc$b_class = DSC$K_CLASS_S;
-        cmd_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-        cmd_dsc.dsc$a_pointer = cmd;
+        set_dsc_string(cmd_dsc, cmd);
         pcmd_dsc = &cmd_dsc;
     }
 
     if (in_file && in_size) {
         in_dsc.dsc$w_length = in_size;
-        in_dsc.dsc$b_class = DSC$K_CLASS_S;
-        in_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-        in_dsc.dsc$a_pointer = in_file;
+        set_dsc_string(in_dsc, in_file);
         pin_dsc = &in_dsc;
     }
 
     if (out_file && out_size) {
         out_dsc.dsc$w_length = out_size;
-        out_dsc.dsc$b_class = DSC$K_CLASS_S;
-        out_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-        out_dsc.dsc$a_pointer = out_file;
+        set_dsc_string(out_dsc, out_file);
         pout_dsc = &out_dsc;
     }
 
     if (proc_name && proc_size) {
         prn_dsc.dsc$w_length = proc_size;
-        prn_dsc.dsc$b_class = DSC$K_CLASS_S;
-        prn_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-        prn_dsc.dsc$a_pointer = proc_name;
+        set_dsc_string(prn_dsc, proc_name);
         pprn_dsc = &prn_dsc;
     }
 
@@ -430,6 +420,11 @@ LIB_spawn(
         NULL, 0, NULL, NULL, NULL, NULL, NULL);
 
     Py_END_ALLOW_THREADS
+
+    free_dsc_string(cmd_dsc);
+    free_dsc_string(in_dsc);
+    free_dsc_string(out_dsc);
+    free_dsc_string(prn_dsc);
 
     PyObject *pResultList = PyList_New(2);
     if (!pResultList) {
@@ -459,11 +454,9 @@ LIB_do_command(
 
     ConvertArgToStr(args, value, size, "do_command");
 
-    struct dsc$descriptor_s cmd_dsc;
+    $DESCRIPTOR(cmd_dsc, "");
     cmd_dsc.dsc$w_length = size;
-    cmd_dsc.dsc$b_class = DSC$K_CLASS_S;
-    cmd_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-    cmd_dsc.dsc$a_pointer = value;
+    set_dsc_string(cmd_dsc, value);
 
     int status = 0;
 
@@ -472,6 +465,8 @@ LIB_do_command(
     status = lib$do_command(&cmd_dsc);
 
     Py_END_ALLOW_THREADS
+
+    free_dsc_string(cmd_dsc);
 
     return PyLong_FromLong(status);
 }
@@ -490,12 +485,10 @@ LIB_put_common(
 
     ConvertArgToStr(args, value, size, "put_common");
 
-    struct dsc$descriptor_s str_dsc;
+    $DESCRIPTOR(str_dsc, "");
 
     str_dsc.dsc$w_length = size;
-    str_dsc.dsc$b_class = DSC$K_CLASS_S;
-    str_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-    str_dsc.dsc$a_pointer = value;
+    set_dsc_string(str_dsc, value);
 
     int status = 0;
 
@@ -504,6 +497,8 @@ LIB_put_common(
     status = lib$put_common(&str_dsc);
 
     Py_END_ALLOW_THREADS
+
+    free_dsc_string(str_dsc);
 
     return PyLong_FromLong(status);
 }
@@ -520,11 +515,7 @@ LIB_get_common(
 
     char buffer[MAX_GET_COMMON_SIZE + 1];
 
-    struct dsc$descriptor_s str_dsc;
-    str_dsc.dsc$w_length = MAX_GET_COMMON_SIZE;
-    str_dsc.dsc$b_class = DSC$K_CLASS_S;
-    str_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-    str_dsc.dsc$a_pointer = buffer;
+    $DESCRIPTOR(str_dsc, buffer);
 
     unsigned short len = 0;
 
@@ -592,12 +583,10 @@ LIB_create_dir(
         ConvertArgToLong(args[3], pv, "create_dir");
     }
 
-    struct dsc$descriptor_s spec_dsc;
+    $DESCRIPTOR(spec_dsc, "");
 
     spec_dsc.dsc$w_length = spec_size;
-    spec_dsc.dsc$b_class = DSC$K_CLASS_S;
-    spec_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-    spec_dsc.dsc$a_pointer = spec;
+    set_dsc_string(spec_dsc, spec);
 
     int status = 0;
 
@@ -606,6 +595,8 @@ LIB_create_dir(
     status = lib$create_dir(&spec_dsc, puic, ppe, ppv, NULL, NULL, NULL);
 
     Py_END_ALLOW_THREADS
+
+    free_dsc_string(spec_dsc);
 
     return PyLong_FromLong(status);
 }
@@ -636,17 +627,13 @@ LIB_set_symbol(
 
     ConvertArgToStr(args[1], value, value_size, "set_symbol");
 
-    struct dsc$descriptor_s sym_dsc, val_dsc;
-
+    $DESCRIPTOR(sym_dsc, "");
     sym_dsc.dsc$w_length = name_size;
-    sym_dsc.dsc$b_class = DSC$K_CLASS_S;
-    sym_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-    sym_dsc.dsc$a_pointer = name;
+    set_dsc_string(sym_dsc, name);
 
+    $DESCRIPTOR(val_dsc, "");
     val_dsc.dsc$w_length = value_size;
-    val_dsc.dsc$b_class = DSC$K_CLASS_S;
-    val_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-    val_dsc.dsc$a_pointer = value;
+    set_dsc_string(val_dsc, value);
 
     int status = 0;
 
@@ -655,6 +642,9 @@ LIB_set_symbol(
     status = lib$set_symbol(&sym_dsc, &val_dsc, NULL);
 
     Py_END_ALLOW_THREADS
+
+    free_dsc_string(sym_dsc);
+    free_dsc_string(val_dsc);
 
     return PyLong_FromLong(status);
 }
@@ -669,19 +659,13 @@ LIB_get_symbol(
 
     ConvertArgToStr(args, name, size, "get_symbol");
 
-    struct dsc$descriptor_s symbol_name;
+    $DESCRIPTOR(symbol_name, "");
     symbol_name.dsc$w_length = size;
-    symbol_name.dsc$b_class = DSC$K_CLASS_S;
-    symbol_name.dsc$b_dtype = DSC$K_DTYPE_T;
-    symbol_name.dsc$a_pointer = name;
+    set_dsc_string(symbol_name, name);
 
     char buffer[256];
     buffer[0] = 0;
-    struct dsc$descriptor_s symbol_value;
-    symbol_value.dsc$w_length = 255;
-    symbol_value.dsc$b_class = DSC$K_CLASS_S;
-    symbol_value.dsc$b_dtype = DSC$K_DTYPE_T;
-    symbol_value.dsc$a_pointer = buffer;
+    $DESCRIPTOR(symbol_value, buffer);
 
     short result_len = 0;
     int status = 0;
@@ -691,6 +675,8 @@ LIB_get_symbol(
     status = lib$get_symbol(&symbol_name, &symbol_value, &result_len);
 
     Py_END_ALLOW_THREADS
+
+    free_dsc_string(symbol_name);
 
     if (!$VMS_STATUS_SUCCESS(status)) {
         result_len = 0;
@@ -723,11 +709,9 @@ LIB_delete_symbol(
 
     ConvertArgToStr(args, name, size, "delete_symbol");
 
-    struct dsc$descriptor_s symbol_name;
+    $DESCRIPTOR(symbol_name, "");
     symbol_name.dsc$w_length = size;
-    symbol_name.dsc$b_class = DSC$K_CLASS_S;
-    symbol_name.dsc$b_dtype = DSC$K_DTYPE_T;
-    symbol_name.dsc$a_pointer = name;
+    set_dsc_string(symbol_name, name);
 
     int status = 0;
 
@@ -736,6 +720,8 @@ LIB_delete_symbol(
     status = lib$delete_symbol(&symbol_name, NULL);
 
     Py_END_ALLOW_THREADS
+
+    free_dsc_string(symbol_name);
 
     return PyLong_FromLong(status);
 }
@@ -751,18 +737,18 @@ unsigned int get_crc_code(
         0x9B64C2B0, 0x86D3D2D4, 0xA00AE278, 0xBDBDF21C
         };
 
-    struct dsc$descriptor_s crc_stream;
+    $DESCRIPTOR(crc_stream, "");
     unsigned   crc_result  = 0;
     int       initial_crc = -1;
 
     crc_stream.dsc$w_length = len;
-    crc_stream.dsc$b_dtype = DSC$K_DTYPE_T;
-    crc_stream.dsc$b_class = DSC$K_CLASS_S;
-    crc_stream.dsc$a_pointer = name;
+    set_dsc_string(crc_stream, name);
 
     crc_result = lib$crc((int *) _crc_table,
         &initial_crc,
         &crc_stream);
+    
+    free_dsc_string(crc_stream);
 
     return crc_result;
 }

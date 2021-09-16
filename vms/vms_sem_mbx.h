@@ -1,5 +1,5 @@
-#ifndef _SEM_MBX_DEFINED
-#define _SEM_MBX_DEFINED
+#ifndef VMS_SEM_MBX_H
+#define VMS_SEM_MBX_H
 
 #ifdef __cplusplus
 extern "C" {}
@@ -31,4 +31,4 @@ int sem_getvalue_mbx (sem_t_mbx *sem, int *sval);
 }
 #endif
 
-#endif // _SEM_MBX_DEFINED
+#endif // VMS_SEM_MBX_H

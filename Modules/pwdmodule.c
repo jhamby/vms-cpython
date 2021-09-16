@@ -6,6 +6,10 @@
 
 #include <pwd.h>
 
+#if defined(__VMS) && __INITIAL_POINTER_SIZE == 64
+#define passwd __passwd64
+#endif
+
 #include "clinic/pwdmodule.c.h"
 /*[clinic input]
 module pwd

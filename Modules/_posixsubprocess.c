@@ -74,7 +74,8 @@
 
 #undef _MAKE_INHERIT
 #ifdef __VMS
-#include "vms_fcntl.h"
+#include "vms/vms_fcntl.h"
+#include "vms/vms_dsc.h"
 #define _IGNORE_FCNTL_BUSY
 #ifndef _IGNORE_FCNTL_BUSY
 #define _MAKE_INHERIT(fd, flg, atomic) vms_fcntl((fd), F_SETFD, (flg) ? 0 : FD_CLOEXEC)
@@ -519,18 +520,18 @@ exec_dcl(char *const argv[], int p2cread, int c2pwrite) {
     int pid = -1;
     unsigned char efn = EFN$C_ENF;
     int flags = CLI$M_NOWAIT;
-    struct dsc$descriptor_s execute = {0, DSC$K_DTYPE_T, DSC$K_CLASS_S, 0};
-    struct dsc$descriptor_s input = {0, DSC$K_DTYPE_T, DSC$K_CLASS_S, 0};
-    struct dsc$descriptor_s output = {0, DSC$K_DTYPE_T, DSC$K_CLASS_S, 0};
+    $DESCRIPTOR(execute, "");
+    $DESCRIPTOR(input, "");
+    $DESCRIPTOR(output, "");
     char input_name[PATH_MAX + 1] = "";
     char output_name[PATH_MAX + 1] = "";
-    struct dsc$descriptor_s *input_ptr = NULL;
-    struct dsc$descriptor_s *output_ptr = NULL;
+    __void_ptr32 input_ptr = NULL;
+    __void_ptr32 output_ptr = NULL;
 
     if (p2cread != -1) {
         if (getname(p2cread, input_name, 1)) {
             input.dsc$w_length = strlen(input_name);
-            input.dsc$a_pointer = (char *)input_name;
+            set_dsc_string(input, input_name);
             input_ptr = &input;
         }
     }
@@ -538,7 +539,7 @@ exec_dcl(char *const argv[], int p2cread, int c2pwrite) {
     if (c2pwrite != -1) {
         if (getname(c2pwrite, output_name, 1)) {
             output.dsc$w_length = strlen(output_name);
-            output.dsc$a_pointer = (char *)output_name;
+            set_dsc_string(output, output_name);
             output_ptr = &output;
         }
     }
@@ -564,7 +565,7 @@ exec_dcl(char *const argv[], int p2cread, int c2pwrite) {
     }
 
     execute.dsc$w_length = strlen(execute_str);
-    execute.dsc$a_pointer = (char *)execute_str;
+    set_dsc_string(execute, execute_str);
 
     unsigned int *ppid, *pfinished;
     int *pstatus;
@@ -586,6 +587,14 @@ exec_dcl(char *const argv[], int p2cread, int c2pwrite) {
             pid = (int)*ppid;
         }
     }
+
+    if (input_ptr) {
+        free_dsc_string(input);
+    }
+    if (output_ptr) {
+        free_dsc_string(output);
+    }
+    free_dsc_string(execute);
 
     return pid;
 }
@@ -724,13 +733,50 @@ vms_child_exec(
 
     decc$set_child_standard_streams(p2cread, c2pwrite, errwrite);
     pid = vfork();
+#if defined(__VMS) && __INITIAL_POINTER_SIZE == 64
+    __char_ptr_ptr32 argv32 = 0, envp32 = 0;
+#endif
     if (pid == 0) {
+#if defined(__VMS) && __INITIAL_POINTER_SIZE == 64
+        int n = 0;
+        while (argv[n]) {
+            ++n;
+        }
+        argv32 = _malloc32((n + 1)* sizeof(__void_ptr32));
+        n = 0;
+        while (argv[n]) {
+            argv32[n] = _strdup32(argv[n]);
+            ++n;
+        }
+        argv32[n] = NULL;
+        if (envp) {
+            int n = 0;
+            while (envp[n]) {
+                ++n;
+            }
+            envp32 = _malloc32((n + 1)* sizeof(__void_ptr32));
+            n = 0;
+            while (envp[n]) {
+                envp32[n] = _strdup32(envp[n]);
+                ++n;
+            }
+            envp32[n] = NULL;
+        }
+#endif
         for (int i = 0; exec_array[i] != NULL; ++i) {
             const char *executable = exec_array[i];
             if (envp) {
+#if defined(__VMS) && __INITIAL_POINTER_SIZE == 64
+                execve(executable, argv32, envp32);
+#else
                 execve(executable, argv, envp);
+#endif
             } else {
+#if defined(__VMS) && __INITIAL_POINTER_SIZE == 64
+                execv(executable, argv32);
+#else
                 execv(executable, argv);
+#endif
             }
             if (errno != ENOENT && errno != ENOTDIR) {
                 break;
@@ -744,6 +790,26 @@ vms_child_exec(
     }
 
 egress:
+
+#if defined(__VMS) && __INITIAL_POINTER_SIZE == 64
+    if (argv32) {
+        int n = 0;
+        while(argv32[n]) {
+            free(argv32[n]);
+            ++n;
+        }
+        free(argv32);
+    }
+    if (envp32) {
+        int n = 0;
+        while(envp32[n]) {
+            free(envp32[n]);
+            ++n;
+        }
+        free(envp32);
+    }
+#endif
+
     // Test if exec() is failed
     if (exec_error) {
         if (pid > 0) {

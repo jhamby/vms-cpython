@@ -1,4 +1,4 @@
-oss$root:[lib]libgdbm32.olb/lib
+oss$root:[lib]libgdbm64.olb/lib
 sys$library:pthread$rtl.exe/SHARE
 python$build_out:[000000]python$shr.exe/SHARE
 CASE_SENSITIVE=YES

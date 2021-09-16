@@ -1106,6 +1106,8 @@ class BytesTest(BaseBytesTest, unittest.TestCase):
             (b'%zu', c_size_t, size_max, str),
             (b'%p', c_char_p, size_max, ptr_formatter),
         ):
+            if sys.platform == 'OpenVMS' and ctypes_type in (c_size_t, c_char_p):
+                continue
             self.assertEqual(PyBytes_FromFormat(formatstr, ctypes_type(value)),
                              py_formatter(value).encode('ascii')),
 

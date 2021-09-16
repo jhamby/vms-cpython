@@ -1606,6 +1606,8 @@ win32_get_reparse_tag(HANDLE reparse_point_handle, ULONG *reparse_tag)
 ** man environ(7).
 */
 #include <crt_externs.h>
+#elif defined (__VMS)
+#   include <unixlib.h>
 #elif !defined(_MSC_VER) && (!defined(__WATCOMC__) || defined(__QNX__) || defined(__VXWORKS__))
 extern char **environ;
 #endif /* !_MSC_VER */
@@ -1617,7 +1619,11 @@ convertenviron(void)
 #ifdef MS_WINDOWS
     wchar_t **e;
 #else
+#if defined(__VMS) && __INITIAL_POINTER_SIZE == 64
+    __char_ptr_ptr32 e;
+#else
     char **e;
+#endif
 #endif
 
     d = PyDict_New();
@@ -5083,10 +5089,10 @@ BOOL WINAPI Py_DeleteFileW(LPCWSTR lpFileName)
 #include <descrip.h>
 #include <lib$routines.h>
 
-extern int decc$to_vms(const char *, int (*)(char *, int, void *), int, int, ...);
+// extern int decc$to_vms(const char *, int (*)(char *, int, void *), int, int, ...);
 
-int delete_non_unlinkable_link_callback(char *name, int flag, void* userdata) {
-    struct dsc$descriptor_s file_name = {0, DSC$K_DTYPE_T, DSC$K_CLASS_S, 0};
+int delete_non_unlinkable_link_callback(__char_ptr32 name, int flag, int userdata) {
+    $DESCRIPTOR(file_name, "");
     file_name.dsc$w_length = strlen(name);
     file_name.dsc$a_pointer = name;
     *(int*)userdata = lib$delete_file(&file_name);
@@ -5095,7 +5101,7 @@ int delete_non_unlinkable_link_callback(char *name, int flag, void* userdata) {
 
 int delete_non_unlinkable_link(const char *path) {
     int del_code = 0;
-    decc$to_vms(path, delete_non_unlinkable_link_callback, 0, 1, &del_code);
+    decc$to_vms(path, (__to_vms_callback)delete_non_unlinkable_link_callback, 0, 1, &del_code);
     return del_code;
 }
 
@@ -5985,7 +5991,19 @@ os_execv_impl(PyObject *module, path_t *path, PyObject *argv)
 #ifdef HAVE_WEXECV
     _wexecv(path->wide, argvlist);
 #else
+#if defined(__VMS) && __INITIAL_POINTER_SIZE == 64
+    __char_ptr_ptr32 argvlist32 = _malloc32(argc * sizeof(__char_ptr32));
+    for(int i = 0; i < argc; ++i) {
+        argvlist32[i] = _strdup32(argvlist[i]);
+    }
+    execv(path->narrow, argvlist32);
+    for(int i = 0; i < argc; ++i) {
+        free(argvlist32[i]);
+    }
+    free(argvlist32);
+#else
     execv(path->narrow, argvlist);
+#endif
 #endif
     _Py_END_SUPPRESS_IPH
 
@@ -6065,7 +6083,27 @@ os_execve_impl(PyObject *module, path_t *path, PyObject *argv, PyObject *env)
 #ifdef HAVE_WEXECV
         _wexecve(path->wide, argvlist, envlist);
 #else
+#if defined(__VMS) && __INITIAL_POINTER_SIZE == 64
+        __char_ptr_ptr32 argvlist32 = _malloc32(argc * sizeof(__char_ptr32));
+        for(int i = 0; i < argc; ++i) {
+            argvlist32[i] = _strdup32(argvlist[i]);
+        }
+        __char_ptr_ptr32 envlist32 = _malloc32(envc * sizeof(__char_ptr32));
+        for(int i = 0; i < envc; ++i) {
+            envlist32[i] = _strdup32(envlist[i]);
+        }
+        execve(path->narrow, argvlist32, envlist32);
+        for(int i = 0; i < envc; ++i) {
+            free(envlist32[i]);
+        }
+        free(envlist32);
+        for(int i = 0; i < argc; ++i) {
+            free(argvlist32[i]);
+        }
+        free(argvlist32);
+#else
         execve(path->narrow, argvlist, envlist);
+#endif
 #endif
     _Py_END_SUPPRESS_IPH
 
@@ -9380,41 +9418,62 @@ dir_fd may not be implemented on your platform.
 
 #ifdef __VMS
 
+#if __INITIAL_POINTER_SIZE == 64
+#   define  malloc_low      _malloc32
+#   define  realloc_low     _realloc32
+#else
+#   define  malloc_low      malloc
+#   define  realloc_low     realloc
+#endif
+
+static void free_libcallg_arg(__u_long_ptr32 argv) {
+    if (argv) {
+#if __INITIAL_POINTER_SIZE == 64
+        for(int i = 4; i <= argv[0]; ++i) {
+            free((__void_ptr32)argv[i]);
+        }
+#endif
+        free(argv);
+    }
+}
 /*
 argv[0] = number of arguments after argv[0]
 */
-static unsigned int * PyObject2argv(PyObject *pyobj, unsigned int *argv) {
+static __u_long_ptr32 PyObject2LibCallgArg(PyObject *pyobj, __u_long_ptr32 argv) {
     if (!argv) {
-        return (unsigned int *)PyErr_NoMemory();
+        return (__u_long_ptr32)PyErr_NoMemory();
     }
+    const char *str_add = NULL;
     if (PyUnicode_CheckExact(pyobj)) {
-        ++argv[0];
-        argv = realloc(argv, (argv[0] + 1) * sizeof(unsigned int));
-        if (!argv) {
-            return (unsigned int *)PyErr_NoMemory();
-        }
-        argv[argv[0]] = (unsigned int)PyUnicode_AsUTF8(pyobj);
+        str_add = PyUnicode_AsUTF8(pyobj);
     } else if (PyBytes_CheckExact(pyobj)) {
-        ++argv[0];
-        argv = realloc(argv, (argv[0] + 1) * sizeof(unsigned int));
-        if (!argv) {
-            return (unsigned int *)PyErr_NoMemory();
-        }
-        argv[argv[0]] = (unsigned int)PyBytes_AS_STRING(pyobj);
+        str_add = PyBytes_AS_STRING(pyobj);
     } else if (PyTuple_CheckExact(pyobj)) {
         int imax = PyTuple_GET_SIZE(pyobj);
         for(int i = 0; i < imax; ++i) {
-            argv = PyObject2argv(PyTuple_GET_ITEM(pyobj, i), argv);
+            argv = PyObject2LibCallgArg(PyTuple_GET_ITEM(pyobj, i), argv);
             if (!argv) {
                 return NULL;
             }
         }
     } else {
         PyErr_SetString(PyExc_ValueError, "rms must be a string or tuple of strings");
-        if (argv) {
-            free(argv);
-        }
+        free_libcallg_arg(argv);
         return NULL;
+    }
+    if (str_add) {
+        ++argv[0];
+        __u_long_ptr32 new_argv = realloc_low(argv, (argv[0] + 1) * sizeof(__u_long));
+        if (!new_argv) {
+            free_libcallg_arg(argv);
+            return (__u_long_ptr32)PyErr_NoMemory();
+        }
+        argv = new_argv;
+#if __INITIAL_POINTER_SIZE == 64
+        argv[argv[0]] = (__u_long)_strdup32(str_add);
+#else
+        argv[argv[0]] = (__u_long)str_add;
+#endif
     }
     return argv;
 }
@@ -9433,7 +9492,7 @@ os_open_impl(PyObject *module, path_t *path, int flags, int mode, int dir_fd)
     int openat_unavailable = 0;
 #endif
 #ifdef __VMS
-    unsigned int *argv = NULL;
+    __u_long_ptr32 argv = NULL;
 #endif
 
 #ifdef O_CLOEXEC
@@ -9453,17 +9512,17 @@ os_open_impl(PyObject *module, path_t *path, int flags, int mode, int dir_fd)
     }
 
 #ifdef __VMS
-        if (rms && rms != Py_None) {
-            argv = malloc(4 * sizeof(unsigned int));
-            argv[0] = 3;
-            argv[1] = (unsigned int)path->narrow;
-            argv[2] = (unsigned int)flags;
-            argv[3] = (unsigned int)mode;
-            argv = PyObject2argv(rms, argv);
-            if (!argv) {
-                return -1;
-            }
+    if (rms && rms != Py_None) {
+        argv = (__u_long_ptr32)malloc_low(4 * sizeof(__u_long));
+        argv[0] = 3;
+        argv[1] = (__u_long)path->narrow;
+        argv[2] = (__u_long)flags;
+        argv[3] = (__u_long)mode;
+        argv = PyObject2LibCallgArg(rms, argv);
+        if (!argv) {
+            return -1;
         }
+    }
 #endif
 
     _Py_BEGIN_SUPPRESS_IPH
@@ -9476,7 +9535,7 @@ os_open_impl(PyObject *module, path_t *path, int flags, int mode, int dir_fd)
         if (argv) {
             // we have option arguments
             fd = (int)lib$callg(argv, (int (*)(void)) open);
-            free(argv);
+            free_libcallg_arg(argv);
             argv = NULL;
         } else
 #endif
@@ -9808,6 +9867,10 @@ os_read_impl(PyObject *module, int fd, Py_ssize_t length)
 
     return buffer;
 }
+
+#if defined(__VMS) && __INITIAL_POINTER_SIZE == 64
+#define iovec __iovec64
+#endif
 
 #if (defined(HAVE_SENDFILE) && (defined(__FreeBSD__) || defined(__DragonFly__) \
                                 || defined(__APPLE__))) \

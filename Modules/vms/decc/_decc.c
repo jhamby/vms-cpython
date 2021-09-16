@@ -107,9 +107,9 @@ DECC_vmstime(
 // extern int decc$from_vms(const char *, int (*)(char *, void *), int, ...);
 // extern int decc$to_vms(const char *, int (*)(char *, int, void *), int, int, ...);
 
-static int cb_from_vms(char *name, void *user_data)
+static int cb_from_vms(__char_ptr32 name, int user_data)
 {
-    PyObject *pTuple = (PyObject *)user_data;
+    PyObject *pTuple = (PyObject *)*(__void_ptr_ptr32)user_data;
     if (pTuple && PyTuple_CheckExact(pTuple) && PyTuple_Size(pTuple) == 2) {
         PyObject *pList = PyTuple_GetItem(pTuple, 0);
         if (pList && pList != Py_None && PyList_CheckExact(pList)) {
@@ -198,7 +198,7 @@ DECC_from_vms(
         Py_RETURN_NONE;
     }
 
-    int num_files = decc$from_vms(path, (__from_vms_callback)cb_from_vms, wild_flag, pTuple);
+    int num_files = decc$from_vms(path, (__from_vms_callback)cb_from_vms, wild_flag, &pTuple);
 
     Py_INCREF(pList);
     Py_DECREF(pTuple);
@@ -206,9 +206,9 @@ DECC_from_vms(
     return pList;
 }
 
-static int cb_to_vms(char *name, int file_type, void *user_data)
+static int cb_to_vms(__char_ptr32 name, int file_type, int user_data)
 {
-    PyObject *pTuple = (PyObject *)user_data;
+    PyObject *pTuple = (PyObject *)*(__void_ptr_ptr32)user_data;
     if (pTuple && PyTuple_CheckExact(pTuple) && PyTuple_Size(pTuple) == 2) {
         PyObject *pList = PyTuple_GetItem(pTuple, 0);
         if (pList && pList != Py_None && PyList_CheckExact(pList)) {
@@ -312,7 +312,7 @@ DECC_to_vms(
         Py_RETURN_NONE;
     }
 
-    int num_files = decc$to_vms(path, (__to_vms_callback)cb_to_vms, allow_wild, no_directory, pTuple);
+    int num_files = decc$to_vms(path, (__to_vms_callback)cb_to_vms, allow_wild, no_directory, &pTuple);
 
     Py_INCREF(pList);
     Py_DECREF(pTuple);

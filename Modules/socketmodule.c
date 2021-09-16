@@ -589,6 +589,10 @@ select_error(void)
 static int support_wsa_no_inherit = -1;
 #endif
 
+#if defined(__VMS) && __INITIAL_POINTER_SIZE == 64
+#define addrinfo __addrinfo64
+#endif
+
 /* Convenience function to raise an error according to errno
    and return a NULL pointer from a function. */
 
@@ -669,7 +673,11 @@ internal_setblocking(PySocketSockObject *s, int block)
 #ifndef MS_WINDOWS
 #if (defined(HAVE_SYS_IOCTL_H) && defined(FIONBIO))
     block = !block;
+#if defined(__VMS) && __INITIAL_POINTER_SIZE == 64
+    if (ioctl(s->sock_fd, FIONBIO, (__void_ptr32)&block) == -1)
+#else
     if (ioctl(s->sock_fd, FIONBIO, (unsigned int *)&block) == -1)
+#endif
         goto done;
 #else
     delay_flag = fcntl(s->sock_fd, F_GETFL, 0);
@@ -5545,7 +5553,11 @@ sock_decode_hostname(const char *name)
 static PyObject *
 gethost_common(struct hostent *h, struct sockaddr *addr, size_t alen, int af)
 {
+#if defined(__VMS) && __INITIAL_POINTER_SIZE == 64
+    __char_ptr_ptr32 pch;
+#else
     char **pch;
+#endif
     PyObject *rtn_tuple = (PyObject *)NULL;
     PyObject *name_list = (PyObject *)NULL;
     PyObject *addr_list = (PyObject *)NULL;
@@ -6762,7 +6774,14 @@ socket_if_nameindex(PyObject *self, PyObject *arg)
     return list;
 #else
     int i;
+#if defined(__VMS) && __INITIAL_POINTER_SIZE == 64
+#   pragma __pointer_size __save
+#   pragma __pointer_size 32
+#endif
     struct if_nameindex *ni;
+#if defined(__VMS) && __INITIAL_POINTER_SIZE == 64
+#   pragma __pointer_size __restore
+#endif
 
     ni = if_nameindex();
     if (ni == NULL) {
@@ -6823,7 +6842,15 @@ socket_if_nametoindex(PyObject *self, PyObject *args)
                           PyUnicode_FSConverter, &oname))
         return NULL;
 
+#if defined(__VMS) && __INITIAL_POINTER_SIZE == 64
+    {
+        __char_ptr32 name32 = _strdup32(PyBytes_AS_STRING(oname));
+        index = if_nametoindex(name32);
+        free(name32);
+    }
+#else
     index = if_nametoindex(PyBytes_AS_STRING(oname));
+#endif
     Py_DECREF(oname);
     if (index == 0) {
         /* if_nametoindex() doesn't set errno */

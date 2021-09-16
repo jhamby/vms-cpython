@@ -5,9 +5,10 @@ SOABI = cpython-310-ia64-openvms
 
 CC_QUALIFIERS = -
 /NAMES=(AS_IS,SHORTENED) -
-/WARNINGS=(WARNINGS=ALL, DISABLE=(EXTRASEMI)) -
+/WARNINGS=(WARNINGS=ALL, DISABLE=(EXTRASEMI, MAYLOSEDATA3)) -
 /ACCEPT=NOVAXC_KEYWORDS -
-/REENTRANCY=MULTITHREAD
+/REENTRANCY=MULTITHREAD -
+/POINTER_SIZE=64
 
 CC_DEFINES = -
 _USE_STD_STAT, -                ! COMMON
@@ -1710,4 +1711,3 @@ DECIMAL_HEADERS = -
 ############################################################################
 CLEAN :
     del/tree [.$(OUT_DIR)...]*.*;*
-

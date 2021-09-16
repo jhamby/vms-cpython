@@ -1119,6 +1119,7 @@ class BaseTest:
         self.assertEqual(len(a) * a.itemsize, 4)
 
     @support.cpython_only
+    @unittest.skipIf(sys.platform == 'OpenVMS', 'sizeof(T) != offsetof(T.last) + sizeof(T.last)')
     def test_sizeof_with_buffer(self):
         a = array.array(self.typecode, self.example)
         basesize = support.calcvobjsize('Pn2Pi')
@@ -1126,6 +1127,7 @@ class BaseTest:
         support.check_sizeof(self, a, basesize + buffer_size)
 
     @support.cpython_only
+    @unittest.skipIf(sys.platform == 'OpenVMS', 'sizeof(T) != offsetof(T.last) + sizeof(T.last)')
     def test_sizeof_without_buffer(self):
         a = array.array(self.typecode)
         basesize = support.calcvobjsize('Pn2Pi')

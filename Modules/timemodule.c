@@ -586,7 +586,11 @@ gettmarg(PyObject *args, struct tm *p, const char *format)
         PyObject *item;
         item = PyStructSequence_GET_ITEM(args, 9);
         if (item != Py_None) {
+#if defined(__VMS) && __INITIAL_POINTER_SIZE == 64
+            p->tm_zone = _strdup32(PyUnicode_AsUTF8(item));
+#else
             p->tm_zone = (char *)PyUnicode_AsUTF8(item);
+#endif
             if (p->tm_zone == NULL) {
                 return 0;
             }
@@ -756,6 +760,9 @@ time_strftime(PyObject *self, PyObject *args)
                        "iiiiiiiii;strftime(): illegal time tuple argument") ||
              !checktm(&buf))
     {
+#if defined(__VMS) && __INITIAL_POINTER_SIZE == 64
+        free(buf.tm_zone);
+#endif
         return NULL;
     }
 
@@ -763,6 +770,9 @@ time_strftime(PyObject *self, PyObject *args)
     if (buf.tm_year + 1900 < 1 || 9999 < buf.tm_year + 1900) {
         PyErr_SetString(PyExc_ValueError,
                         "strftime() requires year in [1; 9999]");
+#if defined(__VMS) && __INITIAL_POINTER_SIZE == 64
+        free(buf.tm_zone);
+#endif
         return NULL;
     }
 #endif
@@ -778,12 +788,18 @@ time_strftime(PyObject *self, PyObject *args)
 #ifdef HAVE_WCSFTIME
     format = PyUnicode_AsWideCharString(format_arg, NULL);
     if (format == NULL)
+#if defined(__VMS) && __INITIAL_POINTER_SIZE == 64
+        { free(buf.tm_zone); return NULL; } if (0)
+#endif
         return NULL;
     fmt = format;
 #else
     /* Convert the unicode string to an ascii one */
     format = PyUnicode_EncodeLocale(format_arg, "surrogateescape");
     if (format == NULL)
+#if defined(__VMS) && __INITIAL_POINTER_SIZE == 64
+        { free(buf.tm_zone); return NULL; } if (0)
+#endif
         return NULL;
     fmt = PyBytes_AS_STRING(format);
 #endif
@@ -802,6 +818,9 @@ time_strftime(PyObject *self, PyObject *args)
             PyErr_SetString(PyExc_ValueError,
                         "format %y requires year >= 1900 on Windows");
             Py_DECREF(format);
+#if defined(__VMS) && __INITIAL_POINTER_SIZE == 64
+            free(buf.tm_zone);
+#endif
             return NULL;
         }
     }
@@ -818,6 +837,9 @@ time_strftime(PyObject *self, PyObject *args)
             PyErr_SetString(PyExc_ValueError,
                             "format %y requires year >= 1900 on AIX");
             PyMem_Free(format);
+#if defined(__VMS) && __INITIAL_POINTER_SIZE == 64
+            free(buf.tm_zone);
+#endif
             return NULL;
         }
     }
@@ -845,6 +867,9 @@ time_strftime(PyObject *self, PyObject *args)
         }
         if (is_trailing_percent) {
             PyErr_SetString(PyExc_ValueError, "Invalid format string");
+#if defined(__VMS) && __INITIAL_POINTER_SIZE == 64
+            free(buf.tm_zone);
+#endif
             return NULL;
         }
     }
@@ -893,6 +918,9 @@ time_strftime(PyObject *self, PyObject *args)
     PyMem_Free(format);
 #else
     Py_DECREF(format);
+#endif
+#if defined(__VMS) && __INITIAL_POINTER_SIZE == 64
+    free(buf.tm_zone);
 #endif
     return ret;
 }

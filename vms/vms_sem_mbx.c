@@ -26,11 +26,13 @@
 
 #undef _USE_EFN_
 
+#include "vms/vms_dsc.h"
+
 /* Open a named semaphore */
 sem_t_mbx *sem_open_mbx (const char *name, int oflag, ...) {
     int status = -1;
     unsigned short chan = 0;
-    struct dsc$descriptor_s dsc_name;
+    $DESCRIPTOR(dsc_name, "");
     sem_t_mbx *sem = SEM_FAILED_MBX;
     va_list vargs;
     unsigned long mode;
@@ -52,10 +54,8 @@ sem_t_mbx *sem_open_mbx (const char *name, int oflag, ...) {
         }
     }
 
-    dsc_name.dsc$a_pointer = (char*)name;
     dsc_name.dsc$w_length = strlen(name);
-    dsc_name.dsc$b_dtype = DSC$K_DTYPE_T;
-    dsc_name.dsc$b_class = DSC$K_CLASS_S;
+    set_dsc_string(dsc_name, name);
 
     status = SYS$CREMBX(
         0,              // temporary
@@ -67,6 +67,8 @@ sem_t_mbx *sem_open_mbx (const char *name, int oflag, ...) {
         &dsc_name,      // lognam
         0,              // flags
         0);             // nullarg
+
+    free_dsc_string(dsc_name);
 
     if (SS$_NORMAL == status) {
         if (oflag == 0) {

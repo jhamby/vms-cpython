@@ -18,21 +18,43 @@
 
 #define PYRMS_M_OPEN 1
 
+
+#if __INITIAL_POINTER_SIZE == 64
+#   define malloc_low   _malloc32
+#   pragma __required_pointer_size __save
+#   pragma __required_pointer_size __short
+#else
+#   define malloc_low   malloc
+#endif
+
+typedef FABDEF      *fab_ptr32_t;
+typedef RAB64DEF    *rab64_ptr32_t;
+typedef RABDEF      *rab32_ptr32_t;
+typedef NAMLDEF     *naml_ptr32_t;
+typedef XABSUMDEF   *xabsum_ptr32_t;
+typedef XABALLDEF   *xaball_ptr32_t;
+typedef XABKEYDEF   *xabkey_ptr32_t;
+typedef XABFHCDEF   *xabfhc_ptr32_t;
+
 typedef struct {
-    PyObject_HEAD FABDEF fab;
-    RABDEF rab;
-    NAMLDEF naml;
-    XABSUMDEF sum;
-    XABALLDEF *area;
-    XABKEYDEF *key;
-    char long_filename[NAML$C_MAXRSS + 1];
-    char esa[NAM$C_MAXRSS + 1];
-    char long_esa[NAML$C_MAXRSS + 1];
-    char rsa[NAM$C_MAXRSS + 1];
-    char long_rsa[NAML$C_MAXRSS + 1];
+    PyObject_HEAD
+    fab_ptr32_t     pfab;
+    rab64_ptr32_t   prab;
+    naml_ptr32_t    pnaml;
+    xabsum_ptr32_t  psum;
+    xaball_ptr32_t  parea;
+    xabkey_ptr32_t  pkey;
+    __char_ptr32    plong_filename;    //NAML$C_MAXRSS + 1
+    __char_ptr32    pesa;              //NAM$C_MAXRSS + 1
+    __char_ptr32    plong_esa;         //NAML$C_MAXRSS + 1
+    __char_ptr32    prsa;              //NAM$C_MAXRSS + 1
+    __char_ptr32    plong_rsa;         //NAML$C_MAXRSS + 1
     unsigned int flags;
 } rms_file_t;
 
+#if __INITIAL_POINTER_SIZE == 64
+#   pragma __required_pointer_size __restore
+#endif
 
 #ifndef adc_Assert
 #define adc_Assert(x) \
@@ -75,142 +97,172 @@ static void addint(PyObject * d, char *name, int val)
     PyObject *obj = PyLong_FromLong((long) val);
 
     if (!obj || (PyDict_SetItemString(d, name, obj) == -1)) {
-	Py_FatalError("can't initialize sane module");
+        Py_FatalError("can't initialize sane module");
     }
 
     Py_DECREF(obj);
 }
 
 
-static void getmsg(unsigned int cond, char *buf, int buflen)
+static void getmsg(unsigned int cond, char *usrbuf, int buflen)
 {
-    unsigned int status;
-    struct dsc$descriptor_s bufD;
     unsigned short int msglen;
-
-    bufD.dsc$w_length = buflen - 1;
-    bufD.dsc$b_dtype = DSC$K_DTYPE_T;
-    bufD.dsc$b_class = DSC$K_CLASS_S;
-    bufD.dsc$a_pointer = buf;
+    unsigned int status;
+    char buf[buflen];
+    $DESCRIPTOR(bufD, buf);
 
     status = sys$getmsg(cond, &msglen, &bufD, 15, 0);
 
-    if (!OKAY(status)) {
-	strncpy(buf, "sys$getmsg failure", buflen);
-	buf[buflen - 1] = '\0';
+    if (OKAY(status)) {
+        bufD.dsc$a_pointer[msglen] = 0;
+        strncpy(usrbuf, bufD.dsc$a_pointer, buflen);
+    } else {
+        strncpy(usrbuf, "sys$getmsg failure", buflen);
     }
-
-    buf[msglen] = '\0';
+    usrbuf[buflen - 1] = '\0';
 }
 
 
 static void
 fill(rms_file_t * self, char *fn, int access, int share, unsigned int fop)
 {
-    self->fab = cc$rms_fab;
-    self->rab = cc$rms_rab;
-    self->sum = cc$rms_xabsum;
-    self->naml = cc$rms_naml;
-    self->area = 0;
-    self->key = 0;
+    self->pfab = (fab_ptr32_t)malloc_low(sizeof(FABDEF));
+    *self->pfab = cc$rms_fab;
+    self->prab = (rab64_ptr32_t)malloc_low(sizeof(RAB64DEF));
+    *self->prab = cc$rms_rab64;
+    self->psum = (xabsum_ptr32_t)malloc_low(sizeof(XABSUMDEF));
+    *self->psum = cc$rms_xabsum;
+    self->pnaml = (naml_ptr32_t)malloc_low(sizeof(NAMLDEF));
+    *self->pnaml = cc$rms_naml;
+    self->parea = 0;
+    self->pkey = 0;
     self->flags = 0;
-    self->fab.fab$b_fac = access;
-    self->fab.fab$b_shr = share;
-    self->fab.fab$l_fna = (char *) -1;
-    self->fab.fab$b_fns = 0;
-    self->fab.fab$l_fop = fop;
-    self->fab.fab$l_xab = (void *) &self->sum;
+    self->pfab->fab$b_fac = access;
+    self->pfab->fab$b_shr = share;
+    self->pfab->fab$l_fna = (__char_ptr32) -1;
+    self->pfab->fab$b_fns = 0;
+    self->pfab->fab$l_fop = fop;
+    self->pfab->fab$l_xab = self->psum;
 
-    self->fab.fab$l_naml = (void *) &self->naml;
+    self->pfab->fab$l_naml = self->pnaml;
 
-    strncpy(self->long_filename, fn, sizeof(self->long_filename) - 1);
-    self->long_filename[sizeof(self->long_filename) - 1] = '\0';
+    self->plong_filename = (__char_ptr32)malloc_low(NAML$C_MAXRSS + 1);
+    strncpy(self->plong_filename, fn, NAML$C_MAXRSS);
+    self->plong_filename[NAML$C_MAXRSS] = '\0';
 
-    self->naml.naml$l_long_filename = (void *) self->long_filename;
-    self->naml.naml$l_long_filename_size = strlen(self->long_filename);
+    self->pnaml->naml$l_long_filename = self->plong_filename;
+    self->pnaml->naml$l_long_filename_size = strlen(self->plong_filename);
 
-    self->naml.naml$l_esa = (void *) self->esa;
-    self->naml.naml$b_ess = sizeof(self->esa) - 1;
-    self->naml.naml$l_rsa = (void *) self->rsa;
-    self->naml.naml$b_rss = sizeof(self->rsa) - 1;
+    self->pesa = (__char_ptr32)malloc_low(NAM$C_MAXRSS + 1);
+    self->pnaml->naml$l_esa = self->pesa;
+    self->pnaml->naml$b_ess = NAM$C_MAXRSS;
+    self->prsa = (__char_ptr32)malloc_low(NAM$C_MAXRSS + 1);
+    self->pnaml->naml$l_rsa = self->prsa;
+    self->pnaml->naml$b_rss = NAM$C_MAXRSS;
 
-    self->naml.naml$l_long_expand = (void *) self->long_esa;
-    self->naml.naml$l_long_expand_alloc = sizeof(self->long_esa) - 1;
-    self->naml.naml$l_long_result = (void *) self->long_rsa;
-    self->naml.naml$l_long_result_alloc = sizeof(self->long_rsa) - 1;
+    self->plong_esa = (__char_ptr32)malloc_low(NAML$C_MAXRSS + 1);
+    self->pnaml->naml$l_long_expand = self->plong_esa;
+    self->pnaml->naml$l_long_expand_alloc = NAML$C_MAXRSS;
+    self->plong_rsa = (__char_ptr32)malloc_low(NAML$C_MAXRSS + 1);
+    self->pnaml->naml$l_long_result = self->plong_rsa;
+    self->pnaml->naml$l_long_result_alloc = NAML$C_MAXRSS;
 
-    self->naml.naml$v_synchk = 0;	        // Have $PARSE do directory existence check
-    self->naml.naml$v_no_short_upcase = 1;	// Don't uppercase short expanded file specification
+    self->pnaml->naml$v_synchk = 0;	        // Have $PARSE do directory existence check
+    self->pnaml->naml$v_no_short_upcase = 1;	// Don't uppercase short expanded file specification
 
 }
 
+static void
+free_bufs(rms_file_t * self) {
+    free(self->pfab);
+    free(self->prab);
+    free(self->pnaml);
+    free(self->psum);
+    free(self->parea);
+    free(self->pkey);
+    free(self->plong_filename);
+    free(self->pesa);
+    free(self->plong_esa);
+    free(self->prsa);
+    free(self->plong_rsa);
+    self->pfab = NULL;
+    self->prab = NULL;
+    self->pnaml = NULL;
+    self->psum = NULL;
+    self->parea = NULL;
+    self->pkey = NULL;
+    self->plong_filename = NULL;
+    self->pesa = NULL;
+    self->plong_esa = NULL;
+    self->prsa = NULL;
+    self->plong_rsa = NULL;
+}
 
 static unsigned int _open(rms_file_t * self)
 {
     unsigned int status;
     int i;
-    XABKEYDEF *key;
-    XABALLDEF *area;
-    void **xab_chain;
+    xabkey_ptr32_t      key;
+    xaball_ptr32_t      area;
+    __void_ptr_ptr32    xab_chain;
 
-    status = sys$open((void *) &self->fab);
-
-    if (!OKAY(status)) {
-	return (status);
-    }
-
-    if (self->fab.fab$b_org != FAB$C_IDX) {
-	return (RMS$_ORG);
-    }
-
-    xab_chain = (void *) &self->fab.fab$l_xab;
-
-    i = self->sum.xab$b_nok;
-
-    adc_Assert((self->key = key = calloc(i, sizeof(XABKEYDEF))));
-    while (--i >= 0) {
-	*key = cc$rms_xabkey;
-	key->xab$b_ref = i;
-	key->xab$l_nxt = *xab_chain;
-	*xab_chain = key;
-	key++;
-    }
-
-    i = self->sum.xab$b_noa;
-    adc_Assert((self->area = area = calloc(i, sizeof(XABALLDEF))));
-    while (--i >= 0) {
-	*area = cc$rms_xaball;
-	area->xab$b_aid = i;
-	area->xab$l_nxt = *xab_chain;
-	*xab_chain = area;
-	area++;
-    }
-
-    status = sys$display((void *) &self->fab);
+    status = sys$open(self->pfab);
 
     if (!OKAY(status)) {
-	return (status);
+        return (status);
     }
 
-    self->naml.naml$l_esa[self->naml.naml$b_esl] = '\0';
-    self->naml.naml$l_rsa[self->naml.naml$b_rsl] = '\0';
-    self->naml.naml$l_long_expand[self->naml.naml$l_long_expand_size] =
-	'\0';
-    self->naml.naml$l_long_result[self->naml.naml$l_long_result_size] =
-	'\0';
+    if (self->pfab->fab$b_org != FAB$C_IDX) {
+        return (RMS$_ORG);
+    }
+
+    xab_chain = &self->pfab->fab$l_xab;
+
+    i = self->psum->xab$b_nok;
+
+    adc_Assert((self->pkey = key = malloc_low(i * sizeof(XABKEYDEF))));
+    while (--i >= 0) {
+        *key = cc$rms_xabkey;
+        key->xab$b_ref = i;
+        key->xab$l_nxt = *xab_chain;
+        *xab_chain = key;
+        key++;
+    }
+
+    i = self->psum->xab$b_noa;
+    adc_Assert((self->parea = area = malloc_low(i * sizeof(XABALLDEF))));
+    while (--i >= 0) {
+        *area = cc$rms_xaball;
+        area->xab$b_aid = i;
+        area->xab$l_nxt = *xab_chain;
+        *xab_chain = area;
+        area++;
+    }
+
+    status = sys$display(self->pfab);
+
+    if (!OKAY(status)) {
+        return (status);
+    }
+
+    self->pnaml->naml$l_esa[self->pnaml->naml$b_esl] = '\0';
+    self->pnaml->naml$l_rsa[self->pnaml->naml$b_rsl] = '\0';
+    self->pnaml->naml$l_long_expand[self->pnaml->naml$l_long_expand_size] = '\0';
+    self->pnaml->naml$l_long_result[self->pnaml->naml$l_long_result_size] = '\0';
 
     self->flags |= PYRMS_M_OPEN;
 
-    self->rab.rab$l_fab = (void *) &self->fab;
+    self->prab->rab64$l_fab = self->pfab;
 
     /* default to primary index */
 
+    self->prab->rab64$b_krf = 0;
+    self->prab->rab64$l_ubf = (__void_ptr32)-1;
+    self->prab->rab64$pq_ubf = 0;
+    self->prab->rab64$w_usz = 0;
+    self->prab->rab64$q_usz = self->pfab->fab$w_mrs;
 
-    self->rab.rab$b_krf = 0;
-    self->rab.rab$l_ubf = NULL;
-    self->rab.rab$w_usz = self->fab.fab$w_mrs;
-
-    return (sys$connect((void *) &self->rab));
+    return (sys$connect((rab32_ptr32_t)self->prab));
 }
 
 
@@ -218,84 +270,88 @@ static unsigned int _close(rms_file_t * self)
 {
     unsigned int status;
 
-    status = sys$disconnect((void *) &self->rab);
+    status = sys$disconnect((rab32_ptr32_t)self->prab);
 
     if (!OKAY(status)) {
-	return (status);
+        return (status);
     }
 
-    return (sys$close((void *) &self->fab));
+    return (sys$close(self->pfab));
 }
 
 
 static unsigned int _flush(rms_file_t * self)
 {
-    return (sys$flush((void *) &self->rab));
+    return (sys$flush((rab32_ptr32_t)self->prab));
 }
 
 
 static unsigned int _free(rms_file_t * self)
 {
-    return (sys$free((void *) &self->rab));
+    return (sys$free((rab32_ptr32_t)self->prab));
 }
 
 
 static unsigned int _release(rms_file_t * self)
 {
-    return (sys$release((void *) &self->rab));
+    return (sys$release((rab32_ptr32_t)self->prab));
 }
 
 
 static unsigned int _usekey(rms_file_t * self, int keynum)
 {
-    if (keynum >= self->sum.xab$b_nok) {
-	return (SS$_INVARG);
+    if (keynum >= self->psum->xab$b_nok) {
+        return (SS$_INVARG);
     }
 
-    self->rab.rab$b_krf = keynum;
+    self->prab->rab64$b_krf = keynum;
     return (RMS$_NORMAL);
 }
 
 
 static int _put(rms_file_t * self, char *buf, int len)
 {
-    self->rab.rab$b_rac = RAB$C_KEY;
-    self->rab.rab$l_rbf = buf;
-    self->rab.rab$w_rsz = len;
-    return (sys$put((void *) &self->rab));
+    self->prab->rab64$b_rac = RAB$C_KEY;
+    self->prab->rab64$l_rbf = (__void_ptr32)-1;
+    self->prab->rab64$pq_rbf = buf;
+    self->prab->rab64$w_rsz = 0;
+    self->prab->rab64$q_rsz = len;
+    return (sys$put((rab32_ptr32_t)self->prab));
 }
 
 
 static unsigned int _update(rms_file_t * self, char *buf, int len)
 {
-    self->rab.rab$l_rbf = buf;
-    self->rab.rab$w_rsz = len;
-    return (sys$update((void *) &self->rab));
+    self->prab->rab64$l_rbf = (__void_ptr32)-1;
+    self->prab->rab64$pq_rbf = buf;
+    self->prab->rab64$w_rsz = 0;
+    self->prab->rab64$q_rsz = len;
+    return (sys$update((rab32_ptr32_t)self->prab));
 }
 
 
-static unsigned int _fetch(rms_file_t * self, char *key, int len,
-			   char *buf, int *retlen)
+static unsigned int _fetch(rms_file_t * self, char *key, int len, char *buf, int *retlen)
 {
     unsigned int status;
 
     if (key) {
-	self->rab.rab$l_kbf = key;
-	self->rab.rab$b_ksz = len;
-	self->rab.rab$b_rac = RAB$C_KEY;
+        self->prab->rab64$l_kbf = (__void_ptr32)-1;
+        self->prab->rab64$pq_kbf = key;
+        self->prab->rab64$b_ksz = len;
+        self->prab->rab64$b_rac = RAB$C_KEY;
     } else {
-	self->rab.rab$b_rac = RAB$C_SEQ;
+        self->prab->rab64$b_rac = RAB$C_SEQ;
     }
 
-    self->rab.rab$l_ubf = (void *) buf;
+    self->prab->rab64$pq_ubf = buf;
 
-    status = sys$get((void *) &self->rab);
+    status = sys$get((rab32_ptr32_t)self->prab);
 
     if (!OKAY(status)) {
-	return (status);
+        return (status);
     }
 
-    *retlen = self->rab.rab$w_rsz;
+    *retlen = self->prab->rab64$q_rsz;
     return (status);
 }
 
@@ -303,14 +359,15 @@ static unsigned int _fetch(rms_file_t * self, char *key, int len,
 static unsigned int _find(rms_file_t * self, char *key, int len)
 {
     if (key) {
-	self->rab.rab$l_kbf = key;
-	self->rab.rab$b_ksz = len;
-	self->rab.rab$b_rac = RAB$C_KEY;
+        self->prab->rab64$l_kbf = (__void_ptr32)-1;
+        self->prab->rab64$pq_kbf = key;
+        self->prab->rab64$b_ksz = len;
+        self->prab->rab64$b_rac = RAB$C_KEY;
     } else {
-	self->rab.rab$b_rac = RAB$C_SEQ;
+        self->prab->rab64$b_rac = RAB$C_SEQ;
     }
 
-    return (sys$find((void *) &self->rab));
+    return (sys$find((rab32_ptr32_t)self->prab));
 }
 
 
@@ -319,26 +376,27 @@ static unsigned int _delete(rms_file_t * self, char *key, int len)
     unsigned int status;
 
     if (key) {
-	self->rab.rab$l_kbf = key;
-	self->rab.rab$b_ksz = len;
-	self->rab.rab$b_rac = RAB$C_KEY;
+        self->prab->rab64$l_kbf = (__void_ptr32)-1;
+        self->prab->rab64$pq_kbf = key;
+        self->prab->rab64$b_ksz = len;
+        self->prab->rab64$b_rac = RAB$C_KEY;
 
-	status = sys$find((void *) &self->rab);
+        status = sys$find((rab32_ptr32_t)self->prab);
 
-	if (!OKAY(status)) {
-	    return (status);
-	}
+        if (!OKAY(status)) {
+            return (status);
+        }
     } else {
-	self->rab.rab$b_rac = RAB$C_SEQ;
+        self->prab->rab64$b_rac = RAB$C_SEQ;
     }
 
-    return (sys$delete((void *) &self->rab));
+    return (sys$delete((rab32_ptr32_t)self->prab));
 }
 
 static unsigned int _setrop(rms_file_t * self, int rop)
 {
-    unsigned int prev_l_rop = self->rab.rab$l_rop;
-    self->rab.rab$l_rop = rop;
+    unsigned int prev_l_rop = self->prab->rab64$l_rop;
+    self->prab->rab64$l_rop = rop;
     return prev_l_rop;
 }
 
@@ -358,29 +416,29 @@ static PyObject *iternext(PyFileObject * self)
     int len = 0;
     PyObject *obj;
     char msg[256];
-    char buf[((rms_file_t *) self)->fab.fab$w_mrs];
+    char buf[((rms_file_t *) self)->pfab->fab$w_mrs];
 
     status = _fetch((rms_file_t *) self, NULL, 0, buf, &len);
 
     if (status == RMS$_EOF) {
-	return (NULL);
+        return (NULL);
     }
 
     if (!OKAY(status)) {
-	getmsg(status, msg, sizeof(msg));
-	if ((obj = Py_BuildValue("(is)", status, msg)) != NULL) {
-	    PyErr_SetObject(RMS_error, obj);
-	    Py_DECREF(obj);
-	}
+        getmsg(status, msg, sizeof(msg));
+        if ((obj = Py_BuildValue("(is)", status, msg)) != NULL) {
+            PyErr_SetObject(RMS_error, obj);
+            Py_DECREF(obj);
+        }
 
-	return (NULL);
+        return (NULL);
     }
 
     if (status == RMS$_EOF) {
-	Py_INCREF(Py_None);
-	obj = Py_None;
+        Py_INCREF(Py_None);
+        obj = Py_None;
     } else {
-	obj = PyBytes_FromStringAndSize(buf, len);
+        obj = PyBytes_FromStringAndSize(buf, len);
     }
 
     return (obj);
@@ -395,28 +453,20 @@ static void dealloc(rms_file_t * self)
     char msg[256];
 
     if (self->flags & PYRMS_M_OPEN) {
-	status = _close(self);
+        status = _close(self);
 
-	if (!OKAY(status)) {
-	    getmsg(status, msg, sizeof(msg));
-	    if ((obj = Py_BuildValue("(is)", status, msg)) != NULL) {
-		PyErr_SetObject(RMS_error, obj);
-		Py_DECREF(obj);
-	    }
-	}
+        if (!OKAY(status)) {
+            getmsg(status, msg, sizeof(msg));
+            if ((obj = Py_BuildValue("(is)", status, msg)) != NULL) {
+                PyErr_SetObject(RMS_error, obj);
+                Py_DECREF(obj);
+            }
+        }
 
-	self->flags ^= PYRMS_M_OPEN;
+        self->flags ^= PYRMS_M_OPEN;
     }
 
-    if (self->area) {
-	free(self->area);
-	self->area = NULL;
-    }
-
-    if (self->key) {
-	free(self->key);
-	self->key = NULL;
-    }
+    free_bufs(self);
 
     PyObject_Del(self);
 }
@@ -430,19 +480,19 @@ static PyObject *RMS_close(rms_file_t * self, PyObject * args)
     PyObject *obj;
 
     if (!PyArg_ParseTuple(args, ":close")) {
-	return (NULL);
+        return (NULL);
     }
 
     status = _close(self);
 
     if (!OKAY(status)) {
-	getmsg(status, msg, sizeof(msg));
-	if ((obj = Py_BuildValue("(is)", status, msg)) != NULL) {
-	    PyErr_SetObject(RMS_error, obj);
-	    Py_DECREF(obj);
-	}
+        getmsg(status, msg, sizeof(msg));
+        if ((obj = Py_BuildValue("(is)", status, msg)) != NULL) {
+            PyErr_SetObject(RMS_error, obj);
+            Py_DECREF(obj);
+        }
 
-	return (NULL);
+        return (NULL);
     }
 
     self->flags ^= PYRMS_M_OPEN;
@@ -457,19 +507,19 @@ static PyObject *RMS_flush(rms_file_t * self, PyObject * args)
     PyObject *obj;
 
     if (!PyArg_ParseTuple(args, ":flush")) {
-	return (NULL);
+        return (NULL);
     }
 
     status = _flush(self);
 
     if (!OKAY(status)) {
-	getmsg(status, msg, sizeof(msg));
-	if ((obj = Py_BuildValue("(is)", status, msg)) != NULL) {
-	    PyErr_SetObject(RMS_error, obj);
-	    Py_DECREF(obj);
-	}
+        getmsg(status, msg, sizeof(msg));
+        if ((obj = Py_BuildValue("(is)", status, msg)) != NULL) {
+            PyErr_SetObject(RMS_error, obj);
+            Py_DECREF(obj);
+        }
 
-	return (NULL);
+        return (NULL);
     }
 
     return (PyLong_FromLong(status));
@@ -483,19 +533,19 @@ static PyObject *RMS_free(rms_file_t * self, PyObject * args)
     PyObject *obj;
 
     if (!PyArg_ParseTuple(args, ":free")) {
-	return (NULL);
+        return (NULL);
     }
 
     status = _free(self);
 
     if (!OKAY(status)) {
-	getmsg(status, msg, sizeof(msg));
-	if ((obj = Py_BuildValue("(is)", status, msg)) != NULL) {
-	    PyErr_SetObject(RMS_error, obj);
-	    Py_DECREF(obj);
-	}
+        getmsg(status, msg, sizeof(msg));
+        if ((obj = Py_BuildValue("(is)", status, msg)) != NULL) {
+            PyErr_SetObject(RMS_error, obj);
+            Py_DECREF(obj);
+        }
 
-	return (NULL);
+        return (NULL);
     }
 
     return (PyLong_FromLong(status));
@@ -510,27 +560,26 @@ static PyObject *RMS_release(rms_file_t * self, PyObject * args)
     PyObject *obj;
 
     if (!PyArg_ParseTuple(args, ":release")) {
-	return (NULL);
+        return (NULL);
     }
 
     status = _release(self);
 
     if (!OKAY(status)) {
-	getmsg(status, msg, sizeof(msg));
-	if ((obj = Py_BuildValue("(is)", status, msg)) != NULL) {
-	    PyErr_SetObject(RMS_error, obj);
-	    Py_DECREF(obj);
-	}
+        getmsg(status, msg, sizeof(msg));
+        if ((obj = Py_BuildValue("(is)", status, msg)) != NULL) {
+            PyErr_SetObject(RMS_error, obj);
+            Py_DECREF(obj);
+        }
 
-	return (NULL);
+        return (NULL);
     }
 
     return (PyLong_FromLong(status));
 }
 
 
-static PyObject *RMS_rewind(rms_file_t * self, PyObject * args,
-			    PyObject * kwargs)
+static PyObject *RMS_rewind(rms_file_t * self, PyObject * args, PyObject * kwargs)
 {
     unsigned int status;
     int keynum = -1;
@@ -540,74 +589,70 @@ static PyObject *RMS_rewind(rms_file_t * self, PyObject * args,
 	"keynum", NULL
     };
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, (char *) "|i:rewind",
-				     kwnames, &keynum)) {
-	return (NULL);
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, (char *) "|i:rewind", kwnames, &keynum)) {
+        return (NULL);
     }
 
     if (keynum >= 0) {
-	status = _usekey((rms_file_t *) self, keynum);
+        status = _usekey((rms_file_t *) self, keynum);
 
-	if (!OKAY(status)) {
-	    getmsg(status, msg, sizeof(msg));
-	    if ((obj = Py_BuildValue("(is)", status, msg)) != NULL) {
-		PyErr_SetObject(RMS_error, obj);
-		Py_DECREF(obj);
-	    }
+        if (!OKAY(status)) {
+            getmsg(status, msg, sizeof(msg));
+            if ((obj = Py_BuildValue("(is)", status, msg)) != NULL) {
+                PyErr_SetObject(RMS_error, obj);
+                Py_DECREF(obj);
+            }
 
-	    return (NULL);
-	}
+            return (NULL);
+        }
     }
 
-    status = sys$rewind((void *) &self->rab, 0, 0);
+    status = sys$rewind((rab32_ptr32_t) self->prab, 0, 0);
 
     if (!OKAY(status)) {
-	getmsg(status, msg, sizeof(msg));
-	if ((obj = Py_BuildValue("(is)", status, msg)) != NULL) {
-	    PyErr_SetObject(RMS_error, obj);
-	    Py_DECREF(obj);
-	}
+        getmsg(status, msg, sizeof(msg));
+        if ((obj = Py_BuildValue("(is)", status, msg)) != NULL) {
+            PyErr_SetObject(RMS_error, obj);
+            Py_DECREF(obj);
+        }
 
-	return (NULL);
+        return (NULL);
     }
 
     return (PyLong_FromLong(status));
 }
 
 
-static PyObject *RMS_usekey(rms_file_t * self, PyObject * args,
-			    PyObject * kwargs)
+static PyObject *RMS_usekey(rms_file_t * self, PyObject * args, PyObject * kwargs)
 {
     unsigned int status;
     int keynum = 0;
     PyObject *res, *obj;
     char msg[256];
     char *kwnames[] = {
-	"keynum", NULL
+        "keynum", NULL
     };
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, (char *) "|i:usekey",
-				     kwnames, &keynum)) {
-	return (NULL);
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, (char *) "|i:usekey", kwnames, &keynum)) {
+        return (NULL);
     }
 
     status = _usekey((rms_file_t *) self, keynum);
     if (!OKAY(status)) {
-	getmsg(status, msg, sizeof(msg));
-	if ((obj = Py_BuildValue("(is)", status, msg)) != NULL) {
-	    PyErr_SetObject(RMS_error, obj);
-	    Py_DECREF(obj);
-	}
+        getmsg(status, msg, sizeof(msg));
+        if ((obj = Py_BuildValue("(is)", status, msg)) != NULL) {
+            PyErr_SetObject(RMS_error, obj);
+            Py_DECREF(obj);
+        }
 
-	return (NULL);
+        return (NULL);
     }
 
     return (PyLong_FromLong(status));
 }
 
 
-static PyObject *RMS_put(rms_file_t * self, PyObject * args,
-			 PyObject * kwargs)
+static PyObject *RMS_put(rms_file_t * self, PyObject * args, PyObject * kwargs)
 {
     unsigned int status;
     char *buf = NULL;
@@ -615,32 +660,30 @@ static PyObject *RMS_put(rms_file_t * self, PyObject * args,
     PyObject *res, *obj;
     char msg[256];
     char *kwnames[] = {
-	"record", NULL
+        "record", NULL
     };
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, (char *) "s#:put",
-				     kwnames, &buf, &len)) {
-	return (NULL);
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, (char *) "s#:put", kwnames, &buf, &len)) {
+        return (NULL);
     }
 
     status = _put((rms_file_t *) self, buf, len);
 
     if (!OKAY(status)) {
-	getmsg(status, msg, sizeof(msg));
-	if ((obj = Py_BuildValue("(is)", status, msg)) != NULL) {
-	    PyErr_SetObject(RMS_error, obj);
-	    Py_DECREF(obj);
-	}
+        getmsg(status, msg, sizeof(msg));
+        if ((obj = Py_BuildValue("(is)", status, msg)) != NULL) {
+            PyErr_SetObject(RMS_error, obj);
+            Py_DECREF(obj);
+        }
 
-	return (NULL);
+        return (NULL);
     }
 
     return (PyLong_FromLong(status));
 }
 
 
-static PyObject *RMS_update(rms_file_t * self, PyObject * args,
-			    PyObject * kwargs)
+static PyObject *RMS_update(rms_file_t * self, PyObject * args, PyObject * kwargs)
 {
     unsigned int status;
     char *buf = NULL;
@@ -648,32 +691,30 @@ static PyObject *RMS_update(rms_file_t * self, PyObject * args,
     PyObject *res, *obj;
     char msg[256];
     char *kwnames[] = {
-	"record", NULL
+        "record", NULL
     };
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, (char *) "s#:update",
-				     kwnames, &buf, &len)) {
-	return (NULL);
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, (char *) "s#:update", kwnames, &buf, &len)) {
+        return (NULL);
     }
 
     status = _update((rms_file_t *) self, buf, len);
 
     if (!OKAY(status)) {
-	getmsg(status, msg, sizeof(msg));
-	if ((obj = Py_BuildValue("(is)", status, msg)) != NULL) {
-	    PyErr_SetObject(RMS_error, obj);
-	    Py_DECREF(obj);
-	}
+        getmsg(status, msg, sizeof(msg));
+        if ((obj = Py_BuildValue("(is)", status, msg)) != NULL) {
+            PyErr_SetObject(RMS_error, obj);
+            Py_DECREF(obj);
+        }
 
-	return (NULL);
+        return (NULL);
     }
 
     return (PyLong_FromLong(status));
 }
 
 
-static PyObject *RMS_fetch(rms_file_t * self, PyObject * args,
-			   PyObject * kwargs)
+static PyObject *RMS_fetch(rms_file_t * self, PyObject * args, PyObject * kwargs)
 {
     unsigned int status;
     char *keyval = NULL;
@@ -681,36 +722,35 @@ static PyObject *RMS_fetch(rms_file_t * self, PyObject * args,
     PyObject *res, *obj, *o1, *o2;
     char msg[256];
     char *kwnames[] = {
-	"key", NULL
+        "key", NULL
     };
 
-    char buf[((rms_file_t *) self)->fab.fab$w_mrs];
+    char buf[((rms_file_t *) self)->pfab->fab$w_mrs];
     int retlen = 0;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, (char *) "|s#:fetch",
-				     kwnames, &keyval, &len)) {
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, (char *) "|s#:fetch", kwnames, &keyval, &len)) {
 	return (NULL);
     }
 
     status = _fetch((rms_file_t *) self, keyval, len, buf, &retlen);
 
     if (status != RMS$_EOF && status != RMS$_RNF && !OKAY(status)) {
-	getmsg(status, msg, sizeof(msg));
-	if ((obj = Py_BuildValue("(is)", status, msg)) != NULL) {
-	    PyErr_SetObject(RMS_error, obj);
-	    Py_DECREF(obj);
-	}
+        getmsg(status, msg, sizeof(msg));
+        if ((obj = Py_BuildValue("(is)", status, msg)) != NULL) {
+            PyErr_SetObject(RMS_error, obj);
+            Py_DECREF(obj);
+        }
 
-	return (NULL);
+        return (NULL);
     }
 
     o1 = PyLong_FromLong(status);
 
     if (status == RMS$_EOF || status == RMS$_RNF) {
-	Py_INCREF(Py_None);
-	o2 = Py_None;
+        Py_INCREF(Py_None);
+        o2 = Py_None;
     } else {
-	o2 = PyBytes_FromStringAndSize(buf, retlen);
+        o2 = PyBytes_FromStringAndSize(buf, retlen);
     }
 
     res = PyTuple_New(2);
@@ -721,8 +761,7 @@ static PyObject *RMS_fetch(rms_file_t * self, PyObject * args,
 }
 
 
-static PyObject *RMS_find(rms_file_t * self, PyObject * args,
-			  PyObject * kwargs)
+static PyObject *RMS_find(rms_file_t * self, PyObject * args, PyObject * kwargs)
 {
     unsigned int status;
     char *keyval = NULL;
@@ -730,32 +769,30 @@ static PyObject *RMS_find(rms_file_t * self, PyObject * args,
     char msg[256];
     PyObject *obj;
     char *kwnames[] = {
-	"key", NULL
+        "key", NULL
     };
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, (char *) "|s#:find",
-				     kwnames, &keyval, &len)) {
-	return (NULL);
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, (char *) "|s#:find", kwnames, &keyval, &len)) {
+        return (NULL);
     }
 
     status = _find((rms_file_t *) self, keyval, len);
 
     if (status != RMS$_EOF && !OKAY(status)) {
-	getmsg(status, msg, sizeof(msg));
-	if ((obj = Py_BuildValue("(is)", status, msg)) != NULL) {
-	    PyErr_SetObject(RMS_error, obj);
-	    Py_DECREF(obj);
-	}
+        getmsg(status, msg, sizeof(msg));
+        if ((obj = Py_BuildValue("(is)", status, msg)) != NULL) {
+            PyErr_SetObject(RMS_error, obj);
+            Py_DECREF(obj);
+        }
 
-	return (NULL);
+        return (NULL);
     }
 
     return (PyLong_FromLong(status));
 }
 
 
-static PyObject *RMS_delete(rms_file_t * self, PyObject * args,
-			    PyObject * kwargs)
+static PyObject *RMS_delete(rms_file_t * self, PyObject * args, PyObject * kwargs)
 {
     unsigned int status;
     char *keyval = NULL;
@@ -763,24 +800,23 @@ static PyObject *RMS_delete(rms_file_t * self, PyObject * args,
     char msg[256];
     PyObject *obj;
     char *kwnames[] = {
-	"key", NULL
+        "key", NULL
     };
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, (char *) "|s#:delete",
-				     kwnames, &keyval, &len)) {
-	return (NULL);
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, (char *) "|s#:delete", kwnames, &keyval, &len)) {
+        return (NULL);
     }
 
     status = _delete((rms_file_t *) self, keyval, len);
 
     if (status != RMS$_EOF && !OKAY(status)) {
-	getmsg(status, msg, sizeof(msg));
-	if ((obj = Py_BuildValue("(is)", status, msg)) != NULL) {
-	    PyErr_SetObject(RMS_error, obj);
-	    Py_DECREF(obj);
-	}
+        getmsg(status, msg, sizeof(msg));
+        if ((obj = Py_BuildValue("(is)", status, msg)) != NULL) {
+            PyErr_SetObject(RMS_error, obj);
+            Py_DECREF(obj);
+        }
 
-	return (NULL);
+        return (NULL);
     }
 
     return (PyLong_FromLong(status));
@@ -833,22 +869,44 @@ static PyMethodDef tp_methods[] = {
 };
 
 
-#define OFF(x) offsetof(rms_file_t, x)
+static PyObject *
+RMS_getlongname(rms_file_t *self, void *closure)
+{
+    if (self->plong_rsa) {
+        return PyUnicode_FromString(self->plong_rsa);
+    }
+    Py_RETURN_NONE;
+}
 
-static PyMemberDef tp_members[] = {
-    {"longname", T_STRING_INPLACE, OFF(long_rsa), READONLY,
-     "long filename"},
-    {"nok", T_UBYTE, OFF(sum.xab$b_nok), READONLY,
-     "number of keys"},
-    {"org", T_UBYTE, OFF(fab.fab$b_org), READONLY,
-     "file organization"},
-    {NULL}
+static PyObject *
+RMS_getnok(rms_file_t *self, void *closure)
+{
+    if (self->psum) {
+        return PyLong_FromLong(self->psum->xab$b_nok);
+    }
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+RMS_getorg(rms_file_t *self, void *closure)
+{
+    if (self->pfab) {
+        return PyLong_FromLong(self->pfab->fab$b_org);
+    }
+    Py_RETURN_NONE;
+}
+
+static PyGetSetDef tp_getset[] = {
+    {"longname", (getter) RMS_getlongname, NULL,
+     "long filename", NULL},
+    {"nok", (getter) RMS_getnok, NULL,
+     "number of keys", NULL},
+    {"org", (getter) RMS_getorg, NULL,
+     "file organization", NULL},
+    {NULL}  /* Sentinel */
 };
 
-
-
-static PyObject *RMS_new(PyObject * self, PyObject * args,
-			 PyObject * kwargs)
+static PyObject *RMS_new(PyObject * self, PyObject * args, PyObject * kwargs)
 {
     unsigned int status;
     char *name;
@@ -869,30 +927,30 @@ static PyObject *RMS_new(PyObject * self, PyObject * args,
     char msg[256];
     PyObject *obj;
     char *kwnames[] = {
-	"name", "fac", "shr", "fop", NULL
+        "name", "fac", "shr", "fop", NULL
     };
 
-    if (!PyArg_ParseTupleAndKeywords
-	(args, kwargs, (char *) "s|iiI:open_file", kwnames, &name, &fac,
-	 &shr, &fop)) {
-	return (NULL);
+    if (!PyArg_ParseTupleAndKeywords(
+        args, kwargs, (char *) "s|iiI:open_file", kwnames, &name, &fac,
+        &shr, &fop)) {
+        return (NULL);
     }
 
     res = _new(name, fac, shr, fop);
 
     if (res) {
-	status = _open(res);
+        status = _open(res);
 
-	if (!OKAY(status)) {
-	    getmsg(status, msg, sizeof(msg));
-	    if ((obj = Py_BuildValue("(is)", status, msg)) != NULL) {
-		PyErr_SetObject(RMS_error, obj);
-		Py_DECREF(obj);
-	    }
+        if (!OKAY(status)) {
+            getmsg(status, msg, sizeof(msg));
+            if ((obj = Py_BuildValue("(is)", status, msg)) != NULL) {
+                PyErr_SetObject(RMS_error, obj);
+                Py_DECREF(obj);
+            }
 
-	    Py_DECREF(res);
-	    return (NULL);
-	}
+            Py_DECREF(res);
+            return (NULL);
+        }
     }
 
     return ((PyObject *) res);
@@ -908,43 +966,43 @@ static PyObject *bcd2string(PyObject * dummy, PyObject * args)
     int i, j, k;
 
     if (!PyArg_ParseTuple(args, "s#i", &temp, &len, &prec)) {
-	return NULL;
+        return NULL;
     }
 
     str = PyMem_Malloc(2 * len + 2);
     c = (temp[len - 1] & 0x0F);
 
     if ((c != 0x0C) && (c != 0x0D)) {
-	PyMem_Free(str);
-	PyErr_SetString(PyExc_TypeError, "Invalid sign");
-	return NULL;
+        PyMem_Free(str);
+        PyErr_SetString(PyExc_TypeError, "Invalid sign");
+        return NULL;
     }
 
     if ((temp[len - 1] & 0x0F) == 0x0C) {
-	str[0] = '+';
+        str[0] = '+';
     } else {
-	str[0] = '-';
+        str[0] = '-';
     }
 
     for (j = 0, i = 1; i < (2 * len - prec); ++i) {
-	if (i & 1) {
-	    str[i] = '0' + ((temp[j] & 0xF0) >> 4);
-	} else {
-	    str[i] = '0' + (temp[j] & 0x0F);
-	    ++j;
-	}
+        if (i & 1) {
+            str[i] = '0' + ((temp[j] & 0xF0) >> 4);
+        } else {
+            str[i] = '0' + (temp[j] & 0x0F);
+            ++j;
+        }
     }
 
     i = 2 * len - prec;
     str[i++] = '.';
 
     for (; i < 2 * len + 1 + 1; ++i) {
-	if (i & 1) {
-	    str[i] = '0' + (temp[j] & 0x0F);
-	    ++j;
-	} else {
-	    str[i] = '0' + ((temp[j] & 0xF0) >> 4);
-	}
+        if (i & 1) {
+            str[i] = '0' + (temp[j] & 0x0F);
+            ++j;
+        } else {
+            str[i] = '0' + ((temp[j] & 0xF0) >> 4);
+        }
     }
 
     res = PyBytes_FromStringAndSize(str, 2 * len + 1);
@@ -964,66 +1022,66 @@ static PyObject *string2bcd(PyObject * dummy, PyObject * args)
     int i;
 
     if (!PyArg_ParseTuple(args, "sii", &temp, &n, &prec)) {
-	return (NULL);
+        return (NULL);
     }
 
     if ((n + prec + 1) & 1) {
-	++n;
+        ++n;
     }
 
     len = strlen(temp);
     if ((n + prec > 31) || (len > 33)) {
-	PyErr_SetString(PyExc_TypeError, "Invalid len");
-	return (NULL);
+        PyErr_SetString(PyExc_TypeError, "Invalid len");
+        return (NULL);
     }
     if (strchr("+-0123456789", *temp) == NULL) {
-	PyErr_SetString(PyExc_TypeError, "Invalid first character");
-	return (NULL);
+        PyErr_SetString(PyExc_TypeError, "Invalid first character");
+        return (NULL);
     }
 
     for (i = 1; i < len; ++i) {
-	if ((temp[i] == '.') && (p == NULL)) {
-	    p = &(temp[i]) + 1;
-	} else if (!isdigit(temp[i])) {
-	    PyErr_SetString(PyExc_TypeError, "Invalid numeric");
-	    return (NULL);
-	}
+        if ((temp[i] == '.') && (p == NULL)) {
+            p = &(temp[i]) + 1;
+        } else if (!isdigit(temp[i])) {
+            PyErr_SetString(PyExc_TypeError, "Invalid numeric");
+            return (NULL);
+        }
     }
 
     {
-	long long in;
-	long long id = 0;
-	char astr[34];
-	char rstr[16];
-	char fmt[20];
-	char sign = 0x0C;
-	int alen;
+        long long in;
+        long long id = 0;
+        char astr[34];
+        char rstr[16];
+        char fmt[20];
+        char sign = 0x0C;
+        int alen;
 
-	sscanf(temp, "%lld", &in);
-	if (p) {
-	    sscanf(p, "%lld", &id);
-	}
-	if (in < 0) {
-	    in = -in;
-	    sign = 0x0D;
-	}
-	sprintf(fmt, "%%0%dlld%%lld", n);
-	sprintf(astr, fmt, in, id);
-	alen = strlen(astr);
-	if (alen > n + prec) {
-	    astr[n + prec] = '\0';
-	} else if (alen < n + prec) {
-	    for (i = n + prec - 1; i >= alen; --i) {
-		astr[i] = '0';
-	    }
-      	    astr[n + prec] = '\0';
-	}
-	for (i = 0; i < (n + prec - 1) / 2; ++i) {
-	    rstr[i] = (astr[2 * i] - '0') * 16 + (astr[2 * i + 1] - '0');
-	}
-	rstr[(n + prec - 1) / 2] = (astr[n + prec - 1] - '0') * 16 + sign;
-	res = PyBytes_FromStringAndSize(rstr, (n + prec + 1) / 2);
-	return (res);
+        sscanf(temp, "%lld", &in);
+        if (p) {
+            sscanf(p, "%lld", &id);
+        }
+        if (in < 0) {
+            in = -in;
+            sign = 0x0D;
+        }
+        sprintf(fmt, "%%0%dlld%%lld", n);
+        sprintf(astr, fmt, in, id);
+        alen = strlen(astr);
+        if (alen > n + prec) {
+            astr[n + prec] = '\0';
+        } else if (alen < n + prec) {
+            for (i = n + prec - 1; i >= alen; --i) {
+                astr[i] = '0';
+            }
+            astr[n + prec] = '\0';
+        }
+        for (i = 0; i < (n + prec - 1) / 2; ++i) {
+            rstr[i] = (astr[2 * i] - '0') * 16 + (astr[2 * i + 1] - '0');
+        }
+        rstr[(n + prec - 1) / 2] = (astr[n + prec - 1] - '0') * 16 + sign;
+        res = PyBytes_FromStringAndSize(rstr, (n + prec + 1) / 2);
+        return (res);
     }
 }
 
@@ -1037,23 +1095,23 @@ static PyObject *bcd2tuple(PyObject * dummy, PyObject * args)
     char c;
 
     if (!PyArg_ParseTuple(args, "s#i", &temp, &len, &prec)) {
-	return (NULL);
+        return (NULL);
     }
 
     c = (temp[len - 1] & 0x0F);
 
     if ((c != 0x0C) && (c != 0x0D)) {
-	PyErr_SetString(PyExc_TypeError, "Invalid sign");
-	return (NULL);
+        PyErr_SetString(PyExc_TypeError, "Invalid sign");
+        return (NULL);
     }
 
     res = PyTuple_New(3);
     pdigit = PyTuple_New(2 * len - 1);
 
     if ((temp[len - 1] & 0x0F) == 0x0C) {
-	sign = 0;
+        sign = 0;
     } else {
-	sign = 1;
+        sign = 1;
     }
 
     PyTuple_SetItem(res, 0, (PyObject *) PyLong_FromLong(sign));
@@ -1061,13 +1119,13 @@ static PyObject *bcd2tuple(PyObject * dummy, PyObject * args)
     PyTuple_SetItem(res, 2, (PyObject *) PyLong_FromLong(-prec));
 
     for (j = 0, i = 0; i < (2 * len - 1); ++i) {
-	if (i & 1) {
-	    v = (temp[j] & 0x0F);
-	    ++j;
-	} else {
-	    v = ((temp[j] & 0xF0) >> 4);
-	}
-	PyTuple_SetItem(pdigit, i, (PyObject *) PyLong_FromLong(v));
+        if (i & 1) {
+            v = (temp[j] & 0x0F);
+            ++j;
+        } else {
+            v = ((temp[j] & 0xF0) >> 4);
+        }
+        PyTuple_SetItem(pdigit, i, (PyObject *) PyLong_FromLong(v));
     }
 
     return (res);
@@ -1082,74 +1140,73 @@ static PyObject *tuple2bcd(PyObject * dummy, PyObject * args)
     int len, dprec, prec, sign;
     int n;
 
-    if (!PyArg_ParseTuple(args, "(iO!i)ii", &sign, &PyTuple_Type, &lst,
-			  &dprec, &n, &prec)) {
-	return (NULL);
+    if (!PyArg_ParseTuple(args, "(iO!i)ii", &sign, &PyTuple_Type, &lst, &dprec, &n, &prec)) {
+        return (NULL);
     }
 
     len = PyTuple_Size(lst);
 
     if (len > 31) {
-	PyErr_SetString(PyExc_TypeError, "Invalid digits tuple length");
-	return (NULL);
+        PyErr_SetString(PyExc_TypeError, "Invalid digits tuple length");
+        return (NULL);
     }
 
     if (((n + prec) & 1) == 0) {
-	++n;
+        ++n;
     }
     if (n + prec > 31) {
-	PyErr_SetString(PyExc_TypeError, "Invalid BCD length");
-	return (NULL);
+        PyErr_SetString(PyExc_TypeError, "Invalid BCD length");
+        return (NULL);
     }
 
     dprec = -dprec;
 
     if (len - dprec > n) {
-	PyErr_SetString(PyExc_TypeError, "BCD integer part too short");
-	return (NULL);
+        PyErr_SetString(PyExc_TypeError, "BCD integer part too short");
+        return (NULL);
     }
 
     {
-	char rstr[16];
-	char digit[n + prec + 1];
-	int i, j, k;
+        char rstr[16];
+        char digit[n + prec + 1];
+        int i, j, k;
 
-	for (i = 0; i < n - len + dprec; ++i) {
-	    digit[i] = 0;
-	}
+        for (i = 0; i < n - len + dprec; ++i) {
+            digit[i] = 0;
+        }
 
-	for (j = 0; j < len - dprec; ++j, ++i) {
-	    digit[i] = PyLong_AsLong(PyTuple_GetItem(lst, j));
-	}
+        for (j = 0; j < len - dprec; ++j, ++i) {
+            digit[i] = PyLong_AsLong(PyTuple_GetItem(lst, j));
+        }
 
-	if (dprec > prec) {
-	    dprec = prec;
-	}
+        if (dprec > prec) {
+            dprec = prec;
+        }
 
-	for (; i < n + dprec; ++i, ++j) {
-	    digit[i] = PyLong_AsLong(PyTuple_GetItem(lst, j));
-	}
+        for (; i < n + dprec; ++i, ++j) {
+            digit[i] = PyLong_AsLong(PyTuple_GetItem(lst, j));
+        }
 
-	for (; i < n + prec; ++i) {
-	    digit[i] = 0;
-	}
+        for (; i < n + prec; ++i) {
+            digit[i] = 0;
+        }
 
-	digit[n + prec] = 0;
+        digit[n + prec] = 0;
 
-	for (i = 0; i < (n + prec - 1) / 2; ++i) {
-	    rstr[i] = (digit[2 * i]) * 16 + (digit[2 * i + 1]);
-	}
+        for (i = 0; i < (n + prec - 1) / 2; ++i) {
+            rstr[i] = (digit[2 * i]) * 16 + (digit[2 * i + 1]);
+        }
 
-	if (sign == 0) {
-	    sign = 0x0C;
-	} else {
-	    sign = 0x0D;
-	}
+        if (sign == 0) {
+            sign = 0x0C;
+        } else {
+            sign = 0x0D;
+        }
 
-	rstr[(n + prec - 1) / 2] = (digit[n + prec - 1]) * 16 + sign;
-	res = PyBytes_FromStringAndSize(rstr, (n + prec + 1) / 2);
+        rstr[(n + prec - 1) / 2] = (digit[n + prec - 1]) * 16 + sign;
+        res = PyBytes_FromStringAndSize(rstr, (n + prec + 1) / 2);
 
-	return (res);
+        return (res);
     }
 
     Py_INCREF(Py_None);
@@ -1164,63 +1221,66 @@ static unsigned int _getrmsattr(char *name, int attr, int *res)
     int fac = 0;
     int shr = FAB$M_SHRGET;
     rms_file_t *fo;
-    XABFHCDEF *fhc;
+    xabfhc_ptr32_t fhc;
 
     adc_Assert((fo = malloc(sizeof(rms_file_t))));
     fill(fo, name, fac, shr, fop);
 
     if (attr == RMSATTR_K_LRL) {
-	adc_Assert((fhc = malloc(sizeof(XABFHCDEF))));
-	*fhc = cc$rms_xabfhc;
-	fo->fab.fab$l_xab = fhc;
+        adc_Assert((fhc = malloc_low(sizeof(XABFHCDEF))));
+        *fhc = cc$rms_xabfhc;
+        fo->pfab->fab$l_xab = fhc;
     }
 
-    status = sys$open((void *) &fo->fab);
+    status = sys$open(fo->pfab);
 
     if (!OKAY(status)) {
-	if (attr == RMSATTR_K_LRL) {
-	    free(fhc);
-	}
-	free(fo);
-	return (status);
+        if (attr == RMSATTR_K_LRL) {
+            free(fhc);
+        }
+        free_bufs(fo);
+        free(fo);
+        return (status);
     }
 
-    status = sys$display((void *) &fo->fab);
+    status = sys$display(fo->pfab);
 
     if (!OKAY(status)) {
-	free(fo);
-	return (status);
+        free_bufs(fo);
+        free(fo);
+        return (status);
     }
 
     *res = 0;
 
     switch (attr) {
-    case RMSATTR_K_ORG:
-	*res = fo->fab.fab$b_org;
-	break;
-    case RMSATTR_K_RFM:
-	*res = fo->fab.fab$b_rfm;
-	break;
-    case RMSATTR_K_MRS:
-	*res = fo->fab.fab$w_mrs;
-	break;
-    case RMSATTR_K_RAT:
-	*res = fo->fab.fab$b_rat;
-	break;
-    case RMSATTR_K_LRL:
-	*res = fhc->xab$w_lrl;
-	break;
-    default:
-	abort();
-	break;
+        case RMSATTR_K_ORG:
+            *res = fo->pfab->fab$b_org;
+            break;
+        case RMSATTR_K_RFM:
+            *res = fo->pfab->fab$b_rfm;
+            break;
+        case RMSATTR_K_MRS:
+            *res = fo->pfab->fab$w_mrs;
+            break;
+        case RMSATTR_K_RAT:
+            *res = fo->pfab->fab$b_rat;
+            break;
+        case RMSATTR_K_LRL:
+            *res = fhc->xab$w_lrl;
+            break;
+        default:
+            abort();
+            break;
     }
 
-    status = sys$close((void *) &fo->fab);
+    status = sys$close(fo->pfab);
 
     if (attr == RMSATTR_K_LRL) {
-	free(fhc);
+        free(fhc);
     }
 
+    free_bufs(fo);
     free(fo);
     return (status);
 }
@@ -1235,23 +1295,23 @@ static PyObject *RMS_getrmsattr(PyObject * dummy, PyObject * args)
     PyObject *obj;
 
     if (!PyArg_ParseTuple(args, "si:getrmsattr", &name, &attr)) {
-	return (NULL);
+        return (NULL);
     }
 
     if (attr < 0 || attr > RMSATTR_K_LAST) {
-	PyErr_Format(RMS_error, "invalid attribute value: %d", attr);
-	return (NULL);
+        PyErr_Format(RMS_error, "invalid attribute value: %d", attr);
+        return (NULL);
     }
 
     status = _getrmsattr(name, attr, &res);
 
     if (!OKAY(status)) {
-	getmsg(status, msg, sizeof(msg));
-	if ((obj = Py_BuildValue("(is)", stat, msg)) != NULL) {
-	    PyErr_SetObject(RMS_error, obj);
-	    Py_DECREF(obj);
-	}
-	return (NULL);
+        getmsg(status, msg, sizeof(msg));
+        if ((obj = Py_BuildValue("(is)", stat, msg)) != NULL) {
+            PyErr_SetObject(RMS_error, obj);
+            Py_DECREF(obj);
+        }
+        return (NULL);
     }
 
     return PyLong_FromLong((long) res);
@@ -1272,54 +1332,54 @@ _parse(char *path, char *node, char *dev, char *dir, char *name,
     fo = PyMem_NEW(rms_file_t, 1);
     fill(fo, path, fac, shr, fop);
 
-    status = sys$parse((void *) &fo->fab);
+    status = sys$parse(fo->pfab);
 
     if (!OKAY(status)) {
-	PyMem_Free(fo);
-	return (status);
+        PyMem_Free(fo);
+        return (status);
     }
 
-    fo->naml.naml$l_esa[fo->naml.naml$b_esl] = '\0';
-    fo->naml.naml$l_long_expand[fo->naml.naml$l_long_expand_size] = '\0';
+    fo->pnaml->naml$l_esa[fo->pnaml->naml$b_esl] = '\0';
+    fo->pnaml->naml$l_long_expand[fo->pnaml->naml$l_long_expand_size] = '\0';
 
-    p1 = fo->naml.naml$b_node;
-    p2 = fo->naml.naml$b_dev;
-    p3 = fo->naml.naml$b_dir;
-    p4 = fo->naml.naml$b_name;
-    p5 = fo->naml.naml$b_type;
-    p6 = fo->naml.naml$b_ver;
+    p1 = fo->pnaml->naml$b_node;
+    p2 = fo->pnaml->naml$b_dev;
+    p3 = fo->pnaml->naml$b_dir;
+    p4 = fo->pnaml->naml$b_name;
+    p5 = fo->pnaml->naml$b_type;
+    p6 = fo->pnaml->naml$b_ver;
 
     *node = *dev = *dir = *name = *type = *ver = '\0';
 
     if (p1) {
-	strncpy(node, fo->naml.naml$l_long_expand, p1);
-	node[p1] = '\0';
+        strncpy(node, fo->pnaml->naml$l_long_expand, p1);
+        node[p1] = '\0';
     }
 
     if (p2) {
-	strncpy(dev, fo->naml.naml$l_long_expand + p1, p2);
-	dev[p2] = '\0';
+        strncpy(dev, fo->pnaml->naml$l_long_expand + p1, p2);
+        dev[p2] = '\0';
     }
 
     if (p3) {
-	strncpy(dir, fo->naml.naml$l_long_expand + p1 + p2, p3);
-	dir[p3] = '\0';
+        strncpy(dir, fo->pnaml->naml$l_long_expand + p1 + p2, p3);
+        dir[p3] = '\0';
     }
 
     if (p4) {
-	strncpy(name, fo->naml.naml$l_long_expand + p1 + p2 + p3, p4);
-	name[p4] = '\0';
+        strncpy(name, fo->pnaml->naml$l_long_expand + p1 + p2 + p3, p4);
+        name[p4] = '\0';
     }
 
     if (p5) {
-	strncpy(type, fo->naml.naml$l_long_expand + p1 + p2 + p3 + p4, p5);
-	type[p5] = '\0';
+        strncpy(type, fo->pnaml->naml$l_long_expand + p1 + p2 + p3 + p4, p5);
+        type[p5] = '\0';
     }
 
     if (p6) {
-	strncpy(ver, fo->naml.naml$l_long_expand + p1 + p2 + p3 + p4 + p5,
-		p6);
-	ver[p6] = '\0';
+        strncpy(ver, fo->pnaml->naml$l_long_expand + p1 + p2 + p3 + p4 + p5,
+            p6);
+        ver[p6] = '\0';
     }
 
     PyMem_Free(fo);
@@ -1341,19 +1401,19 @@ static PyObject *RMS_parse(PyObject * dummy, PyObject * args)
     char msg[256];
 
     if (!PyArg_ParseTuple(args, "s:parse", &path)) {
-	return (NULL);
+        return (NULL);
     }
 
     status = _parse(path, node, dev, dir, name, type, ver);
 
     if (!OKAY(status)) {
-	getmsg(status, msg, sizeof(msg));
-	if ((obj = Py_BuildValue("(is)", stat, msg)) != NULL) {
-	    PyErr_SetObject(RMS_error, obj);
-	    Py_DECREF(obj);
-	}
+        getmsg(status, msg, sizeof(msg));
+        if ((obj = Py_BuildValue("(is)", stat, msg)) != NULL) {
+            PyErr_SetObject(RMS_error, obj);
+            Py_DECREF(obj);
+        }
 
-	return (NULL);
+        return (NULL);
     }
 
     obj = PyTuple_New(6);
@@ -1397,8 +1457,8 @@ PyTypeObject RmsFile_Type = {
     (getiterfunc) getiter,	// tp_iter
     (iternextfunc) iternext,	// tp_iternext
     tp_methods,			// tp_methods
-    tp_members,			// tp_members
-    0,				// tp_getset
+    0,      			// tp_members
+    tp_getset,			// tp_getset
     0,				// tp_base
     0,				// tp_dict
     0,				// tp_descr_get
@@ -1425,7 +1485,7 @@ static rms_file_t *_new(char *fn, int access, int share, unsigned int fop)
     rms_file_t *self = PyObject_New(rms_file_t, &RmsFile_Type);
 
     if (self) {
-	fill(self, fn, access, share, fop);
+        fill(self, fn, access, share, fop);
     }
 
     return (self);

@@ -156,7 +156,11 @@ fcntl_ioctl_impl(PyObject *module, int fd, unsigned int code,
        in their unsigned long ioctl codes this will break and need
        special casing based on the platform being built on.
      */
+#if defined(__VMS)
+    __void_ptr32 arg = 0;
+#else
     int arg = 0;
+#endif
     int ret;
     Py_buffer pstr;
     char *str;
@@ -199,11 +203,19 @@ fcntl_ioctl_impl(PyObject *module, int fd, unsigned int code,
             }
             if (buf == arg) {
                 Py_BEGIN_ALLOW_THREADS /* think array.resize() */
-                ret = ioctl(fd, code, arg);
+                ret = ioctl(fd, code, buf); /* __VMS */
                 Py_END_ALLOW_THREADS
             }
             else {
+#if defined(__VMS) && __INITIAL_POINTER_SIZE == 64
+                __void_ptr32 low_mem = _malloc32(len);
+                memcpy(low_mem, str, len);
+                ret = ioctl(fd, code, low_mem);
+                memcpy(str, low_mem, len);
+                free(low_mem);
+#else
                 ret = ioctl(fd, code, arg);
+#endif
             }
             if (mutate_arg && (len <= IOCTL_BUFSZ)) {
                 memcpy(str, buf, len);
@@ -255,11 +267,7 @@ fcntl_ioctl_impl(PyObject *module, int fd, unsigned int code,
         // Fall-through to outside the 'if' statement.
     }
     Py_BEGIN_ALLOW_THREADS
-    #ifdef __VMS
-    ret = ioctl(fd, code, (void*)arg);
-    #else
     ret = ioctl(fd, code, arg);
-    #endif
     Py_END_ALLOW_THREADS
     if (ret < 0) {
         PyErr_SetFromErrno(PyExc_OSError);

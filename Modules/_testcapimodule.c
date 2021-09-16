@@ -124,15 +124,14 @@ test_sizeof_c_types(PyObject *self, PyObject *Py_UNUSED(ignored))
     CHECK_SIGNNESS(uint64_t, 0);
 
     /* pointer/size types */
+#ifndef __VMS   // why?
     CHECK_SIZEOF(size_t, sizeof(void *));
-    CHECK_SIGNNESS(size_t, 0);
     CHECK_SIZEOF(Py_ssize_t, sizeof(void *));
-    CHECK_SIGNNESS(Py_ssize_t, 1);
-
-#ifndef __VMS
     CHECK_SIZEOF(uintptr_t, sizeof(void *));
     CHECK_SIZEOF(intptr_t, sizeof(void *));
 #endif
+    CHECK_SIGNNESS(size_t, 0);
+    CHECK_SIGNNESS(Py_ssize_t, 1);
     CHECK_SIGNNESS(uintptr_t, 0);
     CHECK_SIGNNESS(intptr_t, 1);
 
@@ -4815,6 +4814,9 @@ check_pyobject_uninitialized_is_freed(PyObject *self, PyObject *Py_UNUSED(args))
 static PyObject*
 check_pyobject_forbidden_bytes_is_freed(PyObject *self, PyObject *Py_UNUSED(args))
 {
+#if defined(__VMS) && __INITIAL_POINTER_SIZE == 64
+    Py_RETURN_NONE;
+#endif
     /* Allocate an incomplete PyObject structure: truncate 'ob_type' field */
     PyObject *op = (PyObject *)PyObject_Malloc(offsetof(PyObject, ob_type));
     if (op == NULL) {

@@ -17,6 +17,7 @@
 #include <socket.h>
 #include <ssdef.h>
 #include <starlet.h>
+#include <stdlib.h>
 #include <string.h>
 #include <stsdef.h>
 #include <time.h>
@@ -30,7 +31,7 @@
 
 int vms_channel_lookup_by_name(char* name, unsigned short *channel) {
     int status;
-    struct dsc$descriptor_s dev_desc;
+    $DESCRIPTOR(dev_desc, "");
     int call_stat;
     unsigned short chan;
 
@@ -39,15 +40,20 @@ int vms_channel_lookup_by_name(char* name, unsigned short *channel) {
     if (name != NULL) {
         /* Assign the channel */
         /*--------------------*/
-        dev_desc.dsc$a_pointer = name;
         dev_desc.dsc$w_length = strlen(name);
-        dev_desc.dsc$b_dtype = DSC$K_DTYPE_T;
-        dev_desc.dsc$b_class = DSC$K_CLASS_S;
+#if __INITIAL_POINTER_SIZE == 64
+        dev_desc.dsc$a_pointer = _strdup32(name);
+#else
+        dev_desc.dsc$a_pointer = name;
+#endif
         call_stat = SYS$ASSIGN(&dev_desc, &chan, 0, 0, 0);
         if ($VMS_STATUS_SUCCESS(call_stat)) {
             *channel = chan;
             status = 0;
         }
+#if __INITIAL_POINTER_SIZE == 64
+        free(dev_desc.dsc$a_pointer);
+#endif
     }
     return status;
 }
@@ -296,13 +302,13 @@ int vms_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds,
                 if (select_array[fd].events != 0) {
                     status = vms_channel_lookup(fd, &pipe_array[pi].channel);
                     if (status == 0) {
-                        int mbx_len;
-                        unsigned int mbx_char;
+                        unsigned long  mbx_char;
+                        unsigned short mbx_len;
                         ILE3 item_list[2];
                         item_list[0].ile3$w_length = 4;
                         item_list[0].ile3$w_code = DVI$_DEVCLASS;
-                        item_list[0].ile3$ps_bufaddr = (void *)&mbx_char;
-                        item_list[0].ile3$ps_retlen_addr = (void *)&mbx_len;
+                        item_list[0].ile3$ps_bufaddr = &mbx_char;
+                        item_list[0].ile3$ps_retlen_addr = &mbx_len;
                         memset(item_list + 1, 0, sizeof(item_list[1]));
 
                         status = SYS$GETDVIW(EFN$C_ENF, pipe_array[pi].channel, 0, &item_list, 0, 0, 0, 0);

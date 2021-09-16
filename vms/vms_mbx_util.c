@@ -14,6 +14,7 @@
 #include <psldef.h>
 #include <ssdef.h>
 #include <starlet.h>
+#include <stdlib.h>
 #include <string.h>
 #include <stsdef.h>
 #include <unixio.h>
@@ -24,15 +25,23 @@ int vms_channel_lookup_by_name(char* name, unsigned short *channel);
 
 unsigned short simple_create_mbx(const char *name, int mbx_size) {
     unsigned short channel = 0;
-    struct dsc$descriptor_s dsc_name, *pdsc_name = 0;
+    $DESCRIPTOR(dsc_name, "");
+    __void_ptr32 pdsc_name = 0;
     if (name) {
-        dsc_name.dsc$a_pointer = (char*)name;
         dsc_name.dsc$w_length = strlen(name);
-        dsc_name.dsc$b_dtype = DSC$K_DTYPE_T;
-        dsc_name.dsc$b_class = DSC$K_CLASS_S;
+#if __INITIAL_POINTER_SIZE == 64
+        dsc_name.dsc$a_pointer = _strdup32(name);
+#else
+        dsc_name.dsc$a_pointer = (char*)name;
+#endif
         pdsc_name = &dsc_name;
     }
     sys$crembx(0, &channel, mbx_size, 0, 0, PSL$C_USER, pdsc_name, 0, 0);
+#if __INITIAL_POINTER_SIZE == 64
+    if (name) {
+        free(dsc_name.dsc$a_pointer);
+    }
+#endif
     return channel;
 }
 

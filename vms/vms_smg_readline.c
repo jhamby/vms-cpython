@@ -22,9 +22,9 @@ void *PyMem_RawMalloc(size_t size);
 void  PyMem_RawFree(void *ptr);
 
 char* vms_SMG_Readline(FILE *stdin, FILE *stdout, const char *prompt) {
-    struct dsc$descriptor_s inputD;
-    struct dsc$descriptor_s promptD;
-    struct dsc$descriptor_s *promptPtr;
+    $DESCRIPTOR(inputD, "");
+    $DESCRIPTOR(promptD, "");
+    __void_ptr32 promptPtr;
 
     unsigned short int reslen = 0;
     unsigned long flags = 0;
@@ -34,16 +34,12 @@ char* vms_SMG_Readline(FILE *stdin, FILE *stdout, const char *prompt) {
         status = smg$create_key_table(&pyvms_gl_key_table_id);
         if (!$VMS_STATUS_SUCCESS(status)) {
             return NULL;
-            // perror("SMG$CREATE_KEY_TABLE() failed\n");
-            // exit(status);
         }
     }
     if (pyvms_gl_keyboard_id == 0) {
         status = smg$create_virtual_keyboard(&pyvms_gl_keyboard_id);
         if (!$VMS_STATUS_SUCCESS(status)) {
             return NULL;
-            // perror("SMG$CREATE_VIRTUAL_KEYBOARD() failed\n");
-            // exit(status);
         }
     }
 
@@ -51,18 +47,22 @@ char* vms_SMG_Readline(FILE *stdin, FILE *stdout, const char *prompt) {
 
     /* set up descriptors */
     inputD.dsc$w_length  = MAX_LINE_BUFFER - 2;
-    inputD.dsc$a_pointer = (void*)PyMem_RawMalloc(MAX_LINE_BUFFER);
+#if __INITIAL_POINTER_SIZE == 64
+    inputD.dsc$a_pointer = _malloc32(MAX_LINE_BUFFER);
+#else
+    inputD.dsc$a_pointer = malloc(MAX_LINE_BUFFER);
+#endif
     if (inputD.dsc$a_pointer == NULL) {
         return NULL;
     }
-    inputD.dsc$b_dtype   = DSC$K_DTYPE_T;
-    inputD.dsc$b_class   = DSC$K_CLASS_S; /* @@ use a Dyndesc ? */
 
     if (prompt)	{
         promptD.dsc$w_length  = strlen(prompt);
-        promptD.dsc$b_dtype   = DSC$K_DTYPE_T;
-        promptD.dsc$b_class   = DSC$K_CLASS_S;
+#if __INITIAL_POINTER_SIZE == 64
+        promptD.dsc$a_pointer = _strdup32(prompt);
+#else
         promptD.dsc$a_pointer = (char*)prompt;
+#endif
         promptPtr = &promptD;
     } else {
         promptPtr = 0;      /* no prompt */
@@ -82,6 +82,11 @@ char* vms_SMG_Readline(FILE *stdin, FILE *stdout, const char *prompt) {
         ,0                          /* [rendition-complement] */
         ,0                          /* [word-terminator-code] */
     );
+#if __INITIAL_POINTER_SIZE == 64
+    if (prompt)	{
+        free(promptD.dsc$a_pointer);
+    }
+#endif
 
     switch (status) {
         case SS$_NORMAL:

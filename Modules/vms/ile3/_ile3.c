@@ -7,6 +7,7 @@
 #include <descrip.h>
 #include <starlet.h>
 #include <ssdef.h>
+#include <iledef.h>
 
 #ifndef MIN
 #define MIN(a,b) ((a)<(b)?(a):(b))
@@ -14,26 +15,34 @@
 
 #include "_ile3.h"
 
+#if defined(__VMS) && __INITIAL_POINTER_SIZE == 64
+#   define  malloc_low      _malloc32
+#   define  realloc_low     _realloc32
+#else
+#   define  malloc_low      malloc
+#   define  realloc_low     realloc
+#endif
+
 static void ILE3_dealloc(ILE3Object * self)
 {
-    if (self->types != NULL) {
-        PyMem_Free(self->types);
-        self->types = NULL;
+    if (self->ptypes != NULL) {
+        free(self->ptypes);
+        self->ptypes = NULL;
     }
-    if (self->list != NULL) {
-        ILE3 *ptr = self->list;
+    if (self->plist != NULL) {
+        ILE3 *ptr = (ILE3*)self->plist;
         while(self->size) {
             if (ptr->ile3$ps_bufaddr) {
-                PyMem_Free(ptr->ile3$ps_bufaddr);
+                free(ptr->ile3$ps_bufaddr);
             }
             if (ptr->ile3$ps_retlen_addr) {
-                PyMem_Free(ptr->ile3$ps_retlen_addr);
+                free(ptr->ile3$ps_retlen_addr);
             }
             ++ptr;
             --self->size;
         }
-        PyMem_Free(self->list);
-        self->list = NULL;
+        free(self->plist);
+        self->plist = NULL;
     }
     PyObject_Del(self);
 }
@@ -114,19 +123,19 @@ ILE3_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         self->allocated = 1;
         self->size = 0;
         self->pos = -1;
-        self->list = PyMem_Calloc(1, sizeof(ILE3));
-        if (self->list == NULL) {
+        self->plist = malloc_low(1 * sizeof(ILE3));
+        if (self->plist == NULL) {
             Py_DECREF(self);
             return NULL;
         }
-        self->types = PyMem_Calloc(1, sizeof(int));
-        if (self->types == NULL) {
-            PyMem_Free(self->list);
-            self->list = NULL;
+        self->ptypes = malloc_low(1 * sizeof(long));
+        if (self->ptypes == NULL) {
+            free(self->plist);
+            self->plist = NULL;
             Py_DECREF(self);
             return NULL;
         }
-        init_item(self->list);
+        init_item(self->plist);
     }
     return (PyObject *) self;
 }
@@ -169,8 +178,8 @@ ILE3_getat_c(
     long pos)
 {
     if ((unsigned int)pos < self->size) {
-        ILE3 *item = self->list + pos;
-        long type = *(self->types + pos);
+        ILE3 *item = (ILE3*)self->plist + pos;
+        long type = *((long*)self->ptypes + pos);
         PyObject *pValue = _value_from_item(item, type);
         if (pValue) {
             return Py_BuildValue("(H,i,O)", item->ile3$w_code, type, pValue);
@@ -197,8 +206,8 @@ static PyObject *ILE3_getat_bytes(ILE3Object *self, PyObject *args) {
     }
     long pos = PyLong_AsLong(args);
     if ((unsigned int)pos < self->size) {
-        ILE3 *item = self->list + pos;
-        long type = *(self->types + pos);
+        ILE3 *item = (ILE3*)self->plist + pos;
+        long type = *((long*)self->ptypes + pos);
         long size = *(item->ile3$ps_retlen_addr);
         PyObject *pValue = PyBytes_FromStringAndSize((char*)item->ile3$ps_bufaddr, size);
         if (pValue) {
@@ -228,11 +237,11 @@ static int ILE3_increment(ILE3Object *self) {
     ++self->size;
     if (self->size >= self->allocated) {
         self->allocated *= 2;
-        self->list = PyMem_Realloc(self->list, self->allocated * sizeof(ILE3));
-        self->types = PyMem_Realloc(self->types, self->allocated * sizeof(int));
+        self->plist = realloc_low(self->plist, self->allocated * sizeof(ILE3));
+        self->ptypes = realloc_low(self->ptypes, self->allocated * sizeof(long));
     }
-    if (self->list && self->types) {
-        init_item(self->list + self->size);
+    if (self->plist && self->ptypes) {
+        init_item((ILE3*)self->plist + self->size);
         return 0;
     }
     PyErr_SetNone(PyExc_MemoryError);
@@ -242,13 +251,13 @@ static int ILE3_increment(ILE3Object *self) {
 static int ILE3_decrement(ILE3Object *self) {
     if (self->size > 0) {
         --self->size;
-        ILE3 *ptr = self->list + self->size;
+        ILE3 *ptr = (ILE3*)self->plist + self->size;
         if (ptr->ile3$ps_bufaddr) {
-            PyMem_Free(ptr->ile3$ps_bufaddr);
+            free(ptr->ile3$ps_bufaddr);
             ptr->ile3$ps_bufaddr = NULL;
         }
         if (ptr->ile3$ps_retlen_addr) {
-            PyMem_Free(ptr->ile3$ps_retlen_addr);
+            free(ptr->ile3$ps_retlen_addr);
             ptr->ile3$ps_retlen_addr = NULL;
         }
         return 0;
@@ -276,10 +285,10 @@ ILE3_append(
         return NULL;
     }
 
-    ILE3 *item = self->list + (self->size - 1);
+    ILE3 *item = (ILE3*)self->plist + (self->size - 1);
 
     item->ile3$w_code = PyLong_AsLong(args[0]);
-    item->ile3$ps_retlen_addr = PyMem_Malloc(sizeof(short));
+    item->ile3$ps_retlen_addr = malloc_low(sizeof(short));
     if (item->ile3$ps_retlen_addr == NULL) {
         ILE3_decrement(self);
         PyErr_SetNone(PyExc_MemoryError);
@@ -350,7 +359,7 @@ ILE3_append(
 
     *item->ile3$ps_retlen_addr = size;
     item->ile3$w_length = size;
-    item->ile3$ps_bufaddr = PyMem_Malloc(size + 1);
+    item->ile3$ps_bufaddr = malloc_low(size + 1);
     if (item->ile3$ps_bufaddr == NULL) {
         PyErr_SetNone(PyExc_MemoryError);
         ILE3_decrement(self);
@@ -378,7 +387,7 @@ ILE3_append(
             memset(item->ile3$ps_bufaddr, 0, size);
         }
     }
-    *(self->types + (self->size - 1)) = type;
+    *((long*)self->ptypes + (self->size - 1)) = type;
     Py_RETURN_NONE;
 }
 
@@ -388,8 +397,8 @@ ILE3_item(
     Py_ssize_t i)
 {
     if ((size_t)i < self->size) {
-        ILE3 *item = self->list + i;
-        long type = *(self->types + i);
+        ILE3 *item = (ILE3*)self->plist + i;
+        long type = *((long*)self->ptypes + i);
         return _value_from_item(item, type);
     }
     PyErr_SetNone(PyExc_IndexError);

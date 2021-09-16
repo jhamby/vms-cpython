@@ -1,5 +1,5 @@
-#ifndef VMS_INHERIT_H
-#define VMS_INHERIT_H
+#ifndef VMS_FCNTL_H
+#define VMS_FCNTL_H
 
 #ifdef __cplusplus
 extern "C" {

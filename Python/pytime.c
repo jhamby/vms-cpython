@@ -1146,7 +1146,12 @@ _PyTime_localtime(time_t t, struct tm *tm)
 #endif
 
     errno = 0;
+#if defined(__VMS) && __INITIAL_POINTER_SIZE == 64
+    // all calls of _PyTime_localtime use tm from the stack, so we can just cast to __struct_tm_ptr32
+    if (localtime_r(&t, (__struct_tm_ptr32)tm) == NULL) {
+#else
     if (localtime_r(&t, tm) == NULL) {
+#endif
         if (errno == 0) {
             errno = EINVAL;
         }
@@ -1171,7 +1176,12 @@ _PyTime_gmtime(time_t t, struct tm *tm)
     }
     return 0;
 #else /* !MS_WINDOWS */
+#if defined(__VMS) && __INITIAL_POINTER_SIZE == 64
+    // all calls of _PyTime_gmtime use tm from the stack, so we can just cast to __struct_tm_ptr32
+    if (gmtime_r(&t, (__struct_tm_ptr32)tm) == NULL) {
+#else
     if (gmtime_r(&t, tm) == NULL) {
+#endif
 #ifdef EINVAL
         if (errno == 0) {
             errno = EINVAL;
