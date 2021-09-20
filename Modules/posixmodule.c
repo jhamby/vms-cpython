@@ -5089,13 +5089,11 @@ BOOL WINAPI Py_DeleteFileW(LPCWSTR lpFileName)
 #include <descrip.h>
 #include <lib$routines.h>
 
-// extern int decc$to_vms(const char *, int (*)(char *, int, void *), int, int, ...);
-
-int delete_non_unlinkable_link_callback(__char_ptr32 name, int flag, int userdata) {
+int delete_non_unlinkable_link_callback(__char_ptr32 name, int flag, __u_long_ptr32 userdata) {
     $DESCRIPTOR(file_name, "");
     file_name.dsc$w_length = strlen(name);
     file_name.dsc$a_pointer = name;
-    *(int*)userdata = lib$delete_file(&file_name);
+    *userdata = lib$delete_file(&file_name);
     return 0;
 }
 

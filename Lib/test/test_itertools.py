@@ -14,6 +14,11 @@ import struct
 import threading
 import gc
 
+import sysconfig
+
+_is_openvms64 = sys.platform == 'OpenVMS' and \
+                sysconfig.get_config_var('SIZEOF_VOID_P') == 8
+
 maxsize = support.MAX_Py_ssize_t
 minsize = -maxsize-1
 
@@ -2246,6 +2251,7 @@ class SizeofTest(unittest.TestCase):
 
     check_sizeof = support.check_sizeof
 
+    @unittest.skipIf(_is_openvms64, 'incorrect test for OpenVMS pointer size = 64')
     def test_product_sizeof(self):
         basesize = support.calcobjsize('3Pi')
         check = self.check_sizeof

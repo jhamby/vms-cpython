@@ -104,12 +104,9 @@ DECC_vmstime(
     return PyLong_FromUnsignedLongLong(val);
 }
 
-// extern int decc$from_vms(const char *, int (*)(char *, void *), int, ...);
-// extern int decc$to_vms(const char *, int (*)(char *, int, void *), int, int, ...);
-
-static int cb_from_vms(__char_ptr32 name, int user_data)
+static int cb_from_vms(__char_ptr32 name, __void_ptr32 user_data)
 {
-    PyObject *pTuple = (PyObject *)*(__void_ptr_ptr32)user_data;
+    PyObject *pTuple = (PyObject *)*(void**)user_data;
     if (pTuple && PyTuple_CheckExact(pTuple) && PyTuple_Size(pTuple) == 2) {
         PyObject *pList = PyTuple_GetItem(pTuple, 0);
         if (pList && pList != Py_None && PyList_CheckExact(pList)) {
@@ -206,9 +203,9 @@ DECC_from_vms(
     return pList;
 }
 
-static int cb_to_vms(__char_ptr32 name, int file_type, int user_data)
+static int cb_to_vms(__char_ptr32 name, int file_type, __void_ptr32 user_data)
 {
-    PyObject *pTuple = (PyObject *)*(__void_ptr_ptr32)user_data;
+    PyObject *pTuple = (PyObject *)*(void**)user_data;
     if (pTuple && PyTuple_CheckExact(pTuple) && PyTuple_Size(pTuple) == 2) {
         PyObject *pList = PyTuple_GetItem(pTuple, 0);
         if (pList && pList != Py_None && PyList_CheckExact(pList)) {

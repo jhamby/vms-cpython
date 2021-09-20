@@ -62,9 +62,11 @@ class BaseTestCase(unittest.TestCase):
 
     def test_from_vms(self):
         """ converts vms path to available unix paths """
-        self.assertEqual( \
-            list(map(lambda x: x.lower(), DECC.from_vms("python$root:[lib]python$shr.exe", 0))), \
-            list(map(lambda x: x.lower(), DECC.from_vms("python$root:[lib]python$shr.*", 1))))
+        from_vms_1 = list(map(lambda x: x.lower(), DECC.from_vms("python$root:[lib]python$shr.exe", 0)))
+        from_vms_2 = list(map(lambda x: x.lower(), DECC.from_vms("python$root:[lib]python$shr.*", 1)))
+        self.assertEqual(len(from_vms_1), 1)
+        self.assertEqual(len(from_vms_2), 1)
+        self.assertEqual(from_vms_1, from_vms_2)
 
     def test_getenv(self):
         """ try to get PYTHONHOME """
@@ -88,9 +90,11 @@ class BaseTestCase(unittest.TestCase):
 
     def test_to_vms(self):
         """ converts unix path to vms path """
-        self.assertEqual( \
-            list(map(lambda x: x.lower(), DECC.to_vms('/python$root/lib/python$shr.exe', 0, 0))), \
-            list(map(lambda x: x.lower(), DECC.to_vms('/python$root/lib/python$shr.*', 1, 0))))
+        to_vms_1 = list(map(lambda x: x.lower(), DECC.to_vms('/python$root/lib/python$shr.exe', 0, 0)))
+        to_vms_2 = list(map(lambda x: x.lower(), DECC.to_vms('/python$root/lib/python$shr.*', 1, 0)))
+        self.assertEqual(len(to_vms_1), 1)
+        self.assertEqual(len(to_vms_2), 1)
+        self.assertEqual(to_vms_1, to_vms_2)
 
     def test_unixtime(self):
         """ converts vms time to unix time (using time zone) """

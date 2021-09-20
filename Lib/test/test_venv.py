@@ -103,7 +103,7 @@ class BasicTest(BaseTest):
         # Issue 21197
         p = self.get_env_file('lib64')
         conditions = ((struct.calcsize('P') == 8) and (os.name == 'posix') and
-                      (sys.platform != 'darwin'))
+                      (sys.platform != 'darwin') and (sys.platform != 'OpenVMS'))
         if conditions:
             self.assertTrue(os.path.islink(p))
         else:

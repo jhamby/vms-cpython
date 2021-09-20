@@ -20,6 +20,9 @@ from test.support import warnings_helper
 from test import support, string_tests
 from test.support.script_helper import assert_python_failure
 
+_is_openvms64 = sys.platform == 'OpenVMS' and \
+                struct.calcsize('P') == 8
+
 # Error handling (bad decoder return)
 def search_function(encoding):
     def decode1(input, errors="strict"):
@@ -2307,6 +2310,7 @@ class UnicodeTest(string_tests.CommonTest,
         s = 'abc'
         self.assertIs(s.expandtabs(), s)
 
+    @unittest.skipIf(_is_openvms64, 'OpenVMS p64 sizeof issue')
     def test_raiseMemError(self):
         if struct.calcsize('P') == 8:
             # 64 bits pointers

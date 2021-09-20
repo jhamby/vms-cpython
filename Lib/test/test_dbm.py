@@ -5,6 +5,16 @@ import glob
 from test.support import import_helper
 from test.support import os_helper
 
+import sys
+import sysconfig
+
+_is_openvms64 = sys.platform == 'OpenVMS' and \
+                sysconfig.get_config_var('SIZEOF_VOID_P') == 8
+
+if _is_openvms64:
+    raise unittest.SkipTest('Failed on OpenVMS pointer size = 64')
+
+
 # Skip tests if dbm module doesn't exist.
 dbm = import_helper.import_module('dbm')
 

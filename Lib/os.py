@@ -210,7 +210,8 @@ def makedirs(name, mode=0o777, exist_ok=False):
 
     if sys.platform == "OpenVMS" and path.exists(name):
         if not exist_ok:
-            raise FileExistsError()
+            import errno as _errno
+            raise FileExistsError(_errno.EEXIST, "File already exists.")
         return
 
     head, tail = path.split(name)

@@ -221,7 +221,7 @@ class BaseTestCase(unittest.TestCase):
         status, message, optional = SYS.getmsg(msgid, flags)
         self.assertEqual(status, SS.SS__NORMAL)
         self.assertEqual(message, '%SYSTEM-I-HBMMCREPOSTMRG, HBMM master bitmaps will be created after shadow set merge completes')
-        self.assertEqual(optional, 0)
+        self.assertEqual(optional, (0, 0))
 
     def test_getqui(self):
         """ test getqui """

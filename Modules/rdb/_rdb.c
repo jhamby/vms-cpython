@@ -20,12 +20,6 @@
         obj = NULL;     \
     }
 
-#define PyFREE(mem)     \
-    if (mem) {          \
-        PyMem_Free(mem);\
-        mem = NULL;     \
-    }
-
 #define __NEW_STARLET 1
 
 #include <builtins.h>
@@ -34,6 +28,14 @@
 #include <libdef.h>
 #include <starlet.h>
 #include <str$routines.h>
+
+extern int decc$feature_set(const char* __name, int __mode, int __value);
+extern void vms_set_crtl_values(void);
+
+#if __INITIAL_POINTER_SIZE == 64
+#   pragma __pointer_size __save
+#   pragma __pointer_size 32
+#endif
 
 #pragma names save
 #pragma names uppercase
@@ -44,6 +46,7 @@
 #pragma message restore
 #include <sql_sqlca.h>
 #include <sql_sqlda.h>
+
 extern void eib$$db_attach(void *, char *);
 extern void eib$$db_detach(void *);
 extern void eib$$db_commit(void *);
@@ -60,14 +63,18 @@ extern void eib$$db_declare(void *, char *, long *);
 extern void eib$$db_describe_select(void *, long *, void *);
 extern void eib$$db_describe_markers(void *, long *, void *);
 extern void eib$$db_fetch(void *, char *, void *);
+
+typedef SQL_T_SQLDA2 *__sqlda_ptr32;
+
+#if __INITIAL_POINTER_SIZE == 64
+#   pragma __pointer_size __restore
+#endif
+
 #pragma names restore
 
 #define RDB_MODULE_NAME "_rdb"
 #define STMT_TYPE_NAME  "stmt"
 #define SQLCA_TYPE_NAME "sqlca"
-
-extern int decc$feature_set(const char* __name, int __mode, int __value);
-extern void vms_set_crtl_values(void);
 
 #ifndef min
 #define min(a, b)   ((a) < (b) ? (a) : (b))
@@ -96,51 +103,40 @@ enum TIMBUF_MUL {
     MINSEC  = 60,
 };
 
-// #pragma nomember_alignment
-
-// #define MAXARGS        100
-
-// typedef struct
-// {
-//     char    sqldaid[8];
-//     int     i0;
-//     short   sqln;
-//     short   sqld;
-//     struct  sqlvar {
-//         short   sqltype;
-//         long    sqldlen;
-//         int     i0;
-//         char    *sqldata;
-//         int     *sqlnind;
-//         int     i1;
-//         int     i2;
-//         short   l0;
-//         char    d0[128];
-//         char    d1[128];
-//         char    d2[128];
-//         char    d3[128];
-//     }
-//     sqlvar[MAXARGS];
-// } sqlda_t;
-
 static struct SQLCA SQLCA_initial_value = {
  "SQLCA  ", 128, 0, {0, ""}, {0, 0, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0, 0, 0}, ""
  };
 
 typedef struct {
     PyObject_HEAD
-    struct SQLCA sqlca;
+#if __INITIAL_POINTER_SIZE == 64
+#   pragma __pointer_size __save
+#   pragma __pointer_size 32
+#endif
+    struct SQLCA *pSQLCA;
+#if __INITIAL_POINTER_SIZE == 64
+#   pragma __pointer_size __restore
+#endif
     PyObject    *pErr;
 } SQLCA_Object;
 
+#define STMT_CURSOR_SIZE 32
+
 typedef struct {
     PyObject_HEAD
-    SQL_T_SQLDA2   *sqlda_o;
-    SQL_T_SQLDA2   *sqlda_i;
-    int             ncols;
-    long            id;
-    char            cursor[32];
-    int             declared;
+#if __INITIAL_POINTER_SIZE == 64
+#   pragma __pointer_size __save
+#   pragma __pointer_size 32
+#endif
+    SQL_T_SQLDA2   *pSQLDA_o;
+    SQL_T_SQLDA2   *pSQLDA_i;
+    long           *pId;
+    char           *pCursor;
+#if __INITIAL_POINTER_SIZE == 64
+#   pragma __pointer_size __restore
+#endif
+    int             numCols;
+    int             isDeclared;
     SQLCA_Object   *pSQLCA;
 } STMT_Object;
 
@@ -170,12 +166,7 @@ RDB_error_message(
     char                    str[256];
     unsigned short          pos;
     unsigned short          len;
-    struct dsc$descriptor_s dsc;
-
-    dsc.dsc$w_length  = sizeof(str) - 1;
-    dsc.dsc$b_class   = DSC$K_CLASS_S;
-    dsc.dsc$b_dtype   = DSC$K_DTYPE_T;
-    dsc.dsc$a_pointer = str;
+    $DESCRIPTOR(dsc, str);
 
     sql$get_error_text(&dsc);
     str$trim(&dsc, &dsc, &len);
@@ -201,10 +192,20 @@ SQLCA_new(
 {
     SQLCA_Object *self;
     self = (SQLCA_Object *) type->tp_alloc(type, 0);
-    if (self != NULL) {
-        memcpy(&self->sqlca, &SQLCA_initial_value, sizeof(struct SQLCA));
-        self->pErr = NULL;
+    if (!self) {
+        return PyErr_NoMemory();
     }
+    self->pSQLCA = 
+#if __INITIAL_POINTER_SIZE == 64
+        _calloc32(1, sizeof(struct SQLCA));
+#else
+        calloc(1, sizeof(struct SQLCA));
+#endif
+    if (!self->pSQLCA) {
+        return PyErr_NoMemory();
+    }
+    memcpy(self->pSQLCA, &SQLCA_initial_value, sizeof(struct SQLCA));
+    self->pErr = NULL;
     return (PyObject *) self;
 }
 
@@ -215,6 +216,7 @@ SQLCA_dealloc(SQLCA_Object *self)
 {
     // TODO: detach?
     PyCLEAR(self->pErr);
+    free(self->pSQLCA);
     PyObject_Del(self);
 }
 
@@ -242,22 +244,22 @@ SQLCA_attach(
     Py_ssize_t dbname_size = 0;
     ConvertArgToStr(args, dbname, dbname_size, "attach");
 
-    char *tmp = alloca(dbname_size + 16);
+    char tmp[dbname_size + 16];
     sprintf(tmp, "filename %s", dbname);
 
     decc$feature_set("DECC$UNIX_LEVEL", 1, 0);
 
     Py_BEGIN_ALLOW_THREADS
-    eib$$db_attach(&self->sqlca, tmp);
+    eib$$db_attach(self->pSQLCA, tmp);
     Py_END_ALLOW_THREADS
 
     vms_set_crtl_values();
 
-    if (self->sqlca.SQLCODE != SQLCODE_SUCCESS) {
+    if (self->pSQLCA->SQLCODE != SQLCODE_SUCCESS) {
         self->pErr = RDB_error_message(NULL, NULL);
     }
 
-    return PyLong_FromLong(self->sqlca.SQLCODE);
+    return PyLong_FromLong(self->pSQLCA->SQLCODE);
 }
 
 /* ------------------------------------------------------------------------------------------------------------------------------ */
@@ -267,17 +269,18 @@ SQLCA_detach(
     SQLCA_Object *self,
     PyObject *args
 ) {
+
     PyCLEAR(self->pErr);
 
     Py_BEGIN_ALLOW_THREADS
-    eib$$db_detach(&self->sqlca);
+    eib$$db_detach(self->pSQLCA);
     Py_END_ALLOW_THREADS
 
-    if (self->sqlca.SQLCODE != SQLCODE_SUCCESS) {
+    if (self->pSQLCA->SQLCODE != SQLCODE_SUCCESS) {
         self->pErr = RDB_error_message(NULL, NULL);
     }
 
-    return PyLong_FromLong(self->sqlca.SQLCODE);
+    return PyLong_FromLong(self->pSQLCA->SQLCODE);
 }
 
 /* ------------------------------------------------------------------------------------------------------------------------------ */
@@ -290,14 +293,14 @@ SQLCA_rollback(
     PyCLEAR(self->pErr);
 
     Py_BEGIN_ALLOW_THREADS
-    eib$$db_rollback(&self->sqlca);
+    eib$$db_rollback(self->pSQLCA);
     Py_END_ALLOW_THREADS
 
-    if (self->sqlca.SQLCODE != SQLCODE_SUCCESS) {
+    if (self->pSQLCA->SQLCODE != SQLCODE_SUCCESS) {
         self->pErr = RDB_error_message(NULL, NULL);
     }
 
-    return PyLong_FromLong(self->sqlca.SQLCODE);
+    return PyLong_FromLong(self->pSQLCA->SQLCODE);
 }
 
 /* ------------------------------------------------------------------------------------------------------------------------------ */
@@ -310,14 +313,14 @@ SQLCA_commit(
     PyCLEAR(self->pErr);
 
     Py_BEGIN_ALLOW_THREADS
-    eib$$db_commit(&self->sqlca);
+    eib$$db_commit(self->pSQLCA);
     Py_END_ALLOW_THREADS
 
-    if (self->sqlca.SQLCODE != SQLCODE_SUCCESS) {
+    if (self->pSQLCA->SQLCODE != SQLCODE_SUCCESS) {
         self->pErr = RDB_error_message(NULL, NULL);
     }
 
-    return PyLong_FromLong(self->sqlca.SQLCODE);
+    return PyLong_FromLong(self->pSQLCA->SQLCODE);
 }
 
 /* ------------------------------------------------------------------------------------------------------------------------------ */
@@ -341,12 +344,18 @@ SQLCA_exec(
         Py_ssize_t cmd_size = 0;
         ConvertArgToStr(args[0], cmd, cmd_size, "exec");
         Py_BEGIN_ALLOW_THREADS
-        eib$$db_exec_immediate(&self->sqlca, cmd);
+#if __INITIAL_POINTER_SIZE == 64
+        __char_ptr32 cmd32 = _strdup32(cmd);
+        eib$$db_exec_immediate(self->pSQLCA, cmd32);
+        free(cmd32);
+#else
+        eib$$db_exec_immediate(self->pSQLCA, cmd);
+#endif
         Py_END_ALLOW_THREADS
-        if (self->sqlca.SQLCODE != SQLCODE_SUCCESS) {
+        if (self->pSQLCA->SQLCODE != SQLCODE_SUCCESS) {
             self->pErr = RDB_error_message(NULL, NULL);
         }
-        return PyLong_FromLong(self->sqlca.SQLCODE);
+        return PyLong_FromLong(self->pSQLCA->SQLCODE);
     } else {
         // command with parameters
         STMT_Object *pStmt = (STMT_Object *)SQLCA_prepare(self, args[0]);
@@ -372,14 +381,14 @@ SQLCA_set_readonly(
     PyCLEAR(self->pErr);
 
     Py_BEGIN_ALLOW_THREADS
-    eib$$db_set_readonly(&self->sqlca);
+    eib$$db_set_readonly(self->pSQLCA);
     Py_END_ALLOW_THREADS
 
-    if (self->sqlca.SQLCODE != SQLCODE_SUCCESS) {
+    if (self->pSQLCA->SQLCODE != SQLCODE_SUCCESS) {
         self->pErr = RDB_error_message(NULL, NULL);
     }
 
-    return PyLong_FromLong(self->sqlca.SQLCODE);
+    return PyLong_FromLong(self->pSQLCA->SQLCODE);
 }
 
 /* ------------------------------------------------------------------------------------------------------------------------------ */
@@ -392,22 +401,27 @@ SQLCA_set_readwrite(
     PyCLEAR(self->pErr);
 
     Py_BEGIN_ALLOW_THREADS
-    eib$$db_set_readwrite(&self->sqlca);
+    eib$$db_set_readwrite(self->pSQLCA);
     Py_END_ALLOW_THREADS
 
-    if (self->sqlca.SQLCODE != SQLCODE_SUCCESS) {
+    if (self->pSQLCA->SQLCODE != SQLCODE_SUCCESS) {
         self->pErr = RDB_error_message(NULL, NULL);
     }
 
-    return PyLong_FromLong(self->sqlca.SQLCODE);
+    return PyLong_FromLong(self->pSQLCA->SQLCODE);
 }
 
 /* ------------------------------------------------------------------------------------------------------------------------------ */
 
-static SQL_T_SQLDA2 * SQLDA_alloc(short int len) {
+static __sqlda_ptr32 SQLDA_alloc(short int len) {
     len = max(1, len);
     int size = sizeof(SQL_T_SQLDA2) + sizeof(SQL_T_SQLVAR2) * (len -1);
-    SQL_T_SQLDA2 *sqlda = (SQL_T_SQLDA2 *)PyMem_Calloc(1, size);
+    __sqlda_ptr32 sqlda = 
+#if __INITIAL_POINTER_SIZE == 64
+        (__sqlda_ptr32)_calloc32(1, size);
+#else
+        (__sqlda_ptr32)calloc(1, size);
+#endif
     if (sqlda != NULL) {
         strncpy(sqlda->SQLDAID, "SQLDA2  ", sizeof(sqlda->SQLDAID));
         sqlda->SQLN = len;
@@ -434,10 +448,16 @@ SQLCA_prepare(
     pSTMT->pSQLCA = self;
 
     Py_BEGIN_ALLOW_THREADS
-    eib$$db_prepare(&self->sqlca, &pSTMT->id, cmd);
+#if __INITIAL_POINTER_SIZE == 64
+    __char_ptr32 cmd32 = _strdup32(cmd);
+    eib$$db_prepare(self->pSQLCA, pSTMT->pId, cmd32);
+    free(cmd32);
+#else
+    eib$$db_prepare(self->pSQLCA, pSTMT->pId, cmd);
+#endif
     Py_END_ALLOW_THREADS
 
-    if (self->sqlca.SQLCODE != SQLCODE_SUCCESS) {
+    if (self->pSQLCA->SQLCODE != SQLCODE_SUCCESS) {
         goto error_exit;
     }
 
@@ -446,59 +466,74 @@ SQLCA_prepare(
     strncpy(sqlda.SQLDAID, "SQLDA2  ", 8);
 
     Py_BEGIN_ALLOW_THREADS
-    eib$$db_describe_select(&self->sqlca, &pSTMT->id, &sqlda);
+    eib$$db_describe_select(self->pSQLCA, pSTMT->pId, &sqlda);
     Py_END_ALLOW_THREADS
 
-    pSTMT->ncols = sqlda.SQLD;
-    pSTMT->sqlda_o = SQLDA_alloc(sqlda.SQLD);
+    pSTMT->numCols = sqlda.SQLD;
+    pSTMT->pSQLDA_o = SQLDA_alloc(sqlda.SQLD);
 
     Py_BEGIN_ALLOW_THREADS
-    eib$$db_describe_select(&self->sqlca, &pSTMT->id, pSTMT->sqlda_o);
+    eib$$db_describe_select(self->pSQLCA, pSTMT->pId, pSTMT->pSQLDA_o);
     Py_END_ALLOW_THREADS
 
-    if (self->sqlca.SQLCODE != SQLCODE_SUCCESS) {
+    if (self->pSQLCA->SQLCODE != SQLCODE_SUCCESS) {
         goto error_exit;
     }
 
     memset(&sqlda, 0, sizeof(sqlda));
     strncpy(sqlda.SQLDAID, "SQLDA2  ", 8);
     Py_BEGIN_ALLOW_THREADS
-    eib$$db_describe_markers(&self->sqlca, &pSTMT->id, &sqlda);
+    eib$$db_describe_markers(self->pSQLCA, pSTMT->pId, &sqlda);
     Py_END_ALLOW_THREADS
 
-    pSTMT->sqlda_i = SQLDA_alloc(sqlda.SQLD);
+    pSTMT->pSQLDA_i = SQLDA_alloc(sqlda.SQLD);
 
     Py_BEGIN_ALLOW_THREADS
-    eib$$db_describe_markers(&self->sqlca, &pSTMT->id, pSTMT->sqlda_i);
+    eib$$db_describe_markers(self->pSQLCA, pSTMT->pId, pSTMT->pSQLDA_i);
     Py_END_ALLOW_THREADS
 
-    if (self->sqlca.SQLCODE != SQLCODE_SUCCESS) {
+    if (self->pSQLCA->SQLCODE != SQLCODE_SUCCESS) {
         goto error_exit;
     }
 
-    for (int i = 0; i < pSTMT->sqlda_i->SQLD; i++) {
-        pSTMT->sqlda_i->SQLVAR[i].SQLDATA = (char*) PyMem_Calloc(1, pSTMT->sqlda_i->SQLVAR[i].SQLOCTET_LEN);
-        if (pSTMT->sqlda_i->SQLVAR[i].SQLDATA == NULL) {
+    for (int i = 0; i < pSTMT->pSQLDA_i->SQLD; i++) {
+        pSTMT->pSQLDA_i->SQLVAR[i].SQLDATA = 
+#if __INITIAL_POINTER_SIZE == 64
+            _calloc32(1, pSTMT->pSQLDA_i->SQLVAR[i].SQLOCTET_LEN);
+#else
+            calloc(1, pSTMT->pSQLDA_i->SQLVAR[i].SQLOCTET_LEN);
+#endif
+        if (pSTMT->pSQLDA_i->SQLVAR[i].SQLDATA == NULL) {
             Py_DECREF(pSTMT);
             return PyErr_NoMemory();
         }
     }
 
-    for (int i = 0; i < pSTMT->sqlda_o->SQLD; i++) {
-        pSTMT->sqlda_o->SQLVAR[i].SQLIND = PyMem_Calloc(1, sizeof(int));
-        if (pSTMT->sqlda_o->SQLVAR[i].SQLIND == NULL) {
+    for (int i = 0; i < pSTMT->pSQLDA_o->SQLD; i++) {
+        pSTMT->pSQLDA_o->SQLVAR[i].SQLIND = 
+#if __INITIAL_POINTER_SIZE == 64
+            _calloc32(1, sizeof(int));
+#else
+            calloc(1, sizeof(int));
+#endif
+        if (pSTMT->pSQLDA_o->SQLVAR[i].SQLIND == NULL) {
             Py_DECREF(pSTMT);
             return PyErr_NoMemory();
         }
-        pSTMT->sqlda_o->SQLVAR[i].SQLDATA = PyMem_Calloc(1, pSTMT->sqlda_o->SQLVAR[i].SQLOCTET_LEN);
-        if (pSTMT->sqlda_o->SQLVAR[i].SQLDATA == NULL) {
+        pSTMT->pSQLDA_o->SQLVAR[i].SQLDATA =
+#if __INITIAL_POINTER_SIZE == 64
+            _calloc32(1, pSTMT->pSQLDA_o->SQLVAR[i].SQLOCTET_LEN);
+#else
+            calloc(1, pSTMT->pSQLDA_o->SQLVAR[i].SQLOCTET_LEN);
+#endif
+        if (pSTMT->pSQLDA_o->SQLVAR[i].SQLDATA == NULL) {
             Py_DECREF(pSTMT);
             return PyErr_NoMemory();
         }
     }
     __ATOMIC_INCREMENT_LONG(&global_cursor_id);
-    sprintf(pSTMT->cursor, "$DC_%08d", global_cursor_id);
-    pSTMT->declared = 0;
+    sprintf(pSTMT->pCursor, "$DC_%08d", global_cursor_id);
+    pSTMT->isDeclared = 0;
 
     return (PyObject*)pSTMT;
 
@@ -548,14 +583,14 @@ SQLCA_declare_cursor(
         _PyArg_BadArgument("declare_cursor", "args[1]", "str | bytes", args[1]);
     }
 
-    cursor_size = min(cursor_size, sizeof(pSTMT->cursor) - 1);
-    strncpy(pSTMT->cursor, cursor, cursor_size);
+    cursor_size = min(cursor_size, STMT_CURSOR_SIZE - 1);
+    strncpy(pSTMT->pCursor, cursor, cursor_size);
 
     Py_BEGIN_ALLOW_THREADS
-    eib$$db_declare(&self->sqlca, pSTMT->cursor, &pSTMT->id);
+    eib$$db_declare(self->pSQLCA, pSTMT->pCursor, pSTMT->pId);
     Py_END_ALLOW_THREADS
 
-    if (self->sqlca.SQLCODE != SQLCODE_SUCCESS) {
+    if (self->pSQLCA->SQLCODE != SQLCODE_SUCCESS) {
         self->pErr = RDB_error_message(NULL, NULL);
         Py_DECREF(pSTMT);
         Py_RETURN_NONE;
@@ -577,11 +612,21 @@ STMT_new(
     STMT_Object *self;
     self = (STMT_Object *) type->tp_alloc(type, 0);
     if (self != NULL) {
-        self->id = 0;
-        self->ncols = 0;
-        self->cursor[0] = 0;
-        self->sqlda_i = NULL;
-        self->sqlda_o = NULL;
+        self->pId = 
+#if __INITIAL_POINTER_SIZE == 64
+            _calloc32(1, sizeof(long));
+#else
+            calloc(1, sizeof(long));
+#endif
+        self->numCols = 0;
+        self->pCursor = 
+#if __INITIAL_POINTER_SIZE == 64
+            _calloc32(1, STMT_CURSOR_SIZE);
+#else
+            calloc(1, STMT_CURSOR_SIZE);
+#endif
+        self->pSQLDA_i = NULL;
+        self->pSQLDA_o = NULL;
         self->pSQLCA = NULL;
     }
     return (PyObject *) self;
@@ -595,20 +640,22 @@ STMT_dealloc(STMT_Object *self)
     PyObject *pTmp = STMT_release(self, NULL);
     Py_XDECREF(pTmp);
     PyCLEAR(self->pSQLCA);
-    if (self->sqlda_i) {
-        for(int i = 0; i < self->sqlda_i->SQLD; ++i) {
-            PyFREE(self->sqlda_i->SQLVAR[i].SQLDATA);
-            PyFREE(self->sqlda_i->SQLVAR[i].SQLIND);
+    if (self->pSQLDA_i) {
+        for(int i = 0; i < self->pSQLDA_i->SQLD; ++i) {
+            free(self->pSQLDA_i->SQLVAR[i].SQLDATA);
+            free(self->pSQLDA_i->SQLVAR[i].SQLIND);
         }
-        PyFREE(self->sqlda_i);
+        free(self->pSQLDA_i);
     }
-    if (self->sqlda_o) {
-        for(int i = 0; i < self->sqlda_o->SQLD; ++i) {
-            PyFREE(self->sqlda_o->SQLVAR[i].SQLDATA);
-            PyFREE(self->sqlda_o->SQLVAR[i].SQLIND);
+    if (self->pSQLDA_o) {
+        for(int i = 0; i < self->pSQLDA_o->SQLD; ++i) {
+            free(self->pSQLDA_o->SQLVAR[i].SQLDATA);
+            free(self->pSQLDA_o->SQLVAR[i].SQLIND);
         }
-        PyFREE(self->sqlda_o);
+        free(self->pSQLDA_o);
     }
+    free(self->pId);
+    free(self->pCursor);
     PyObject_Del(self);
 }
 
@@ -1230,17 +1277,16 @@ static STMT_Object *fill_statement(
     PyObject* objectsRepresentation;
     long long long_value;
     double double_value;
-    char tmp[32], *t;
     SQL_T_SQLVAR2 *pVar;
     unsigned short timbuf[7];
     int sign;
 
-    if (pStmt->sqlda_i->SQLD != nargs) {
-        PyErr_Format(PyExc_TypeError, "Must be %i args, given %i", pStmt->sqlda_i->SQLD, nargs);
+    if (pStmt->pSQLDA_i->SQLD != nargs) {
+        PyErr_Format(PyExc_TypeError, "Must be %i args, given %i", pStmt->pSQLDA_i->SQLD, nargs);
         return NULL;
     }
     for (int i = 0; i < nargs; i++) {
-        pVar = &pStmt->sqlda_i->SQLVAR[i];
+        pVar = &pStmt->pSQLDA_i->SQLVAR[i];
         switch (pVar->SQLTYPE) {
             case SQLDA_VARCHAR:
                 // 1. clean 
@@ -1603,14 +1649,14 @@ STMT_exec(
     }
 
     Py_BEGIN_ALLOW_THREADS
-    eib$$db_exec(&self->pSQLCA->sqlca, &self->id, self->sqlda_i, self->sqlda_o);
+    eib$$db_exec(self->pSQLCA->pSQLCA, self->pId, self->pSQLDA_i, self->pSQLDA_o);
     Py_END_ALLOW_THREADS
 
-    if (self->pSQLCA->sqlca.SQLCODE != SQLCODE_SUCCESS) {
+    if (self->pSQLCA->pSQLCA->SQLCODE != SQLCODE_SUCCESS) {
         self->pSQLCA->pErr = RDB_error_message(NULL, NULL);
     }
 
-    return PyLong_FromLong(self->pSQLCA->sqlca.SQLCODE);
+    return PyLong_FromLong(self->pSQLCA->pSQLCA->SQLCODE);
 }
 
 /* ------------------------------------------------------------------------------------------------------------------------------ */
@@ -1629,36 +1675,36 @@ STMT_select(
         return NULL;
     }
 
-    if (!self->declared) {
+    if (!self->isDeclared) {
         Py_BEGIN_ALLOW_THREADS
-        eib$$db_declare(&self->pSQLCA->sqlca, self->cursor, &self->id);
+        eib$$db_declare(self->pSQLCA->pSQLCA, self->pCursor, self->pId);
         Py_END_ALLOW_THREADS
-        if (self->pSQLCA->sqlca.SQLCODE != SQLCODE_SUCCESS) {
+        if (self->pSQLCA->pSQLCA->SQLCODE != SQLCODE_SUCCESS) {
             self->pSQLCA->pErr = RDB_error_message(NULL, NULL);
-            return PyLong_FromLong(self->pSQLCA->sqlca.SQLCODE);
+            return PyLong_FromLong(self->pSQLCA->pSQLCA->SQLCODE);
         }
     }
 
-    self->declared = 1;
+    self->isDeclared = 1;
 
     Py_BEGIN_ALLOW_THREADS
-    eib$$db_open_cursor(&self->pSQLCA->sqlca, self->cursor, self->sqlda_i);
+    eib$$db_open_cursor(self->pSQLCA->pSQLCA, self->pCursor, self->pSQLDA_i);
     Py_END_ALLOW_THREADS
 
-    if (self->pSQLCA->sqlca.SQLCODE != SQLCODE_SUCCESS) {
+    if (self->pSQLCA->pSQLCA->SQLCODE != SQLCODE_SUCCESS) {
         self->pSQLCA->pErr = RDB_error_message(NULL, NULL);
-        return PyLong_FromLong(self->pSQLCA->sqlca.SQLCODE);
+        return PyLong_FromLong(self->pSQLCA->pSQLCA->SQLCODE);
     }
 
     Py_BEGIN_ALLOW_THREADS
-    eib$$db_fetch(&self->pSQLCA->sqlca, self->cursor, self->sqlda_o);
+    eib$$db_fetch(self->pSQLCA->pSQLCA, self->pCursor, self->pSQLDA_o);
     Py_END_ALLOW_THREADS
 
     // list to return 
     PyObject *pList = NULL;
 
     // save fetch status
-    int fetch_code = self->pSQLCA->sqlca.SQLCODE;
+    int fetch_code = self->pSQLCA->pSQLCA->SQLCODE;
     PyObject *pErr = NULL;
     if (fetch_code != SQLCODE_SUCCESS) {
         // save error
@@ -1670,12 +1716,12 @@ STMT_select(
 
     // close cursor in any case without checking an error
     Py_BEGIN_ALLOW_THREADS
-    eib$$db_close_cursor(&self->pSQLCA->sqlca, self->cursor);
+    eib$$db_close_cursor(self->pSQLCA->pSQLCA, self->pCursor);
     Py_END_ALLOW_THREADS
 
     // restore fetch status
     self->pSQLCA->pErr = pErr;
-    self->pSQLCA->sqlca.SQLCODE = fetch_code;
+    self->pSQLCA->pSQLCA->SQLCODE = fetch_code;
 
     // check errors from STMT_data
     if (!pList) {
@@ -1697,18 +1743,18 @@ STMT_release(
     }
     PyCLEAR(self->pSQLCA->pErr);
 
-    if (self->id) {
+    if (*self->pId) {
         Py_BEGIN_ALLOW_THREADS
-        eib$$db_release(&self->pSQLCA->sqlca, &self->id);
+        eib$$db_release(self->pSQLCA->pSQLCA, self->pId);
         Py_END_ALLOW_THREADS
-        self->id = 0;
+        *self->pId = 0;
     }
 
-    if (self->pSQLCA->sqlca.SQLCODE != SQLCODE_SUCCESS) {
+    if (self->pSQLCA->pSQLCA->SQLCODE != SQLCODE_SUCCESS) {
         self->pSQLCA->pErr = RDB_error_message(NULL, NULL);
     }
 
-    return PyLong_FromLong(self->pSQLCA->sqlca.SQLCODE);
+    return PyLong_FromLong(self->pSQLCA->pSQLCA->SQLCODE);
 }
 
 /* ------------------------------------------------------------------------------------------------------------------------------ */
@@ -1729,14 +1775,14 @@ STMT_open_cursor(
     }
 
     Py_BEGIN_ALLOW_THREADS
-    eib$$db_open_cursor(&self->pSQLCA->sqlca, self->cursor, self->sqlda_i);
+    eib$$db_open_cursor(self->pSQLCA->pSQLCA, self->pCursor, self->pSQLDA_i);
     Py_END_ALLOW_THREADS
 
-    if (self->pSQLCA->sqlca.SQLCODE != SQLCODE_SUCCESS) {
+    if (self->pSQLCA->pSQLCA->SQLCODE != SQLCODE_SUCCESS) {
         self->pSQLCA->pErr = RDB_error_message(NULL, NULL);
     }
 
-    return PyLong_FromLong(self->pSQLCA->sqlca.SQLCODE);
+    return PyLong_FromLong(self->pSQLCA->pSQLCA->SQLCODE);
 }
 
 /* ------------------------------------------------------------------------------------------------------------------------------ */
@@ -1752,14 +1798,14 @@ STMT_close_cursor(
     PyCLEAR(self->pSQLCA->pErr);
 
     Py_BEGIN_ALLOW_THREADS
-    eib$$db_close_cursor(&self->pSQLCA->sqlca, self->cursor);
+    eib$$db_close_cursor(self->pSQLCA->pSQLCA, self->pCursor);
     Py_END_ALLOW_THREADS
 
-    if (self->pSQLCA->sqlca.SQLCODE != SQLCODE_SUCCESS) {
+    if (self->pSQLCA->pSQLCA->SQLCODE != SQLCODE_SUCCESS) {
         self->pSQLCA->pErr = RDB_error_message(NULL, NULL);
     }
 
-    return PyLong_FromLong(self->pSQLCA->sqlca.SQLCODE);
+    return PyLong_FromLong(self->pSQLCA->pSQLCA->SQLCODE);
 }
 
 /* ------------------------------------------------------------------------------------------------------------------------------ */
@@ -1775,14 +1821,14 @@ STMT_fetch(
     PyCLEAR(self->pSQLCA->pErr);
 
     Py_BEGIN_ALLOW_THREADS
-    eib$$db_fetch(&self->pSQLCA->sqlca, self->cursor, self->sqlda_o);
+    eib$$db_fetch(self->pSQLCA->pSQLCA, self->pCursor, self->pSQLDA_o);
     Py_END_ALLOW_THREADS
 
-    if (self->pSQLCA->sqlca.SQLCODE != SQLCODE_SUCCESS) {
+    if (self->pSQLCA->pSQLCA->SQLCODE != SQLCODE_SUCCESS) {
         self->pSQLCA->pErr = RDB_error_message(NULL, NULL);
     }
 
-    return PyLong_FromLong(self->pSQLCA->sqlca.SQLCODE);
+    return PyLong_FromLong(self->pSQLCA->pSQLCA->SQLCODE);
 }
 
 /* ------------------------------------------------------------------------------------------------------------------------------ */
@@ -1797,7 +1843,7 @@ STMT_data(
     }
     PyCLEAR(self->pSQLCA->pErr);
 
-    PyObject *pList = PyList_New(self->sqlda_o->SQLD);
+    PyObject *pList = PyList_New(self->pSQLDA_o->SQLD);
     if (pList == NULL) {
         return PyErr_NoMemory();
     }
@@ -1820,8 +1866,8 @@ STMT_data(
         pInvalidStr = PyUnicode_FromString("<inv>");
     }
 
-    for(int i = 0; i < self->sqlda_o->SQLD; ++i) {
-        pVar = &self->sqlda_o->SQLVAR[i];
+    for(int i = 0; i < self->pSQLDA_o->SQLD; ++i) {
+        pVar = &self->pSQLDA_o->SQLVAR[i];
         pValue = NULL;
         if (*pVar->SQLIND < 0) {
             pValue = pNullStr;
@@ -2024,7 +2070,7 @@ STMT_fields(
     }
     PyCLEAR(self->pSQLCA->pErr);
 
-    PyObject *pList = PyList_New(self->sqlda_o->SQLD);
+    PyObject *pList = PyList_New(self->pSQLDA_o->SQLD);
     if (pList == NULL) {
         return PyErr_NoMemory();
     }
@@ -2033,8 +2079,8 @@ STMT_fields(
     PyObject *pValue;
     SQL_T_SQLVAR2 *pVar;
 
-    for(int i = 0; i < self->sqlda_o->SQLD; ++i) {
-        pVar = &self->sqlda_o->SQLVAR[i];
+    for(int i = 0; i < self->pSQLDA_o->SQLD; ++i) {
+        pVar = &self->pSQLDA_o->SQLVAR[i];
         pValue = NULL;
         len = 0;
         switch (pVar->SQLTYPE) {
@@ -2109,12 +2155,31 @@ static PyMethodDef SQLCA_methods[] = {
     {NULL, NULL}
 };
 
-static PyMemberDef SQLCA_members[] = {
-    {"code", T_INT, offsetof(SQLCA_Object, sqlca.SQLCODE), READONLY,
-     "SQLCODE"},
-    {"message", T_OBJECT, offsetof(SQLCA_Object, pErr), READONLY,
-     "Error message"},
-    {NULL}
+static PyObject *
+SQLCA_getcode(SQLCA_Object *self, void *closure)
+{
+    if (self->pSQLCA) {
+        return PyLong_FromLong(self->pSQLCA->SQLCODE);
+    }
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+SQLCA_getmessage(SQLCA_Object *self, void *closure)
+{
+    if (self->pErr) {
+        Py_IncRef(self->pErr);
+        return self->pErr;
+    }
+    Py_RETURN_NONE;
+}
+
+static PyGetSetDef SQLCA_getset[] = {
+    {"code", (getter) SQLCA_getcode, NULL,
+     "SQLCODE", NULL},
+    {"message", (getter) SQLCA_getmessage, NULL,
+     "Error message", NULL},
+    {NULL}  /* Sentinel */
 };
 
 PyTypeObject SQLCA_Type = {
@@ -2126,7 +2191,7 @@ PyTypeObject SQLCA_Type = {
     .tp_flags = Py_TPFLAGS_DEFAULT,
     .tp_new = SQLCA_new,
     .tp_methods = SQLCA_methods,
-    .tp_members = SQLCA_members,
+    .tp_getset = SQLCA_getset,
 };
 
 /********************************************************************
@@ -2154,7 +2219,7 @@ static PyMethodDef  STMT_methods[] = {
 };
 
 static PyMemberDef  STMT_members[] = {
-    {"ncols", T_SHORT, offsetof(STMT_Object, ncols), READONLY,
+    {"ncols", T_SHORT, offsetof(STMT_Object, numCols), READONLY,
      "Number of columns"},
     {NULL}
 };

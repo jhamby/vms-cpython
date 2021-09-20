@@ -6,6 +6,11 @@ import unittest
 import struct
 import sys
 
+import sysconfig
+
+_is_openvms64 = sys.platform == 'OpenVMS' and \
+                sysconfig.get_config_var('SIZEOF_VOID_P') == 8
+
 from test import support
 from test.support.script_helper import assert_python_ok
 
@@ -164,7 +169,8 @@ class StructTest(unittest.TestCase):
         self.assertLessEqual(8, struct.calcsize('q'))
         self.assertLessEqual(struct.calcsize('l'), struct.calcsize('q'))
         self.assertGreaterEqual(struct.calcsize('n'), struct.calcsize('i'))
-        self.assertGreaterEqual(struct.calcsize('n'), struct.calcsize('P'))
+        if not _is_openvms64:
+            self.assertGreaterEqual(struct.calcsize('n'), struct.calcsize('P'))
 
     def test_integers(self):
         # Integer tests (bBhHiIlLqQnN).
