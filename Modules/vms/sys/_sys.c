@@ -969,6 +969,7 @@ SYS_device_scan(
         pILE3 = (ILE3Object *)args[1];
     }
     struct _generic_64 ctxt;
+    ctxt.gen64$q_quadword = 0;
     ConvertPosArgToLongLong(2, ctxt.gen64$q_quadword, "device_scan");
 
     char buffer[128];
@@ -1387,6 +1388,7 @@ SYS_rem_holder(
     ConvertPosArgToUnsignedLong(0, id, "rem_holder");
 
     struct _generic_64 holder;
+    holder.gen64$q_quadword = 0;
     ConvertPosArgToUnsignedLongLong(1, holder.gen64$q_quadword, "rem_holder");
 
     int status = 0;
@@ -1412,6 +1414,7 @@ SYS_add_holder(
     ConvertPosArgToUnsignedLong(0, id, "add_holder");
 
     struct _generic_64 holder;
+    holder.gen64$q_quadword = 0;
     ConvertPosArgToUnsignedLongLong(1, holder.gen64$q_quadword, "add_holder");
 
     unsigned int attrib = 0;
