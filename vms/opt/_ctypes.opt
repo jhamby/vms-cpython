@@ -1,4 +1,4 @@
-oss$root:[lib]libffi64.olb/lib
+LIBFFI/lib
 sys$library:pthread$rtl.exe/SHARE
 python$build_out:[000000]python$shr.exe/SHARE
 CASE_SENSITIVE=YES

@@ -16,9 +16,8 @@ the OpenVMS-style command-line C compiler:
 import os, sys, re
 import tempfile
 import stat
-import sysconfig
+import struct
 
-from distutils import sysconfig
 from distutils.dep_util import newer
 from distutils.ccompiler import \
      CCompiler, gen_lib_options
@@ -29,7 +28,7 @@ from distutils import log
 if sys.platform == 'OpenVMS':
     import _decc
     import _lib
-    _is_openvms64 = sysconfig.get_config_var('SIZEOF_VOID_P') == 8
+    VMS64 = struct.calcsize('P') == 8
 
 class OpenVMSCCompiler(CCompiler):
 
@@ -160,7 +159,7 @@ class OpenVMSCCompiler(CCompiler):
             cc_args += ["/DEBUG/NOOPTIMIZE", "/WARNINGS=WARNINGS=ALL"]
         else:
             cc_args += ["/NODEBUG/OPTIMIZE", "/WARNINGS=DISABLE=ALL"]
-        if _is_openvms64:
+        if VMS64:
             cc_args += ["/POINTER_SIZE=64"]
 
         if before:

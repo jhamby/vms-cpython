@@ -6,12 +6,11 @@ from test.support import import_helper
 from test.support import os_helper
 
 import sys
-import sysconfig
+import struct
 
-_is_openvms64 = sys.platform == 'OpenVMS' and \
-                sysconfig.get_config_var('SIZEOF_VOID_P') == 8
+VMS64 = sys.platform == 'OpenVMS' and struct.calcsize('P') == 8
 
-if _is_openvms64:
+if VMS64:
     raise unittest.SkipTest('Failed on OpenVMS pointer size = 64')
 
 

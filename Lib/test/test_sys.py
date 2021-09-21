@@ -17,8 +17,7 @@ import textwrap
 import unittest
 import warnings
 
-_is_openvms64 = sys.platform == 'OpenVMS' and \
-                sysconfig.get_config_var('SIZEOF_VOID_P') == 8
+VMS64 = sys.platform == 'OpenVMS' and struct.calcsize('P') == 8
 
 # count the number of test runs, used to create unique
 # strings to intern in test_intern()
@@ -1128,7 +1127,7 @@ class SizeofTest(unittest.TestCase):
 
     check_sizeof = test.support.check_sizeof
 
-    @unittest.skipIf(_is_openvms64, 'OpenVMS p64 sizeof issue')
+    @unittest.skipIf(VMS64, 'OpenVMS p64 sizeof issue')
     def test_gc_head_size(self):
         # Check that the gc header size is added to objects tracked by the gc.
         vsize = test.support.calcvobjsize
@@ -1169,13 +1168,13 @@ class SizeofTest(unittest.TestCase):
         with self.assertRaises((ValueError, OverflowError)):
             sys.getsizeof(OverflowSizeof(-sys.maxsize - 1))
 
-    @unittest.skipIf(_is_openvms64, 'OpenVMS p64 sizeof issue')
+    @unittest.skipIf(VMS64, 'OpenVMS p64 sizeof issue')
     def test_default(self):
         size = test.support.calcvobjsize
         self.assertEqual(sys.getsizeof(True), size('') + self.longdigit)
         self.assertEqual(sys.getsizeof(True, -1), size('') + self.longdigit)
 
-    @unittest.skipIf(_is_openvms64, 'OpenVMS p64 sizeof issue')
+    @unittest.skipIf(VMS64, 'OpenVMS p64 sizeof issue')
     def test_objecttypes(self):
         # check all types defined in Objects/
         calcsize = struct.calcsize
@@ -1472,7 +1471,7 @@ class SizeofTest(unittest.TestCase):
             __slots__ = 'a', 'b', 'c'
         check(OD(x=[]), OrderedDict(x=[]), '3P')
 
-    @unittest.skipIf(_is_openvms64, 'OpenVMS p64 sizeof issue')
+    @unittest.skipIf(VMS64, 'OpenVMS p64 sizeof issue')
     def test_pythontypes(self):
         # check all types defined in Python/
         size = test.support.calcobjsize

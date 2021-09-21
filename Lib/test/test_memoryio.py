@@ -11,11 +11,9 @@ import _pyio as pyio
 import pickle
 import sys
 
-import sysconfig
+import struct
 
-_is_openvms64 = sys.platform == 'OpenVMS' and \
-                sysconfig.get_config_var('SIZEOF_VOID_P') == 8
-
+VMS64 = sys.platform == 'OpenVMS' and struct.calcsize('P') == 8
 
 class IntLike:
     def __init__(self, num):
@@ -760,7 +758,7 @@ class CBytesIOTest(PyBytesIOTest):
     check_sizeof = support.check_sizeof
 
     @support.cpython_only
-    @unittest.skipIf(_is_openvms64, 'sizeof(T) != offsetof(T.last) + sizeof(T.last)')
+    @unittest.skipIf(VMS64, 'sizeof(T) != offsetof(T.last) + sizeof(T.last)')
     def test_sizeof(self):
         basesize = support.calcobjsize('P2n2Pn')
         check = self.check_sizeof

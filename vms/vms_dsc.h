@@ -5,7 +5,7 @@
 #   define  set_dsc_string(dsc, val)    (dsc).dsc$a_pointer = _strdup32(val)
 #   define  free_dsc_string(dsc)        free((dsc).dsc$a_pointer)
 #else
-#   define  set_dsc_string(dsc, val)    (dsc).dsc$a_pointer = (val)
+#   define  set_dsc_string(dsc, val)    (dsc).dsc$a_pointer = (__char_ptr32)(val)
 #   define  free_dsc_string
 #endif
 

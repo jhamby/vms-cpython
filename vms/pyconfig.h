@@ -1493,7 +1493,11 @@
 #define SIZEOF_UINTPTR_T 8
 
 /* The size of `void *', as computed by sizeof. */
+#if __INITIAL_POINTER_SIZE == 64
 #define SIZEOF_VOID_P 8
+#else
+#define SIZEOF_VOID_P 4
+#endif
 
 /* The size of `wchar_t', as computed by sizeof. */
 #define SIZEOF_WCHAR_T 4

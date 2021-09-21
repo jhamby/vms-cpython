@@ -1,4 +1,4 @@
-! MMS/EXT/DESCR=Python3.mms/MACRO=("OUTDIR=OUT","CONFIG=DEBUG")
+! MMS/EXT/DESCR=Python3.mms/MACRO=("OUTDIR=OUT","CONFIG=DEBUG","P64")
 DYNLOAD_DIR = lib-dynload
 PLATFORM = OpenVMS
 SOABI = cpython-310-ia64-openvms
@@ -7,8 +7,29 @@ CC_QUALIFIERS = -
 /NAMES=(AS_IS,SHORTENED) -
 /WARNINGS=(WARNINGS=ALL, DISABLE=(EXTRASEMI, MAYLOSEDATA3)) -
 /ACCEPT=NOVAXC_KEYWORDS -
-/REENTRANCY=MULTITHREAD -
-/POINTER_SIZE=64
+/REENTRANCY=MULTITHREAD
+
+.IF P64
+CC_QUALIFIERS = $(CC_QUALIFIERS) -
+/POINTER_SIZE=64  ! check 'SIZEOF_VOID_P': 8, in _sysconfigdata__OpenVMS_cpython-310-ia64-openvms.py
+LIBBZ2 = oss$root:[lib]libbz2_64.olb
+LIBFFI = oss$root:[lib]libffi64.olb
+LIBGDBM = oss$root:[lib]libgdbm64.olb
+LILZMA = oss$root:[lib]liblzma64.olb
+LIBSQLITE = oss$root:[lib]libsqlite64.olb
+LIBZ = oss$root:[lib]libz64.olb
+LIBREADLINE = oss$root:[lib]libreadline64.olb
+POINTER_SIZE = 64
+.ELSE
+LIBBZ2 = oss$root:[lib]libbz2_32.olb
+LIBFFI = oss$root:[lib]libffi32.olb
+LIBGDBM = oss$root:[lib]libgdbm32.olb
+LILZMA = oss$root:[lib]liblzma32.olb
+LIBSQLITE = oss$root:[lib]libsqlite32.olb
+LIBZ = oss$root:[lib]libz32.olb
+LIBREADLINE = oss$root:[lib]libreadline32.olb
+POINTER_SIZE = 32
+.ENDIF 
 
 CC_DEFINES = -
 _USE_STD_STAT, -                ! COMMON
@@ -47,7 +68,7 @@ OUTDIR = OUT
 CONFIG = DEBUG
 .ENDIF
 
-.IF $(CONFIG) .EQ DEBUG
+.IF $(FINDSTRING DEBUG, $(CONFIG)) .EQ DEBUG
 ! debug
 CC_QUALIFIERS = $(CC_QUALIFIERS)/DEBUG/NOOPTIMIZE/LIST=$(MMS$TARGET_NAME)/SHOW=ALL
 CC_DEFINES = $(CC_DEFINES),_DEBUG
@@ -115,6 +136,14 @@ CC_GETPATH_CFLAGS = $(CC_QUALIFIERS)/DEFINE=("Py_BUILD_CORE",$(GETPATH_DEFINES))
     BUILD_OBJ_DIR = F$ENVIRONMENT("DEFAULT")-"]"+".$(OBJ_DIR).]"
     define /trans=concealed python$build_out 'BUILD_OUT_DIR'
     define /trans=concealed python$build_obj 'BUILD_OBJ_DIR'
+    ! lib 32 or 64
+    define LIBBZ2 $(LIBBZ2)
+    define LIBFFI $(LIBFFI)
+    define LIBGDBM $(LIBGDBM)
+    define LILZMA $(LILZMA)
+    define LIBSQLITE $(LIBSQLITE)
+    define LIBZ $(LIBZ)
+    define LIBREADLINE $(LIBREADLINE)
 
 .SUFFIXES
 .SUFFIXES .EXE .OLB .OBS .OBM .OBB .OBC .C
@@ -1059,6 +1088,8 @@ LIB_DYNLOAD : $(LIBDYNLOAD)
 #	-L$(SSL)/lib -lssl -lcrypto
 [.$(OBJ_DIR).Modules]_ssl.obm : [.Modules]_ssl.c [.Modules]socketmodule.h $(PYTHON_HEADERS)
 [.$(OUT_DIR).$(DYNLOAD_DIR)]_ssl.exe : [.$(OBJ_DIR).Modules]_ssl.obm
+    @ pipe create/dir $(DIR $(MMS$TARGET)) | copy SYS$INPUT nl:
+    $(LINK)$(LINK_FLAGS)/SHARE=python$build_out:[$(DYNLOAD_DIR)]$(NOTDIR $(MMS$TARGET_NAME)).exe $(MMS$SOURCE),[.vms.opt]$(NOTDIR $(MMS$TARGET_NAME))$(POINTER_SIZE).opt/OPT
 
 # The crypt module is now disabled by default because it breaks builds
 # on many systems (where -lcrypt is needed), e.g. Linux (I believe).
@@ -1469,7 +1500,7 @@ DECIMAL_HEADERS = -
 [.$(OBJ_DIR).Modules]_hashopenssl.obm : [.Modules]_hashopenssl.c [.Modules]hashlib.h $(PYTHON_HEADERS)
 [.$(OUT_DIR).$(DYNLOAD_DIR)]_hashlib.exe : [.$(OBJ_DIR).Modules]_hashopenssl.obm
     @ pipe create/dir $(DIR $(MMS$TARGET)) | copy SYS$INPUT nl:
-    $(LINK)$(LINK_FLAGS)/SHARE=python$build_out:[$(DYNLOAD_DIR)]$(NOTDIR $(MMS$TARGET_NAME)).exe $(MMS$SOURCE),[.vms.opt]$(NOTDIR $(MMS$TARGET_NAME)).opt/OPT
+    $(LINK)$(LINK_FLAGS)/SHARE=python$build_out:[$(DYNLOAD_DIR)]$(NOTDIR $(MMS$TARGET_NAME)).exe $(MMS$SOURCE),[.vms.opt]$(NOTDIR $(MMS$TARGET_NAME))$(POINTER_SIZE).opt/OPT
 
 # _lsprof _lsprof rotatingtree
 [.$(OBJ_DIR).Modules]_lsprof.obm : [.Modules]_lsprof.c $(PYTHON_HEADERS)
