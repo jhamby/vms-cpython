@@ -162,8 +162,8 @@ class BaseTestCase(unittest.TestCase):
             devices.append(dev_name)
             status, dev_name, context = SYS.device_scan('*', il, context)
 
-        self.assertGreater(len(devices), 0)
         self.assertEqual(status, SS.SS__NOMOREDEV)
+        self.assertGreater(len(devices), 0)
 
     def test_uicstr(self):
         """ test uicstr """
