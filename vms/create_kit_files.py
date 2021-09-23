@@ -166,7 +166,7 @@ if __name__ == "__main__":
     major = '3'
     minor = '10'
     level = '0'
-    edit = 'dev006'
+    edit = 'dev007'
 
     for opt, optarg in opts:
         if opt in ['--type']:
