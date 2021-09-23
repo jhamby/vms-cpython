@@ -14,13 +14,14 @@ $ then
 $    root = f$trnlmn("pcsi$destination")
 $    if "''root'" .eqs. ""
 $    then
-$       write sys$output "The logical name python_wheels$root is not defined; check installation."
+$       write sys$output "The logical name pcsi$destination is not defined; check installation."
 $       exit
 $    endif
 $
 $    root = "''root" - "]" + "wheels.]"
 $    define/system/trans=concealed PYTHON_WHEELS$ROOT 'root
 $    define/system PIP_FIND_LINKS "/PYTHON_WHEELS$ROOT"
+$    define/system PIP_NO_INDEX 1
 $ else
 $    @sys$startup:python_wheels$define_logicals.com
 $ endif

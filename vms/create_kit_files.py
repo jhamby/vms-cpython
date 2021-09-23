@@ -67,10 +67,6 @@ product VSI I64VMS PYTHON {type}{major}.{minor}-{level}{edit} FULL ;
 --
 -- Start-up and shutdown scripts
 --
-   file "[sys$startup]python$define_root.com" source "[python]python$define_root.com";
-   file "[sys$startup]python$startup.com" source "[python]python$startup.com";
-   file "[sys$startup]python$shutdown.com" source "[python]python$shutdown.com";
-
 
 --
 -- Release notes
@@ -81,7 +77,22 @@ product VSI I64VMS PYTHON {type}{major}.{minor}-{level}{edit} FULL ;
 --
 -- Do post-install tasks
 --
-   execute postinstall "@pcsi$source:[python]python$define_root.com" interactive uses "[python]python$define_root.com" ;
+    execute postinstall (
+        "root = f$trnlmn(""pcsi$destination"") - ""]"" + ""python.]""",
+        "define/system/trans=concealed python$root 'root'",
+        "define/system python$shr python$root:[lib]python$shr.exe",
+        "define/system PYTHONHOME ""/python$root""",
+        "python :== $python$root:[bin]python.exe",
+        "open/write fd sys$startup:python$startup.com",
+        "write fd ""$!Define logical names for Python""",
+        "write fd ""$python :== $python$root:[bin]python.exe""",
+        "write fd ""$define/system/trans=concealed python$root ''root'""",
+        "write fd ""$define/system python$shr python$root:[lib]python$shr.exe""",
+        "write fd ""$define/system PYTHONHOME """"/python$root""""",
+        "write fd ""$exit""",
+        "close fd",
+        "set file /prot=(W:RE) sys$startup:python$startup.com"
+     );
 
 --
 -- Okay, done.  Tell the user what to do next.
@@ -131,13 +142,6 @@ following lines to SYS$MANAGER:SYSTARTUP_VMS.COM:
 
     $ file := SYS$STARTUP:PYTHON$STARTUP.COM
     $ if f$search("''file'") .nes. "" then @'file'
-
-To shutdown the Python runtime at system shutdown time, add the
-following lines to SYS$MANAGER:SYSHUTDWN.COM:
-
-    $ file := SYS$STARTUP:PYTHON$SHUTDOWN.COM
-    $ if f$search("''file'") .nes. "" then @'file'
-
 
 '''
     text_content = text_template.format(

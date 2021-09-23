@@ -154,11 +154,11 @@ class OpenVMSCCompiler(CCompiler):
     def _get_cc_args(self, pp_opts, debug, before):
         """ Generate C compiler qualifiers
         """
-        cc_args = ["/NAMES=(AS_IS,SHORTENED)"]
+        cc_args = ["/NAMES=(AS_IS,SHORTENED)", "/WARNING=DISABLE=ALL"]
         if debug:
-            cc_args += ["/DEBUG/NOOPTIMIZE", "/WARNINGS=WARNINGS=ALL"]
+            cc_args += ["/DEBUG/NOOPTIMIZE"]
         else:
-            cc_args += ["/NODEBUG/OPTIMIZE", "/WARNINGS=DISABLE=ALL"]
+            cc_args += ["/NODEBUG/OPTIMIZE"]
         if VMS64:
             cc_args += ["/POINTER_SIZE=64"]
 

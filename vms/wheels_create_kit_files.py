@@ -82,8 +82,6 @@ product VSI I64VMS PYTHWHLS {type}{major}.{minor}-{level}{edit} FULL ;
 --
 -- Start-up and shutdown scripts
 --
---    file "[sys$startup]python_wheels$define_root.com" source "[000000]python_wheels$define_root.com";
---    file "[sys$startup]python_wheels$startup.com" source "[000000]python_wheels$startup.com";
 
 --
 -- Do post-install tasks
@@ -93,29 +91,16 @@ product VSI I64VMS PYTHWHLS {type}{major}.{minor}-{level}{edit} FULL ;
         "root = f$trnlmn(""pcsi$destination"") - ""]"" + ""wheels.]""",
         "define/system/trans=concealed python_wheels$root 'root'",
         "define/system PIP_FIND_LINKS ""/python_wheels$root""",
-        "open/write fd sys$startup:wheels$startup.com",
+        "define/system PIP_NO_INDEX 1",
+        "open/write fd sys$startup:python_wheels$startup.com",
         "write fd ""$!Define logical names for Python wheels packages...""",
         "write fd ""$define/system/trans=concealed python_wheels$root ''root'""",
         "write fd ""$define/system PIP_FIND_LINKS """"/python_wheels$root""""",
+        "write fd ""$define/system PIP_NO_INDEX 1""",
         "write fd ""$exit""",
-        "close fd"
+        "close fd",
+        "set file /prot=(W:RE) sys$startup:python_wheels$startup.com"
      );
-
---    execute postinstall (
---        "root = f$trnlmn(""pcsi$destination"") - ""]"" + ""wheels.]""",
---        "define/system/trans=concealed python_wheels$root 'root'",
---        "define/system PIP_FIND_LINKS ""/python_wheels$root""",
---        "write sys$output ""% Add next commands to the system startup file:""",
---        "write sys$output ""%     $define/system/trans=concealed python_wheels$root ''root'""",
---        "write sys$output ""%     $define/system PIP_FIND_LINKS """"/python_wheels$root"""""
---     ) interactive ;
-
---    execute
---        postinstall
---            "@pcsi$source:[000000]python_wheels$define_root.com"
---            interactive
---            uses [000000]python_wheels$define_root.com
---    ;
 
 --
 -- Okay, done.  Tell the user what to do next.
@@ -151,7 +136,7 @@ end product;
 To define the Wheels for Python runtime at system boot time, add the
 following lines to SYS$MANAGER:SYSTARTUP_VMS.COM:
 
-    $ file := sys$startup:wheels$startup.com
+    $ file := sys$startup:python_wheels$startup.com
     $ if f$search("''file'") .nes. "" then @'file'
 
 '''

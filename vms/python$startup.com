@@ -14,7 +14,7 @@ $ then
 $    root = f$trnlmn("pcsi$destination")
 $    if "''root'" .eqs. ""
 $    then
-$       write sys$output "The logical name python$root is not defined; check installation."
+$       write sys$output "The logical name pcsi$destination is not defined; check installation."
 $       exit
 $    endif
 $

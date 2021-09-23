@@ -876,6 +876,7 @@
 
 /* Define to 1 if you have the `round' function. */
 #undef HAVE_ROUND
+#define round py_round
 
 /* Define to 1 if you have the `rtpSpawn' function. */
 #undef HAVE_RTPSPAWN
@@ -1707,8 +1708,6 @@
 #ifndef MAP_ANONYMOUS
 #define MAP_ANONYMOUS 0x10
 #endif
-
-#define round py_round
 
 #ifndef INT32_MIN
 #define INT32_MIN __INT32_MIN

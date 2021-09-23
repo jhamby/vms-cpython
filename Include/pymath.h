@@ -15,11 +15,23 @@ functions and constants
  *Note: PC/pyconfig.h defines copysign as _copysign
  */
 #ifndef HAVE_COPYSIGN
+#ifdef __cplusplus
+    extern "C" {
+#endif
 extern double copysign(double, double);
+#ifdef __cplusplus
+    }
+#endif
 #endif
 
 #ifndef HAVE_ROUND
+#ifdef __cplusplus
+    extern "C" {
+#endif
 extern double round(double);
+#ifdef __cplusplus
+    }
+#endif
 #endif
 
 #ifndef HAVE_HYPOT
