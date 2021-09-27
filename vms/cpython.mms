@@ -14,7 +14,7 @@ CC_QUALIFIERS = $(CC_QUALIFIERS) -
 /POINTER_SIZE=64  ! check 'SIZEOF_VOID_P': 8, in _sysconfigdata__OpenVMS_cpython-310-ia64-openvms.py
 LIBBZ2 = oss$root:[lib]libbz2_64.olb
 LIBFFI = oss$root:[lib]libffi64.olb
-LIBGDBM = oss$root:[lib]libgdbm64.olb
+LIBGDBM = wrk_disk:[vorfolomeev.gdbm.vms]libgdbm64.olb
 LILZMA = oss$root:[lib]liblzma64.olb
 LIBSQLITE = oss$root:[lib]libsqlite64.olb
 LIBZ = oss$root:[lib]libz64.olb
@@ -23,7 +23,7 @@ POINTER_SIZE = 64
 .ELSE
 LIBBZ2 = oss$root:[lib]libbz2_32.olb
 LIBFFI = oss$root:[lib]libffi32.olb
-LIBGDBM = oss$root:[lib]libgdbm32.olb
+LIBGDBM = wrk_disk:[vorfolomeev.gdbm.vms]libgdbm32.olb
 LILZMA = oss$root:[lib]liblzma32.olb
 LIBSQLITE = oss$root:[lib]libsqlite32.olb
 LIBZ = oss$root:[lib]libz32.olb

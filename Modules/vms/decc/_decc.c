@@ -49,11 +49,7 @@ DECC_fix_time(
 static long long epoch() {
     static long long _epoch = 0;
     if (_epoch == 0)  {
-        struct dsc$descriptor_s epoch_dsc;
-        epoch_dsc.dsc$w_length = strlen(UNIX_EPOCH);
-        epoch_dsc.dsc$b_class = DSC$K_CLASS_S;
-        epoch_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-        epoch_dsc.dsc$a_pointer = UNIX_EPOCH;
+        $DESCRIPTOR(epoch_dsc, UNIX_EPOCH);
         Py_BEGIN_ALLOW_THREADS
         sys$bintim(&epoch_dsc, (struct _generic_64 *) &_epoch);
         Py_END_ALLOW_THREADS

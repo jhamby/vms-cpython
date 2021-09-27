@@ -38,12 +38,7 @@ LIB_date_time(
     PyObject * args)
 {
     char buffer[32];
-    struct dsc$descriptor_s val_dsc;
-
-    val_dsc.dsc$w_length = sizeof(buffer) - 1;
-    val_dsc.dsc$b_class = DSC$K_CLASS_S;
-    val_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-    val_dsc.dsc$a_pointer = buffer;
+    $DESCRIPTOR(val_dsc, buffer);
 
     int status = 0;
 
@@ -141,11 +136,7 @@ LIB_get_hostname(
     }
 
     char buffer[256];
-    struct dsc$descriptor_s val_dsc;
-    val_dsc.dsc$w_length = sizeof(buffer) - 1;
-    val_dsc.dsc$b_class = DSC$K_CLASS_S;
-    val_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-    val_dsc.dsc$a_pointer = buffer;
+    $DESCRIPTOR(val_dsc, buffer);
 
     int status = 0;
     int result_len = 0;

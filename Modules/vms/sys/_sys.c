@@ -140,14 +140,10 @@ SYS_asctim(
     }
 
     char buffer[64];
-    struct dsc$descriptor_s val_dsc;
+    $DESCRIPTOR(val_dsc, buffer);
+
     int status = 0;
     unsigned short result_len = 0;
-
-    val_dsc.dsc$w_length = sizeof(buffer) - 1;
-    val_dsc.dsc$b_class = DSC$K_CLASS_S;
-    val_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-    val_dsc.dsc$a_pointer = buffer;
 
     Py_BEGIN_ALLOW_THREADS
     status = sys$asctim(&result_len, &val_dsc, (struct _generic_64 *) &vms_time, cvt_flag);
@@ -476,15 +472,11 @@ SYS_getmsg(
     }
 
     char buffer[257];
-    struct dsc$descriptor_s val_dsc;
+    $DESCRIPTOR(val_dsc, buffer);
+
     int status = 0;
     unsigned short result_len = 0;
     unsigned char out[4];
-
-    val_dsc.dsc$w_length = sizeof(buffer) - 1;
-    val_dsc.dsc$b_class = DSC$K_CLASS_S;
-    val_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-    val_dsc.dsc$a_pointer = buffer;
 
     Py_BEGIN_ALLOW_THREADS
     status = sys$getmsg(msgid, &result_len, &val_dsc, flags, out);
@@ -523,16 +515,11 @@ SYS_idtoasc(
     }
 
     char buffer[256];
-    struct dsc$descriptor_s val_dsc;
+    $DESCRIPTOR(val_dsc, buffer);
     int status = 0;
     unsigned short result_len = 0;
     unsigned int resid = 0;
     unsigned int attrib = 0;
-
-    val_dsc.dsc$w_length = sizeof(buffer) - 1;
-    val_dsc.dsc$b_class = DSC$K_CLASS_S;
-    val_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-    val_dsc.dsc$a_pointer = buffer;
 
     Py_BEGIN_ALLOW_THREADS
     status = sys$idtoasc(id, &result_len, &val_dsc, &resid, &attrib, &context);
@@ -1490,7 +1477,8 @@ SYS_uicstr(
     }
 
     char buffer[32], fmt[16];
-    struct dsc$descriptor_s str_dsc, fmt_dsc;
+    $DESCRIPTOR(str_dsc, buffer);
+    $DESCRIPTOR(fmt_dsc, fmt);
     unsigned short result_len = 0;
     int status = 0;
 
@@ -1499,16 +1487,6 @@ SYS_uicstr(
     } else {
         strcpy(fmt, "!%I");
     }
-
-    fmt_dsc.dsc$w_length = sizeof(fmt) - 1;
-    fmt_dsc.dsc$b_class = DSC$K_CLASS_S;
-    fmt_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-    fmt_dsc.dsc$a_pointer = fmt;
-
-    str_dsc.dsc$w_length = sizeof(buffer) - 1;
-    str_dsc.dsc$b_class = DSC$K_CLASS_S;
-    str_dsc.dsc$b_dtype = DSC$K_DTYPE_T;
-    str_dsc.dsc$a_pointer = buffer;
 
     Py_BEGIN_ALLOW_THREADS
     status = sys$fao(&fmt_dsc, &result_len, &str_dsc, val);

@@ -5,15 +5,6 @@ import glob
 from test.support import import_helper
 from test.support import os_helper
 
-import sys
-import struct
-
-VMS64 = sys.platform == 'OpenVMS' and struct.calcsize('P') == 8
-
-if VMS64:
-    raise unittest.SkipTest('Failed on OpenVMS pointer size = 64')
-
-
 # Skip tests if dbm module doesn't exist.
 dbm = import_helper.import_module('dbm')
 
