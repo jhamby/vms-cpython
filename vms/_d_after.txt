@@ -1,5 +1,9 @@
 # Requires Cython and build on VILE
 # --no-deps
 # python -m pip wheel -w /pyth$whl --no-deps 
-PyYAML==5.4.1
+PyYAML
 simplejson
+charset-normalizer
+backports.entry-points-selectable
+ruamel.yaml
+wheel==0.36.2
