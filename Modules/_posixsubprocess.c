@@ -74,24 +74,24 @@
 
 #undef _MAKE_INHERIT
 #ifdef __VMS
-#include "vms/vms_fcntl.h"
-#include "vms/vms_dsc.h"
-#define _IGNORE_FCNTL_BUSY
-#ifndef _IGNORE_FCNTL_BUSY
-#define _MAKE_INHERIT(fd, flg, atomic) vms_fcntl((fd), F_SETFD, (flg) ? 0 : FD_CLOEXEC)
-#else
-inline int _MAKE_INHERIT(fd, flg, atomic) {
-    int ret = vms_fcntl((fd), F_SETFD, (flg) ? 0 : FD_CLOEXEC);
-    if (ret == -1 && errno == EBUSY) {
-        PyErr_Clear();
-        errno = 0;
-        ret = 0;
-    }
-    return ret;
-}
+#   include "vms/vms_fcntl.h"
+#   include "vms/vms_dsc.h"
+#   define _IGNORE_FCNTL_BUSY
+#   ifndef _IGNORE_FCNTL_BUSY
+#       define _MAKE_INHERIT(fd, flg, atomic) vms_fcntl((fd), F_SETFD, (flg) ? 0 : FD_CLOEXEC)
+#   else
+        inline int _MAKE_INHERIT(fd, flg, atomic) {
+            int ret = vms_fcntl((fd), F_SETFD, (flg) ? 0 : FD_CLOEXEC);
+            if (ret == -1 && errno == EBUSY) {
+                PyErr_Clear();
+                errno = 0;
+                ret = 0;
+            }
+            return ret;
+        }
 #endif
 #else
-    _MAKE_INHERIT(fd, flg, atomic) _Py_set_inheritable_async_safe((int)(fd), (flg), (atomic))
+#   define _MAKE_INHERIT(fd, flg, atomic) _Py_set_inheritable_async_safe((int)(fd), (flg), (atomic))
 #endif
 
 #define POSIX_CALL(call)   do { if ((call) == -1) goto error; } while (0)
