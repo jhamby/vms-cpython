@@ -853,6 +853,8 @@ is available in ``argparse`` and adds support for boolean actions such as
     >>> parser.parse_args(['--no-foo'])
     Namespace(foo=False)
 
+.. versionadded:: 3.9
+
 The recommended way to create a custom action is to extend :class:`Action`,
 overriding the ``__call__`` method and optionally the ``__init__`` and
 ``format_usage`` methods.
@@ -1102,7 +1104,7 @@ Anything with more interesting error-handling or resource management should be
 done downstream after the arguments are parsed.
 
 For example, JSON or YAML conversions have complex error cases that require
-better reporting than can be given by the ``type`` keyword.  An
+better reporting than can be given by the ``type`` keyword.  A
 :exc:`~json.JSONDecodeError` would not be well formatted and a
 :exc:`FileNotFound` exception would not be handled at all.
 

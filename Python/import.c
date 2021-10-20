@@ -255,6 +255,9 @@ _PyImport_Fini2(void)
     PyMemAllocatorEx old_alloc;
     _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
+    // Reset PyImport_Inittab
+    PyImport_Inittab = _PyImport_Inittab;
+
     /* Free memory allocated by PyImport_ExtendInittab() */
     PyMem_RawFree(inittab_copy);
     inittab_copy = NULL;
@@ -551,6 +554,23 @@ import_find_extension(PyThreadState *tstate, PyObject *name,
                            name, filename);
     }
     return mod;
+}
+
+PyObject *
+_PyImport_FindExtensionObject(PyObject *name, PyObject *filename)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyObject *mod = import_find_extension(tstate, name, filename);
+    if (mod) {
+        PyObject *ref = PyWeakref_NewRef(mod, NULL);
+        Py_DECREF(mod);
+        if (ref == NULL) {
+            return NULL;
+        }
+        mod = PyWeakref_GetObject(ref);
+        Py_DECREF(ref);
+    }
+    return mod; /* borrowed reference */
 }
 
 

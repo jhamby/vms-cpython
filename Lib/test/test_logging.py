@@ -54,12 +54,15 @@ import unittest
 import warnings
 import weakref
 
-import asyncore
 from http.server import HTTPServer, BaseHTTPRequestHandler
-import smtpd
 from urllib.parse import urlparse, parse_qs
 from socketserver import (ThreadingUDPServer, DatagramRequestHandler,
                           ThreadingTCPServer, StreamRequestHandler)
+
+with warnings.catch_warnings():
+    warnings.simplefilter('ignore', DeprecationWarning)
+    import asyncore
+    import smtpd
 
 try:
     import win32evtlog, win32evtlogutil, pywintypes
@@ -888,7 +891,7 @@ class ControlMixin(object):
                     single parameter - the request - in order to
                     process the request. This handler is called on the
                     server thread, effectively meaning that requests are
-                    processed serially. While not quite Web scale ;-),
+                    processed serially. While not quite web scale ;-),
                     this should be fine for testing applications.
     :param poll_interval: The polling interval in seconds.
     """
@@ -4418,8 +4421,10 @@ class LogRecordTest(BaseTest):
             name = mp.current_process().name
 
             r1 = logging.makeLogRecord({'msg': f'msg1_{key}'})
-            del sys.modules['multiprocessing']
-            r2 = logging.makeLogRecord({'msg': f'msg2_{key}'})
+
+            # https://bugs.python.org/issue45128
+            with support.swap_item(sys.modules, 'multiprocessing', None):
+                r2 = logging.makeLogRecord({'msg': f'msg2_{key}'})
 
             results = {'processName'  : name,
                        'r1.processName': r1.processName,
@@ -4467,7 +4472,6 @@ class LogRecordTest(BaseTest):
         finally:
             if multiprocessing_imported:
                 import multiprocessing
-
 
     def test_optional(self):
         r = logging.makeLogRecord({})

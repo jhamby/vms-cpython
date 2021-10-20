@@ -2,8 +2,6 @@
 # does add tests for a few functions which have been determined to be more
 # portable than they had been thought to be.
 
-import asynchat
-import asyncore
 import codecs
 import contextlib
 import decimal
@@ -53,6 +51,11 @@ if (sys.platform == 'OpenVMS'):
             return True
         else:
             return False
+
+with warnings.catch_warnings():
+    warnings.simplefilter('ignore', DeprecationWarning)
+    import asynchat
+    import asyncore
 
 try:
     import resource

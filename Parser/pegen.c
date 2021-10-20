@@ -77,6 +77,18 @@ _PyPegen_check_barry_as_flufl(Parser *p, Token* t) {
     return 0;
 }
 
+int
+_PyPegen_check_legacy_stmt(Parser *p, expr_ty name) {
+    assert(name->kind == Name_kind);
+    const char* candidates[2] = {"print", "exec"};
+    for (int i=0; i<2; i++) {
+        if (PyUnicode_CompareWithASCIIString(name->v.Name.id, candidates[i]) == 0) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
 PyObject *
 _PyPegen_new_identifier(Parser *p, const char *n)
 {
@@ -1581,6 +1593,13 @@ _PyPegen_seq_last_item(asdl_seq *seq)
     return asdl_seq_GET_UNTYPED(seq, len - 1);
 }
 
+void *
+_PyPegen_seq_first_item(asdl_seq *seq)
+{
+    return asdl_seq_GET_UNTYPED(seq, 0);
+}
+
+
 /* Creates a new name of the form <first_name>.<second_name> */
 expr_ty
 _PyPegen_join_names_with_dot(Parser *p, expr_ty first_name, expr_ty second_name)
@@ -2535,8 +2554,17 @@ void *_PyPegen_arguments_parsing_error(Parser *p, expr_ty e) {
     return RAISE_SYNTAX_ERROR(msg);
 }
 
+
+static inline expr_ty
+_PyPegen_get_last_comprehension_item(comprehension_ty comprehension) {
+    if (comprehension->ifs == NULL || asdl_seq_LEN(comprehension->ifs) == 0) {
+        return comprehension->iter;
+    }
+    return PyPegen_last_item(comprehension->ifs, expr_ty);
+}
+
 void *
-_PyPegen_nonparen_genexp_in_call(Parser *p, expr_ty args)
+_PyPegen_nonparen_genexp_in_call(Parser *p, expr_ty args, asdl_comprehension_seq *comprehensions)
 {
     /* The rule that calls this function is 'args for_if_clauses'.
        For the input f(L, x for x in y), L and x are in args and
@@ -2550,8 +2578,11 @@ _PyPegen_nonparen_genexp_in_call(Parser *p, expr_ty args)
         return NULL;
     }
 
-    return RAISE_SYNTAX_ERROR_STARTING_FROM(
+    comprehension_ty last_comprehension = PyPegen_last_item(comprehensions, comprehension_ty);
+
+    return RAISE_SYNTAX_ERROR_KNOWN_RANGE(
         (expr_ty) asdl_seq_GET(args->v.Call.args, len - 1),
+        _PyPegen_get_last_comprehension_item(last_comprehension),
         "Generator expression must be parenthesized"
     );
 }
