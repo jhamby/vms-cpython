@@ -1,18 +1,19 @@
 # Requires repository and build on VILE
 --no-index
 # python -m pip wheel -w /pyth$whl -f /pyth$whl -f /pyth$rep --no-index --no-deps 
-Brotli==1.0.9
-Pillow==8.2.0
-awscli==1.19.50
-cffi==1.14.5
-# do not forget about: $ define CRYPTOGRAPHY_DONT_BUILD_RUST "1"
-cryptography==3.4.7
-cython==0.29.22
-httpbin==0.7.0
-perfdat==4.3.1
+Brotli
+Pillow
+awscli
+# $ define libffi_shr
+cffi
+# $ define CRYPTOGRAPHY_DONT_BUILD_RUST "1"
+cryptography
+cython
+httpbin
+perfdat
 pytest==6.2.4
-reportlab==3.5.66
-numpy==1.20.3
-psycopg2==2.8.6
-pandas==1.2.4
-pyrsistent==0.18.0
+reportlab
+numpy
+psycopg2
+pandas
+pyrsistent
