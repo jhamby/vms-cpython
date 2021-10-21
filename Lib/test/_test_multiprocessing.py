@@ -4151,6 +4151,7 @@ class _TestSharedMemory(BaseTestCase):
         deserialized_sl.shm.close()
         sl.shm.close()
 
+    @unittest.skipIf(sys.platform == 'OpenVMS', "skipped on OpenVMS")
     def test_shared_memory_cleaned_after_process_termination(self):
         cmd = '''if 1:
             import os, time, sys

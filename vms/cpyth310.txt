@@ -1,7 +1,7 @@
 PyAST_Check=PROCEDURE
 PyAST_mod2obj=PROCEDURE
 PyAST_obj2mod=PROCEDURE
-PyAiter_Check=PROCEDURE
+PyAIter_Check=PROCEDURE
 PyAnextAwaitable_New=PROCEDURE
 PyArg_Parse=PROCEDURE
 PyArg_ParseTuple=PROCEDURE
@@ -652,7 +652,7 @@ PyObject_GenericGetAttr=PROCEDURE
 PyObject_GenericGetDict=PROCEDURE
 PyObject_GenericSetAttr=PROCEDURE
 PyObject_GenericSetDict=PROCEDURE
-PyObject_GetAiter=PROCEDURE
+PyObject_GetAIter=PROCEDURE
 PyObject_GetArenaAllocator=PROCEDURE
 PyObject_GetAttr=PROCEDURE
 PyObject_GetAttrString=PROCEDURE

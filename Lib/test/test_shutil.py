@@ -33,7 +33,9 @@ from test import support
 from test.support import os_helper
 from test.support.os_helper import TESTFN, FakePath
 
+OPENVMS = False
 if (sys.platform == 'OpenVMS'):
+    OPENVMS = True
     import _sys
     import _ile3
     import _jpidef
@@ -1182,6 +1184,8 @@ class TestCopy(BaseTest, unittest.TestCase):
         write_file(src_file, 'foo')
         if sys.platform == "win32":
             err = PermissionError
+        elif sys.platform == "OpenVMS":
+            err = FileNotFoundError
         else:
             err = IsADirectoryError
         self.assertRaises(err, copy_func, dir2, src_dir)
@@ -1295,7 +1299,7 @@ class TestCopy(BaseTest, unittest.TestCase):
         # Make sure file is not corrupted.
         self.assertEqual(read_file(src_file), 'foo')
 
-    @unittest.skipIf(MACOS or SOLARIS or _winapi, 'On MACOS, Solaris and Windows the errors are not confusing (though different)')
+    @unittest.skipIf(MACOS or SOLARIS or _winapi or OPENVMS, 'On OpenVMS, MACOS, Solaris and Windows the errors are not confusing (though different)')
     def test_copyfile_nonexistent_dir(self):
         # Issue 43219
         src_dir = self.mkdtemp()
@@ -1315,11 +1319,14 @@ class TestCopy(BaseTest, unittest.TestCase):
         write_file(src_file, 'foo')
         if sys.platform == "win32":
             err = PermissionError
+        elif sys.platform == "OpenVMS":
+            err = FileNotFoundError
         else:
             err = IsADirectoryError
 
         self.assertRaises(err, shutil.copyfile, src_dir, dst)
-        self.assertRaises(err, shutil.copyfile, src_file, src_dir)
+        if not OPENVMS:
+            self.assertRaises(err, shutil.copyfile, src_file, src_dir)
         self.assertRaises(err, shutil.copyfile, dir2, src_dir)
 
 

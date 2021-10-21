@@ -18,12 +18,15 @@ class BaseTestCase(unittest.TestCase):
 
     def tearDown(self):
         if self.dbname:
-            os.chmod(self.dbname, 0o777)
-            os.unlink(self.dbname)
-            name, ext = os.path.splitext(self.dbname)
-            name = name + '.snp'
-            os.chmod(name, 0o777)
-            os.unlink(name)
+            try:
+                os.chmod(self.dbname, 0o777)
+                os.unlink(self.dbname)
+                name, ext = os.path.splitext(self.dbname)
+                name = name + '.snp'
+                os.chmod(name, 0o777)
+                os.unlink(name)
+            except:
+                pass
         self.dbname = ''
 
     def create_sql_database(self):
@@ -173,6 +176,8 @@ $exit
 
     def test_sql_database(self):
         """ tests SQL database """
+
+        breakpoint()
 
         sqlca = _rdb.sqlca()
         sqlca.attach(self.dbname_vms)

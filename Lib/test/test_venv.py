@@ -537,6 +537,7 @@ class EnsurePipTest(BaseTest):
 
     # Issue #26610: pip/pep425tags.py requires ctypes
     @unittest.skipUnless(ctypes, 'pip requires ctypes')
+    @unittest.skipIf(sys.platform == 'OpenVMS', 'skip on OpenVMS')
     @requires_zlib()
     def test_with_pip(self):
         self.do_test_with_pip(False)
