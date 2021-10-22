@@ -291,6 +291,10 @@ class CmdLineTest(unittest.TestCase):
                 % stream)
             rc, out, err = assert_python_ok('-u', '-c', code)
             data = err if stream == 'stderr' else out
+            if sys.platform == "OpenVMS":
+                pos = data.find(b'%CMA-F-EXIT_THREAD')
+                if pos != -1:   # get rid of %CMA-F-EXIT_THREAD
+                    data = data[:pos]
             self.assertEqual(data, b'x', "binary %s not unbuffered" % stream)
             # Text is unbuffered
             code = ("import os, sys; sys.%s.write('x'); os._exit(0)"

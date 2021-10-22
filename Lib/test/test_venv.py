@@ -370,7 +370,7 @@ class BasicTest(BaseTest):
         out, err = check_output([envpy, '-c',
             'from multiprocessing import Pool; '
             'pool = Pool(1); '
-            'print(pool.apply_async("Python".lower).get(3)); '
+            'print(pool.apply_async("Python".lower).get(10)); '
             'pool.terminate()'])
         self.assertEqual(out.strip(), "python".encode())
 
