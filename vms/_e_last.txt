@@ -37,6 +37,7 @@ parse_type
 path
 pbr
 pika
+platformdirs
 portend
 prance
 pyasn1_modules
@@ -59,6 +60,7 @@ strict_rfc3339
 suds_py3
 sure
 tempora
+tomli
 trustme
 validate_email
 virtualenv
