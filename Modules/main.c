@@ -196,7 +196,11 @@ pymain_header(const PyConfig *config)
         return;
     }
 
+#if defined(__VMS) && __INITIAL_POINTER_SIZE == 64
+    fprintf(stderr, "Python %s 64-bit on %s\n", Py_GetVersion(), Py_GetPlatform());
+#else
     fprintf(stderr, "Python %s on %s\n", Py_GetVersion(), Py_GetPlatform());
+#endif
     if (config->site_import) {
         fprintf(stderr, "%s\n", COPYRIGHT);
     }
