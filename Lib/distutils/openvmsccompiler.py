@@ -156,7 +156,7 @@ class OpenVMSCCompiler(CCompiler):
         """
         cc_args = ["/NAMES=(AS_IS,SHORTENED)", "/WARNING=DISABLE=ALL"]
         if debug:
-            cc_args += ["/DEBUG/NOOPTIMIZE"]
+            cc_args += ["/DEBUG/NOOPTIMIZE/LIST/SHOW=EXPANSION"]
         else:
             cc_args += ["/NODEBUG/OPTIMIZE"]
         if VMS64:
