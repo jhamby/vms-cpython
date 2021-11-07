@@ -115,10 +115,21 @@ extern "C" {
 
 #define BUILD_LANDMARK L"Modules/Setup.local"
 
+#ifdef __VMS
+/* The dafault implementation of DECODE_LOCALE_ERR causes X86 compiler to crash */
+inline PyStatus DecodeLocaleError(const char *msg, size_t len) {
+    if (len == (size_t)-2) {
+        return _PyStatus_ERR(msg);
+    }
+    return _PyStatus_NO_MEMORY();
+}
+#define DECODE_LOCALE_ERR(NAME, LEN) DecodeLocaleError("cannot decode " NAME, LEN)
+#else
 #define DECODE_LOCALE_ERR(NAME, LEN) \
-    ((LEN) == (size_t)-2) \
+    (((LEN) == (size_t)-2) \
      ? _PyStatus_ERR("cannot decode " NAME) \
-     : _PyStatus_NO_MEMORY()
+     : _PyStatus_NO_MEMORY())
+#endif
 
 #define PATHLEN_ERR() _PyStatus_ERR("path configuration: path too long")
 

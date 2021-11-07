@@ -1,13 +1,24 @@
 ! MMS/EXT/DESCR=Python3.mms/MACRO=("OUTDIR=OUT","CONFIG=DEBUG","P64")
 DYNLOAD_DIR = lib-dynload
 PLATFORM = OpenVMS
+.IF X86_HOST
+SOABI = cpython-310-x86_64-openvms
+.ELSE
 SOABI = cpython-310-ia64-openvms
+.ENDIF
 
 CC_QUALIFIERS = -
 /NAMES=(AS_IS,SHORTENED) -
-/WARNINGS=(WARNINGS=ALL, DISABLE=(EXTRASEMI, MAYLOSEDATA3)) -
 /ACCEPT=NOVAXC_KEYWORDS -
 /REENTRANCY=MULTITHREAD
+
+.IF X86_HOST
+CC_QUALIFIERS = $(CC_QUALIFIERS)-
+/WARNINGS=(WARNINGS=ALL, DISABLE=(EXTRASEMI,INCLUDEINFO,MAYLOSEDATA3))
+.ELSE
+CC_QUALIFIERS = $(CC_QUALIFIERS)-
+/WARNINGS=(WARNINGS=ALL, DISABLE=(EXTRASEMI,MAYLOSEDATA3))
+.ENDIF
 
 .IF P64
 CC_QUALIFIERS = $(CC_QUALIFIERS) -
@@ -15,21 +26,30 @@ CC_QUALIFIERS = $(CC_QUALIFIERS) -
 LIBBZ2 = oss$root:[lib]libbz2_64.olb
 LIBFFI = oss$root:[lib]libffi64.olb
 LIBGDBM = wrk_disk:[vorfolomeev.gdbm.vms]libgdbm64.olb
-LILZMA = oss$root:[lib]liblzma64.olb
+LIBLZMA = oss$root:[lib]liblzma64.olb
 LIBSQLITE = oss$root:[lib]libsqlite64.olb
 LIBZ = oss$root:[lib]libz64.olb
 LIBREADLINE = oss$root:[lib]libreadline64.olb
-POINTER_SIZE = 64
+LIBCRYPTO = SYS$LIBRARY:SSL111$LIBCRYPTO_SHR.EXE
+LIBSSL = SYS$LIBRARY:SSL111$LIBSSL_SHR.EXE
 .ELSE
 LIBBZ2 = oss$root:[lib]libbz2_32.olb
 LIBFFI = oss$root:[lib]libffi32.olb
 LIBGDBM = wrk_disk:[vorfolomeev.gdbm.vms]libgdbm32.olb
-LILZMA = oss$root:[lib]liblzma32.olb
+LIBLZMA = oss$root:[lib]liblzma32.olb
 LIBSQLITE = oss$root:[lib]libsqlite32.olb
 LIBZ = oss$root:[lib]libz32.olb
 LIBREADLINE = oss$root:[lib]libreadline32.olb
-POINTER_SIZE = 32
-.ENDIF 
+LIBCRYPTO = SYS$LIBRARY:SSL111$LIBCRYPTO_SHR32.EXE
+LIBSSL = SYS$LIBRARY:SSL111$LIBSSL_SHR32.EXE
+.ENDIF
+
+.IF X86_HOST
+LIBGDBM = oss$root:[lib]libgdbm32.olb
+LIBFFI = libffi$root:[lib]libffi$shr.olb
+LIBCRYPTO = ssl$shared:[000000]SSL111$LIBCRYPTO_SHR32.EXE
+LIBSSL = ssl$shared:[000000]SSL111$LIBSSL_SHR32.EXE
+.ENDIF
 
 CC_DEFINES = -
 _USE_STD_STAT, -                ! COMMON
@@ -101,6 +121,13 @@ oss$root:[include], -
 dtr$library, -
 SSL111$ROOT:[INCLUDE]
 
+.IF X86_HOST
+CC_INCLUDES = $(CC_INCLUDES),-
+libffi$root:[vms.x86], -
+libffi$root:[include], -
+libffi$root:[src.x86]
+.ENDIF
+
 CC_FLAGS = $(CC_QUALIFIERS)/DEFINE=($(CC_DEFINES))/INCLUDE_DIRECTORY=($(CC_INCLUDES))
 
 CC_CORE_CFLAGS = $(CC_QUALIFIERS)/DEFINE=("Py_BUILD_CORE",$(CC_DEFINES))/INCLUDE_DIRECTORY=($(CC_INCLUDES))
@@ -113,7 +140,22 @@ CC_SQLITE3_MODULE_CFLAGS = $(CC_QUALIFIERS)/DEFINE=("Py_BUILD_CORE_MODULE",MODUL
 
 CC_GETPATH_CFLAGS = $(CC_QUALIFIERS)/DEFINE=("Py_BUILD_CORE",$(GETPATH_DEFINES))/INCLUDE_DIRECTORY=($(CC_INCLUDES))
 
+.IF X86_HOST
+X86_START = @SYS$MANAGER:X86_XTOOLS$SYLOGIN
+X86_LIBDEF = define sys$library X86$LIBRARY
+X86_OSSDEF = define /trans=concealed oss$root DSA22:[OSS.X86.]
+.ELSE
+X86_START =
+X86_LIBDEF =
+X86_OSSDEF =
+.ENDIF
+
 .FIRST
+    $(X86_START)
+    $(X86_LIBDEF)
+    $(X86_OSSDEF)
+    $(X86_FFIDEF)
+    $(X86_SSLDEF)
     ! defines for nested includes, like:
     ! #include "clinic/transmogrify.h.h"
     define cpython [.Include.cpython]
@@ -140,10 +182,12 @@ CC_GETPATH_CFLAGS = $(CC_QUALIFIERS)/DEFINE=("Py_BUILD_CORE",$(GETPATH_DEFINES))
     define LIBBZ2 $(LIBBZ2)
     define LIBFFI $(LIBFFI)
     define LIBGDBM $(LIBGDBM)
-    define LILZMA $(LILZMA)
+    define LIBLZMA $(LIBLZMA)
     define LIBSQLITE $(LIBSQLITE)
     define LIBZ $(LIBZ)
     define LIBREADLINE $(LIBREADLINE)
+    define LIBCRYPTO $(LIBCRYPTO)
+    define LIBSSL $(LIBSSL)
 
 .SUFFIXES
 .SUFFIXES .EXE .OLB .OBS .OBM .OBB .OBC .C
@@ -584,12 +628,17 @@ $(PARSER_HEADERS) -
 ############################################################################
 # Importlib
 
+freeze_importlib : [.$(OUT_DIR).Programs]_freeze_importlib.exe
+    ! continue
+
 [.$(OUT_DIR).Programs]_freeze_importlib.exe : [.$(OBJ_DIR).Programs]_freeze_importlib.obc [.$(OBJ_DIR).vms]vms_crtl_init.obc $(LIBRARY_OBJS_OMIT_FROZEN)
   @ pipe create/dir $(DIR $(MMS$TARGET)) | copy SYS$INPUT nl:
     $(LINK)/NODEBUG/NOMAP/EXECUTABLE=python$build_out:[Programs]$(NOTDIR $(MMS$TARGET_NAME)).exe [.$(OBJ_DIR).vms]vms_crtl_init.obc,$(MMS$SOURCE),[.vms.opt]$(NOTDIR $(MMS$TARGET_NAME)).opt/OPT
 
 [.$(OBJ_DIR).Programs]_freeze_importlib.obc : [.Programs]_freeze_importlib.c $(PYTHON_HEADERS)
 
+.IF X86_HOST
+.ELSE
 [.Python]importlib_external.h : [.Lib.importlib]_bootstrap_external.py [.$(OUT_DIR).Programs]_freeze_importlib.exe
     mcr [.$(OUT_DIR).Programs]_freeze_importlib.exe importlib._bootstrap_external Lib/importlib/_bootstrap_external.py Python/importlib_external.h
 
@@ -598,7 +647,7 @@ $(PARSER_HEADERS) -
 
 [.Python]importlib_zipimport.h : [.Lib]zipimport.py [.$(OUT_DIR).Programs]_freeze_importlib.exe
     mcr [.$(OUT_DIR).Programs]_freeze_importlib.exe zipimport Lib/zipimport.py Python/importlib_zipimport.h
-
+.ENDIF
 ############################################################################
 # Static modules
 [.$(OBJ_DIR).Modules]posixmodule.obb : [.Modules]posixmodule.c $(PYTHON_HEADERS)
@@ -764,12 +813,26 @@ $(PARSER_HEADERS) -
 [.$(OBJ_DIR).vms]vms_mbx_util.obc : [.vms]vms_mbx_util.c [.vms]vms_mbx_util.h
 [.$(OBJ_DIR).vms]vms_fcntl.obc : [.vms]vms_fcntl.c [.vms]vms_fcntl.h [.vms]vms_mbx_util.h
 
+.IF X86_HOST
+[.$(OBJ_DIR).Python]frozen.obc : [.Python]frozen.c -
+[.$(OUT_DIR).Programs]_freeze_importlib.exe -
+[.Lib.importlib]_bootstrap_external.py -
+[.Lib.importlib]_bootstrap.py -
+[.Lib]zipimport.py -
+[.vms]frzx86.com -
+$(PYTHON_HEADERS)
+    backup [.vms]frzx86.com sys$login: /repl
+    - type $(X86_HOST)"$(X86_USER) $(X86_PASS)"::"task=frzx86"
+    @- pipe create/dir $(DIR $(MMS$TARGET)) | copy SYS$INPUT nl:
+    $(CC) $(CC_CORE_CFLAGS) /OBJECT=$(MMS$TARGET) $(MMS$SOURCE)
+
+.ELSE
 [.$(OBJ_DIR).Python]frozen.obc : [.Python]frozen.c -
 [.Python]importlib.h -
 [.Python]importlib_external.h -
 [.Python]importlib_zipimport.h -
 $(PYTHON_HEADERS)
-
+.ENDIF
 ############################################################################
 # Library
 [.$(OUT_DIR)]LIBPYTHON.OLB : [.$(OUT_DIR)]LIBPYTHON.OLB($(LIBRARY_OBJS))
@@ -855,9 +918,13 @@ LIBDYNLOAD_VMS = -
 [.$(OUT_DIR).$(DYNLOAD_DIR)]_decc.exe -
 [.$(OUT_DIR).$(DYNLOAD_DIR)]_lib.exe -
 [.$(OUT_DIR).$(DYNLOAD_DIR)]_ile3.exe -
-[.$(OUT_DIR).$(DYNLOAD_DIR)]_sys.exe -
-[.$(OUT_DIR).$(DYNLOAD_DIR)]_rdb.exe
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_sys.exe
 ! [.$(OUT_DIR).$(DYNLOAD_DIR)]_rec.exe
+.IF X86_HOST
+.ELSE
+LIBDYNLOAD_VMS = $(LIBDYNLOAD_VMS) -
+[.$(OUT_DIR).$(DYNLOAD_DIR)]_rdb.exe
+.ENDIF
 
 .IFDEF BUILD_DTR
 LIBDYNLOAD_VMS = $(LIBDYNLOAD_VMS) -
@@ -1089,7 +1156,7 @@ LIB_DYNLOAD : $(LIBDYNLOAD)
 [.$(OBJ_DIR).Modules]_ssl.obm : [.Modules]_ssl.c [.Modules]socketmodule.h $(PYTHON_HEADERS)
 [.$(OUT_DIR).$(DYNLOAD_DIR)]_ssl.exe : [.$(OBJ_DIR).Modules]_ssl.obm
     @ pipe create/dir $(DIR $(MMS$TARGET)) | copy SYS$INPUT nl:
-    $(LINK)$(LINK_FLAGS)/SHARE=python$build_out:[$(DYNLOAD_DIR)]$(NOTDIR $(MMS$TARGET_NAME)).exe $(MMS$SOURCE),[.vms.opt]$(NOTDIR $(MMS$TARGET_NAME))$(POINTER_SIZE).opt/OPT
+    $(LINK)$(LINK_FLAGS)/SHARE=python$build_out:[$(DYNLOAD_DIR)]$(NOTDIR $(MMS$TARGET_NAME)).exe $(MMS$SOURCE),[.vms.opt]$(NOTDIR $(MMS$TARGET_NAME)).opt/OPT
 
 # The crypt module is now disabled by default because it breaks builds
 # on many systems (where -lcrypt is needed), e.g. Linux (I believe).
@@ -1500,7 +1567,7 @@ DECIMAL_HEADERS = -
 [.$(OBJ_DIR).Modules]_hashopenssl.obm : [.Modules]_hashopenssl.c [.Modules]hashlib.h $(PYTHON_HEADERS)
 [.$(OUT_DIR).$(DYNLOAD_DIR)]_hashlib.exe : [.$(OBJ_DIR).Modules]_hashopenssl.obm
     @ pipe create/dir $(DIR $(MMS$TARGET)) | copy SYS$INPUT nl:
-    $(LINK)$(LINK_FLAGS)/SHARE=python$build_out:[$(DYNLOAD_DIR)]$(NOTDIR $(MMS$TARGET_NAME)).exe $(MMS$SOURCE),[.vms.opt]$(NOTDIR $(MMS$TARGET_NAME))$(POINTER_SIZE).opt/OPT
+    $(LINK)$(LINK_FLAGS)/SHARE=python$build_out:[$(DYNLOAD_DIR)]$(NOTDIR $(MMS$TARGET_NAME)).exe $(MMS$SOURCE),[.vms.opt]$(NOTDIR $(MMS$TARGET_NAME)).opt/OPT
 
 # _lsprof _lsprof rotatingtree
 [.$(OBJ_DIR).Modules]_lsprof.obm : [.Modules]_lsprof.c $(PYTHON_HEADERS)

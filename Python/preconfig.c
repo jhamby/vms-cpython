@@ -6,11 +6,21 @@
 #include <locale.h>               // setlocale()
 
 
+#ifdef __VMS
+/* The dafault implementation of DECODE_LOCALE_ERR causes X86 compiler to crash */
+inline PyStatus DecodeLocaleError(const char *msg, size_t len) {
+    if (len == (size_t)-2) {
+        return _PyStatus_ERR(msg);
+    }
+    return _PyStatus_NO_MEMORY();
+}
+#define DECODE_LOCALE_ERR(NAME, LEN) DecodeLocaleError("cannot decode " NAME, LEN)
+#else
 #define DECODE_LOCALE_ERR(NAME, LEN) \
     (((LEN) == -2) \
      ? _PyStatus_ERR("cannot decode " NAME) \
      : _PyStatus_NO_MEMORY())
-
+#endif
 
 /* Forward declarations */
 static void

@@ -1694,7 +1694,9 @@
 
 #include <builtins.h>
 
+#ifndef alloca
 #define alloca(n) __ALLOCA(n)
+#endif
 
 #define PLATLIBDIR "lib"
 
