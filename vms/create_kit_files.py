@@ -27,6 +27,20 @@ def create_content(type, major, minor, level, edit):
                 '" source "' + \
                 kit_dir + file_name + file_ext + \
                 '";')
+            if file == '_sysconfigdata__OpenVMS_cpython-310-ia64-openvms.py':
+                full_name = os.path.join(root, file)
+                with open(full_name, 'r') as file_:
+                    lines = file_.readlines()
+                rewrite = False
+                for idx, line in enumerate(lines):
+                    if 'SIZEOF_VOID_P' in line:
+                        if line != " 'SIZEOF_VOID_P': 4,\n":
+                            lines[idx] = " 'SIZEOF_VOID_P': 4,\n"
+                            rewrite = True
+                        break
+                if rewrite:
+                    with open(full_name, 'w') as file_:
+                        file_.writelines(lines)
 
     kit_template = '''--
 -- (C) Copyright 2021 VMS Software Inc.
