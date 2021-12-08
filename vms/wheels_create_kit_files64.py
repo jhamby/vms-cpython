@@ -123,7 +123,7 @@ end product;
 
     text_template = '''=product VSI I64VMS PYTHWHLS64 {type}{major}.{minor}-{level}{edit} full
 1 'PRODUCT
-=prompt Python wheels collection for OpenVMS ({edit})
+=prompt Python wheels collection for OpenVMS Python 3.10 64
 
 1 'PRODUCER
 =prompt VSI Software Inc.

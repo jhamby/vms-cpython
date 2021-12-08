@@ -133,7 +133,7 @@ end product;
 
     text_template = '''=product VSI I64VMS PYTHON64 {type}{major}.{minor}-{level}{edit} full
 1 'PRODUCT
-=prompt Python for OpenVMS is based on Python Version 3.10 dev ({edit})
+=prompt Python 64 for OpenVMS is based on Python Version 3.10
 
 1 'PRODUCER
 =prompt VSI Software Inc.
