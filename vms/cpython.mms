@@ -30,8 +30,7 @@ LIBLZMA = oss$root:[lib]liblzma64.olb
 LIBSQLITE = oss$root:[lib]libsqlite64.olb
 LIBZ = oss$root:[lib]libz64.olb
 LIBREADLINE = oss$root:[lib]libreadline64.olb
-LIBCRYPTO = SYS$LIBRARY:SSL111$LIBCRYPTO_SHR.EXE
-LIBSSL = SYS$LIBRARY:SSL111$LIBSSL_SHR.EXE
+OPT_SUFFIX = _64
 .ELSE
 LIBBZ2 = oss$root:[lib]libbz2_32.olb
 LIBFFI = oss$root:[lib]libffi32.olb
@@ -40,15 +39,13 @@ LIBLZMA = oss$root:[lib]liblzma32.olb
 LIBSQLITE = oss$root:[lib]libsqlite32.olb
 LIBZ = oss$root:[lib]libz32.olb
 LIBREADLINE = oss$root:[lib]libreadline32.olb
-LIBCRYPTO = SYS$LIBRARY:SSL111$LIBCRYPTO_SHR32.EXE
-LIBSSL = SYS$LIBRARY:SSL111$LIBSSL_SHR32.EXE
+OPT_SUFFIX = _32
 .ENDIF
 
 .IF X86_HOST
 LIBGDBM = oss$root:[lib]libgdbm32.olb
 LIBFFI = libffi$root:[lib]libffi$shr.olb
-LIBCRYPTO = ssl$shared:[000000]SSL111$LIBCRYPTO_SHR32.EXE
-LIBSSL = ssl$shared:[000000]SSL111$LIBSSL_SHR32.EXE
+OPT_SUFFIX = _x86
 .ENDIF
 
 CC_DEFINES = -
@@ -186,8 +183,6 @@ X86_OSSDEF =
     define LIBSQLITE $(LIBSQLITE)
     define LIBZ $(LIBZ)
     define LIBREADLINE $(LIBREADLINE)
-    define LIBCRYPTO $(LIBCRYPTO)
-    define LIBSSL $(LIBSSL)
 
 .SUFFIXES
 .SUFFIXES .EXE .OLB .OBS .OBM .OBB .OBC .C
@@ -1156,7 +1151,7 @@ LIB_DYNLOAD : $(LIBDYNLOAD)
 [.$(OBJ_DIR).Modules]_ssl.obm : [.Modules]_ssl.c [.Modules]socketmodule.h $(PYTHON_HEADERS)
 [.$(OUT_DIR).$(DYNLOAD_DIR)]_ssl.exe : [.$(OBJ_DIR).Modules]_ssl.obm
     @ pipe create/dir $(DIR $(MMS$TARGET)) | copy SYS$INPUT nl:
-    $(LINK)$(LINK_FLAGS)/SHARE=python$build_out:[$(DYNLOAD_DIR)]$(NOTDIR $(MMS$TARGET_NAME)).exe $(MMS$SOURCE),[.vms.opt]$(NOTDIR $(MMS$TARGET_NAME)).opt/OPT
+    $(LINK)$(LINK_FLAGS)/SHARE=python$build_out:[$(DYNLOAD_DIR)]$(NOTDIR $(MMS$TARGET_NAME)).exe $(MMS$SOURCE),[.vms.opt]$(NOTDIR $(MMS$TARGET_NAME))$(OPT_SUFFIX).opt/OPT
 
 # The crypt module is now disabled by default because it breaks builds
 # on many systems (where -lcrypt is needed), e.g. Linux (I believe).
@@ -1567,7 +1562,7 @@ DECIMAL_HEADERS = -
 [.$(OBJ_DIR).Modules]_hashopenssl.obm : [.Modules]_hashopenssl.c [.Modules]hashlib.h $(PYTHON_HEADERS)
 [.$(OUT_DIR).$(DYNLOAD_DIR)]_hashlib.exe : [.$(OBJ_DIR).Modules]_hashopenssl.obm
     @ pipe create/dir $(DIR $(MMS$TARGET)) | copy SYS$INPUT nl:
-    $(LINK)$(LINK_FLAGS)/SHARE=python$build_out:[$(DYNLOAD_DIR)]$(NOTDIR $(MMS$TARGET_NAME)).exe $(MMS$SOURCE),[.vms.opt]$(NOTDIR $(MMS$TARGET_NAME)).opt/OPT
+    $(LINK)$(LINK_FLAGS)/SHARE=python$build_out:[$(DYNLOAD_DIR)]$(NOTDIR $(MMS$TARGET_NAME)).exe $(MMS$SOURCE),[.vms.opt]$(NOTDIR $(MMS$TARGET_NAME))$(OPT_SUFFIX).opt/OPT
 
 # _lsprof _lsprof rotatingtree
 [.$(OBJ_DIR).Modules]_lsprof.obm : [.Modules]_lsprof.c $(PYTHON_HEADERS)
