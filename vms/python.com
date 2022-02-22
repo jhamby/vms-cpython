@@ -10,15 +10,15 @@ $ com_nam = f$environment("procedure")
 $ com_dir = f$parse(com_nam,,,"directory")
 $ com_dev = f$parse(com_nam,,,"device")
 $ com_pat = com_dev + com_dir
-$ prj_ptt = com_pat - ".vms]"
-$ bld_pat = prj_ptt + ".out.''CONFIG']"
-$ inc_pat = prj_ptt + ".include]"
-$ cpy_pat = prj_ptt + ".include.cpython]"
-$ lib_pat = prj_ptt + ".lib...]"
-$ vms_py_pat = prj_ptt + ".modules.vms...]"
-$ rdb_py_pat = prj_ptt + ".modules.rdb...]"
-$ vms_pat = prj_ptt + ".vms]"
-$ dyn_pat = prj_ptt + ".out.'CONFIG'.lib-dynload...]"
+$ prj_pat = com_pat - ".vms]"
+$ bld_pat = prj_pat + ".out.''CONFIG']"
+$ inc_pat = prj_pat + ".include]"
+$ cpy_pat = prj_pat + ".include.cpython]"
+$ lib_pat = prj_pat + ".lib...]"
+$ vms_py_pat = prj_pat + ".modules.vms...]"
+$ rdb_py_pat = prj_pat + ".modules.rdb...]"
+$ vms_pat = prj_pat + ".vms]"
+$ dyn_pat = prj_pat + ".out.'CONFIG'.lib-dynload...]"
 $ @'com_pat'Python^.def.com
 $
 $ pipe delete/tree python$root:[000000...]*.*;* | copy SYS$INPUT nl:
@@ -41,3 +41,5 @@ $ backup 'vms_pat'python$shutdown.com python$root:[000000]
 $
 $ backup 'dyn_pat'*.* python$root:[lib.python3^.10.lib-dynload...]*.*
 $ backup 'vms_pat'_sysconfigdata__OpenVMS_cpython-310-ia64-openvms.py python$root:[lib.python3^.10]
+$ backup 'vms_pat'_sysconfigdata__OpenVMS_cpython-310-x86_64-openvms.py python$root:[lib.python3^.10]
+$
