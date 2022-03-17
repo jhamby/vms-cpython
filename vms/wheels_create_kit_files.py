@@ -63,7 +63,7 @@ def create_content(type, major, minor, level, edit):
             pass
 
     kit_template = '''--
--- (C) Copyright 2021 VMS Software Inc.
+-- (C) Copyright 2022 VMS Software Inc.
 --
 product VSI I64VMS PYTHWHLS {type}{major}.{minor}-{level}{edit} FULL ;
 
@@ -129,7 +129,7 @@ end product;
 =prompt VSI Software Inc.
 
 1 'NOTICE
-=prompt (C) Copyright 2021 VMS Software Inc.
+=prompt (C) Copyright 2022 VMS Software Inc.
 
 1 POST_INSTALL
 =prompt Post-installation tasks are required.
@@ -162,7 +162,7 @@ if __name__ == "__main__":
     major = '1'
     minor = '1'
     level = '6'
-    edit = 'fix02'   # 'd' + datetime.date.today().strftime('%Y%m%d')
+    edit = 'fix03'   # 'd' + datetime.date.today().strftime('%Y%m%d')
 
     for opt, optarg in opts:
         if opt in ['--type']:
