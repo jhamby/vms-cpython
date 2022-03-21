@@ -5,6 +5,7 @@ functions from this module themselves.
 """
 import os
 import stat
+from errno import EPERM
 
 __all__ = ['commonprefix', 'exists', 'getatime', 'getctime', 'getmtime',
            'getsize', 'isdir', 'isfile', 'samefile', 'sameopenfile',
@@ -17,7 +18,11 @@ def exists(path):
     """Test whether a path exists.  Returns False for broken symbolic links"""
     try:
         os.stat(path)
-    except (OSError, ValueError):
+    except OSError as ex:
+        if ex.errno == EPERM and os.sys.platform == 'OpenVMS':
+            return True
+        return False
+    except ValueError:
         return False
     return True
 
