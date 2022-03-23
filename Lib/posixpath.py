@@ -485,11 +485,18 @@ def relpath(path, start=None):
         start = os.fspath(start)
 
     try:
-        start_list = [x for x in abspath(start).split(sep) if x]
-        path_list = [x for x in abspath(path).split(sep) if x]
+        if sys.platform == 'OpenVMS':
+            start_list = [x for x in abspath(start).lower().split(sep) if x]
+            path_list = [x for x in abspath(path).lower().split(sep) if x]
+        else:
+            start_list = [x for x in abspath(start).split(sep) if x]
+            path_list = [x for x in abspath(path).split(sep) if x]
         # Work out how much of the filepath is shared by start and path.
         i = len(commonprefix([start_list, path_list]))
 
+        if sys.platform == 'OpenVMS':
+            # Back case
+            path_list = [x for x in abspath(path).split(sep) if x]
         rel_list = [pardir] * (len(start_list)-i) + path_list[i:]
         if not rel_list:
             return curdir
