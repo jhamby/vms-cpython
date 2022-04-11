@@ -74,7 +74,11 @@ int simple_write_mbx_eof(unsigned short channel) {
 }
 
 int write_mbx_eof(int fd) {
+#ifdef __x86_64
+    if (fd >= 0 && vms_isapipe(fd) == 2) {
+#else
     if (fd >= 0 && isapipe(fd) == 1) {
+#endif
         unsigned short channel;
         if (vms_channel_lookup(fd, &channel) == 0) {
             simple_write_mbx_eof(channel);
@@ -215,8 +219,8 @@ unsigned int get_mbx_size(unsigned short channel) {
     return 0;
 }
 
-#undef _DO_TRACE_MBX_EOF_
-// #define _DO_TRACE_MBX_EOF_
+// #undef _DO_TRACE_MBX_EOF_
+#define _DO_TRACE_MBX_EOF_
 #ifndef _DO_TRACE_MBX_EOF_
 #define _TRACE_LINE_(line)
 #define _TRACE_LINE_V_(line, ...)
@@ -259,7 +263,11 @@ int map_fd_to_child(int fd, int pid) {
 }
 
 int read_mbx(int fd, char *buf, int size) {
+#ifdef __x86_64
+    if (fd < 0 || vms_isapipe(fd) != 1) {
+#else
     if (fd < 0 || isapipe(fd) != 1) {
+#endif
         return -1;
     }
     int fd_pid = 0;
@@ -288,6 +296,7 @@ int read_mbx(int fd, char *buf, int size) {
                 op |= IO$M_STREAM;
 #endif
             }
+            _TRACE_LINE_V_("=== sys$qiow fd_pid=0x%x (-0x%x) ===\n", fd_pid, -fd_pid);
             int status = sys$qiow(EFN$C_ENF, channel, op, &iosb, NULL, 0, buf, size, 0, 0, 0, 0);
             if ($VMS_STATUS_SUCCESS(status)) {
                 if (iosb.iosb$w_status == SS$_ENDOFFILE) {
@@ -295,15 +304,14 @@ int read_mbx(int fd, char *buf, int size) {
                     nbytes = 0;
                     _TRACE_LINE_V_("%i: \"%s\" eof from 0x%x", fd, devicename, iosb.iosb$l_pid);
                     if ((fd_pid < -1 && iosb.iosb$l_pid != -fd_pid) ||
-                        (fd_pid > 0 && iosb.iosb$l_pid != fd_pid)) {
+                        (fd_pid > 0 && iosb.iosb$l_pid != fd_pid) ||
+                        (iosb.iosb$l_pid == 0)) {
                         // accept EOF only given pid
-                        nbytes = -1;
-                        errno = EAGAIN;
-                        _TRACE_LINE_(" again\n");
-                    }
-                    if (!nbytes) {
+                        _TRACE_LINE_(" => skip\n");
+                        errno = EPIPE;
+                    } else {
                         //we should prevent future reading/waiting already closed pipe
-                        _TRACE_LINE_(" sentinel\n");
+                        _TRACE_LINE_(" => push sentinel\n");
                         simple_write_mbx_eof(channel);
                         //free fd
                         map_fd_to_child(fd, 0);
@@ -351,7 +359,7 @@ int vms_isapipe_by_name(char *name) {
         return 0;
     }
     char *ptr = name + 4;
-    while(*(ptr++)) {
+    while(*ptr) {
         if (*ptr == ':') {
             // found a semicolon
             break;
@@ -360,18 +368,30 @@ int vms_isapipe_by_name(char *name) {
             // not a number or semicolon - not a pipe
             return 0;
         }
+        ++ptr;
     }
-    if (ptr - name < 8 || ptr - name > 9) {
-        // amount of number must be 4 or 5
+    if (ptr - name < 5 || ptr - name > 10) {
+        // amount of number must be in (1...6)?
         return 0;
     }
-    if (strcmp(ptr, ":[].") == 0) {
+    if (strncmp(ptr, ":[].", 4) == 0) {
+        // read end?
         return 1;
     }
-    return 2;
+    if (strncmp(ptr, ":", 1) == 0) {
+        // write end?
+        return 2;
+    }
+    return -1;
 }
 
 int vms_isapipe(int fd) {
     char name[256];
-    return vms_isapipe_by_name(getname(fd, name, 1));
+    char *pname = getname(fd, name, 1);
+    int ret = vms_isapipe_by_name(pname);
+    if (pname && strcmp(pname, "NLA0:[].;") == 0) {
+        ret = 1;
+    }
+    _TRACE_LINE_V_("vms_isapipe %i \"%s\" %i\n", fd, pname, ret);
+    return ret;
 }

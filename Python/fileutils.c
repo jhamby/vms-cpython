@@ -1833,10 +1833,12 @@ _Py_read(int fd, void *buf, size_t count)
         char fd_name[256];
         getname(fd, fd_name, 1);
 #endif
+#ifdef __x86_64
+        if (vms_isapipe(fd) == 1) {
+#else
         if (isapipe(fd) == 1) {
-            do {
-                n = read_mbx(fd, buf, count);
-            } while(n == -1 && errno == EAGAIN);
+#endif
+            n = read_mbx(fd, buf, count);
         } else
 #endif
 #ifdef MS_WINDOWS

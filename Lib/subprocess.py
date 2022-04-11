@@ -65,6 +65,8 @@ __all__ = ["Popen", "PIPE", "STDOUT", "call", "check_call", "getstatusoutput",
            # NOTE: We intentionally exclude list2cmdline as it is
            # considered an internal implementation detail.  issue10838.
 
+_openvms = (sys.platform == 'OpenVMS')
+
 try:
     import msvcrt
     import _winapi
@@ -498,7 +500,7 @@ def run(*popenargs,
         kwargs['stdout'] = PIPE
         kwargs['stderr'] = PIPE
 
-    if (sys.platform == 'OpenVMS'):
+    if _openvms: # (sys.platform == 'OpenVMS')
         try:
             kwargs['shell'] = False
             process = Popen(*popenargs, **kwargs)
@@ -803,7 +805,7 @@ class Popen:
             if creationflags != 0:
                 raise ValueError("creationflags is only supported on Windows "
                                  "platforms")
-            if (sys.platform == 'OpenVMS'):
+            if _openvms: # (sys.platform == 'OpenVMS')
                 if preexec_fn is not None:
                     raise ValueError("preexec_fn is not supported on OpenVMS")
                 if pass_fds and shell:
@@ -1715,7 +1717,7 @@ class Popen:
                 args = list(args)
 
             if shell:
-                if (sys.platform == 'OpenVMS'):
+                if _openvms: # (sys.platform == 'OpenVMS')
                     # DCL is a keyword :)
                     args = ["DCL"] + args
                     if self.stderr:
@@ -1784,7 +1786,7 @@ class Popen:
                     else:
                         env_list = None  # Use execv instead of execve.
                     executable = os.fsencode(executable)
-                    if os.path.dirname(executable) or ((sys.platform == 'OpenVMS') and shell):
+                    if os.path.dirname(executable) or (_openvms and shell): #((sys.platform == 'OpenVMS')
                         executable_list = (executable,)
                     else:
                         # This matches the behavior of os._execvpe().
@@ -1815,7 +1817,7 @@ class Popen:
                 # Wait for exec to fail or succeed; possibly raising an
                 # exception (limited in size)
                 errpipe_data = bytearray()
-                while True and not (sys.platform == 'OpenVMS'):
+                while True and not _openvms: # not (sys.platform == 'OpenVMS')
                     part = os.read(errpipe_read, 50000)
                     errpipe_data += part
                     if not part or len(errpipe_data) > 50000:
@@ -1871,7 +1873,7 @@ class Popen:
             """All callers to this function MUST hold self._waitpid_lock."""
             # This method is called (indirectly) by __del__, so it cannot
             # refer to anything outside of its local scope.
-            if (sys.platform == 'OpenVMS'):
+            if _openvms: # (sys.platform == 'OpenVMS')
                 # Get return code from AST
                 found, finished, status = _posixsubprocess.proc_status(self.pid, True)
                 if found:
@@ -2058,10 +2060,17 @@ class Popen:
                                     key.fileobj.close()
                         elif key.fileobj in (self.stdout, self.stderr):
                             data = os.read(key.fd, 32768)
-                            if not data:
-                                selector.unregister(key.fileobj)
-                                key.fileobj.close()
-                            self._fileobj2output[key.fileobj].append(data)
+                            if _openvms: # (sys.platform == 'OpenVMS')
+                                if data != None:    # data may be None if it is read from unknown process. skip it
+                                    if not len(data):
+                                        selector.unregister(key.fileobj)
+                                        key.fileobj.close()
+                                    self._fileobj2output[key.fileobj].append(data)
+                            else:
+                                if not data:
+                                    selector.unregister(key.fileobj)
+                                    key.fileobj.close()
+                                self._fileobj2output[key.fileobj].append(data)
 
             self.wait(timeout=self._remaining_time(endtime))
 

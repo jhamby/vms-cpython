@@ -9867,6 +9867,15 @@ os_read_impl(PyObject *module, int fd, Py_ssize_t length)
         return NULL;
     }
 
+#ifdef __VMS
+    if (n == 0 && errno == EPIPE) {
+        // data is read from unknown process
+        errno = 0;
+        Py_DECREF(buffer);
+        Py_RETURN_NONE;
+    }
+#endif
+
     if (n != length)
         _PyBytes_Resize(&buffer, n);
 

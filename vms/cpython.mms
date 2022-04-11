@@ -817,10 +817,11 @@ freeze_importlib : [.$(OUT_DIR).Programs]_freeze_importlib.exe
 [.Lib]zipimport.py -
 [.vms]frzx86.com -
 $(PYTHON_HEADERS)
-    backup [.vms]frzx86.com sys$login: /repl
-    - type $(X86_HOST)"$(X86_USER) $(X86_PASS)"::"task=frzx86"
-    @- pipe create/dir $(DIR $(MMS$TARGET)) | copy SYS$INPUT nl:
-    $(CC) $(CC_CORE_CFLAGS) /OBJECT=$(MMS$TARGET) $(MMS$SOURCE)
+    continue
+    ! backup [.vms]frzx86.com sys$login: /repl
+    ! - type $(X86_HOST)"$(X86_USER) $(X86_PASS)"::"task=frzx86"
+    ! @- pipe create/dir $(DIR $(MMS$TARGET)) | copy SYS$INPUT nl:
+    ! $(CC) $(CC_CORE_CFLAGS) /OBJECT=$(MMS$TARGET) $(MMS$SOURCE)
 
 .ELSE
 [.$(OBJ_DIR).Python]frozen.obc : [.Python]frozen.c -

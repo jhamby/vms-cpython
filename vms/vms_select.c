@@ -28,6 +28,7 @@
 #include "vms/vms_spawn_helper.h"
 #include "vms/vms_select.h"
 #include "vms/vms_sleep.h"
+#include "vms/vms_mbx_util.h"
 
 int vms_channel_lookup_by_name(char* name, unsigned short *channel) {
     int status;
@@ -241,7 +242,12 @@ int vms_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds,
             select_array[fd].revents = 0;
 
             /* Now separate out the pipes */
+#ifdef __x86_64
+            int vms_isapipe_fd = vms_isapipe(fd);
+            if (vms_isapipe_fd == 1 || vms_isapipe_fd == 2) {
+#else
             if (isapipe(fd) == 1) {
+#endif
                 pipe_array[pi].fd_desc_ptr = &select_array[fd];
                 if (readfds != NULL) {
                     if (FD_ISSET(fd, readfds)) {
