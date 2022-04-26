@@ -844,13 +844,12 @@ SYS_getjpi(
     }
     ILE3Object *pILE3 = (ILE3Object *)args[0];
 
-    unsigned int pid = 0, *ppid = NULL;
+    unsigned int pid = 0, *ppid = &pid;
     char *prcnam = NULL;
     Py_ssize_t prcnam_size = 0;
     if (nargs > 1 && args[1] != Py_None) {
         if (PyLong_Check(args[1])) {
             pid = PyLong_AsUnsignedLong(args[1]);
-            ppid = &pid;
         } else if (PyUnicode_CheckExact(args[1])) {
             prcnam = (char*)PyUnicode_AsUTF8AndSize(args[1], &prcnam_size);
         } else if (PyBytes_CheckExact(args[1])) {
@@ -906,7 +905,7 @@ SYS_getdvi(
     ConvertArgToStr(args[0], dev, dev_size, "getdvi");
 
     if (strcmp(Py_TYPE(args[1])->tp_name, ILE3_MODULE_NAME "." ILE3_TYPE_NAME) != 0) {
-        _PyArg_BadArgument("getjpi", "args[1]", ILE3_MODULE_NAME "." ILE3_TYPE_NAME, args[1]);
+        _PyArg_BadArgument("getdvi", "args[1]", ILE3_MODULE_NAME "." ILE3_TYPE_NAME, args[1]);
         return NULL;
     }
     ILE3Object *pILE3 = (ILE3Object *)args[1];
