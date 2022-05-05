@@ -1,7 +1,7 @@
 $ set verify
 $
-$ delete/log/noconf vsi-i64vms-python*.pcsi;*
-$ delete/log/noconf vsi-i64vms-python*.pcsi$compressed;*
+$ delete/log/noconf vsi-axpvms-python*.pcsi;*
+$ delete/log/noconf vsi-axpvms-python*.pcsi$compressed;*
 $
 $ com_nam = f$environment("procedure")
 $ com_dir = f$parse(com_nam,,,"directory")

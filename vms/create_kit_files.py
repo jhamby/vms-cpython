@@ -27,7 +27,7 @@ def create_content(type, major, minor, level, edit):
                 '" source "' + \
                 kit_dir + file_name + file_ext + \
                 '";')
-            if file == '_sysconfigdata__OpenVMS_cpython-310-ia64-openvms.py':
+            if file == '_sysconfigdata__OpenVMS_cpython-310-alpha-openvms.py':
                 full_name = os.path.join(root, file)
                 with open(full_name, 'r') as file_:
                     lines = file_.readlines()
@@ -45,7 +45,7 @@ def create_content(type, major, minor, level, edit):
     kit_template = '''--
 -- (C) Copyright 2021 VMS Software Inc.
 --
-product VSI I64VMS PYTHON {type}{major}.{minor}-{level}{edit} FULL ;
+product VSI AXPVMS PYTHON {type}{major}.{minor}-{level}{edit} FULL ;
 
 --
 --  Execute the preconfigure procedure
@@ -55,7 +55,7 @@ product VSI I64VMS PYTHON {type}{major}.{minor}-{level}{edit} FULL ;
 --
 --  Make sure VMS V8.4 or above is installed
 --
-    if ((not <software VSI I64VMS VMS version minimum V8.4>) and (not <software HP I64VMS VMS version minimum V8.4>)) ;
+    if ((not <software VSI AXPVMS VMS version minimum V8.4>) and (not <software HP AXPVMS VMS version minimum V8.4>)) ;
         error NO_MIN_VMS abort ;
     end if ;
 
@@ -131,7 +131,7 @@ end product;
     with open('python.pcsi$desc', 'w') as file:
         file.write(kit_content)
 
-    text_template = '''=product VSI I64VMS PYTHON {type}{major}.{minor}-{level}{edit} full
+    text_template = '''=product VSI AXPVMS PYTHON {type}{major}.{minor}-{level}{edit} full
 1 'PRODUCT
 =prompt Python for OpenVMS is based on Python Version 3.10
 
@@ -143,7 +143,7 @@ end product;
 
 1 NO_MIN_VMS
 =prompt Minimum OpenVMS software version not found on this system, abort instalation
-This kit requires a minimum of OpenVMS I64 V8.4.
+This kit requires a minimum of OpenVMS AXP V8.4.
 
 1 NO_ODS5_DISKS
 =prompt ODS-5 disk(s) not found on this system, abort installation

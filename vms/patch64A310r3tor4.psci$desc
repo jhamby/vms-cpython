@@ -1,5 +1,5 @@
 -- product package PYTHON64A310r3tor4 /source=patch64A310r3tor4.psci$desc/destination=[]/material=wrk_disk:[vorfolomeev.cpython.out.]/format=sequential/opt=noconf/log/producer=VSI
-product VSI I64VMS PYTHON64A310r3tor4 B1.0 patch;
-apply to VSI I64VMS PYTHON64 version minimum A3.10;
+product VSI AXPVMS PYTHON64A310r3tor4 B1.0 patch;
+apply to VSI AXPVMS PYTHON64 version minimum A3.10;
 file "[python.lib.python3^.10.lib-dynload]_sys.exe" source "[python.lib.python3^.10.lib-dynload]_sys.exe";
 end product;

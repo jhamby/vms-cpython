@@ -40,6 +40,6 @@ $ backup 'vms_pat'python$startup.com python$root:[000000]
 $ backup 'vms_pat'python$shutdown.com python$root:[000000]
 $
 $ backup 'dyn_pat'*.* python$root:[lib.python3^.10.lib-dynload...]*.*
-$ backup 'vms_pat'_sysconfigdata__OpenVMS_cpython-310-ia64-openvms.py python$root:[lib.python3^.10]
+$ backup 'vms_pat'_sysconfigdata__OpenVMS_cpython-310-alpha-openvms.py python$root:[lib.python3^.10]
 $ backup 'vms_pat'_sysconfigdata__OpenVMS_cpython-310-x86_64-openvms.py python$root:[lib.python3^.10]
 $

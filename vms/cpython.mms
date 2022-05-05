@@ -4,14 +4,15 @@ PLATFORM = OpenVMS
 .IF X86_HOST
 SOABI = cpython-310-x86_64-openvms
 .ELSE
-SOABI = cpython-310-ia64-openvms
+SOABI = cpython-310-alpha-openvms
 .ENDIF
 
 CC_QUALIFIERS = -
 /FLOAT=IEEE_FLOAT/IEEE=DENORM-
 /NAMES=(AS_IS,SHORTENED)-
 /ACCEPT=NOVAXC_KEYWORDS-
-/REENTRANCY=MULTITHREAD
+/REENTRANCY=MULTITHREAD-
+/ARCH=EV56/OPT=(TUNE=EV67)
 
 .IF X86_HOST
 CC_QUALIFIERS = $(CC_QUALIFIERS)-
@@ -23,7 +24,7 @@ CC_QUALIFIERS = $(CC_QUALIFIERS)-
 
 .IF P64
 CC_QUALIFIERS = $(CC_QUALIFIERS) -
-/POINTER_SIZE=64  ! check 'SIZEOF_VOID_P': 8, in _sysconfigdata__OpenVMS_cpython-310-ia64-openvms.py
+/POINTER_SIZE=64  ! check 'SIZEOF_VOID_P': 8, in _sysconfigdata__OpenVMS_cpython-310-alpha-openvms.py
 LIBBZ2 = oss$root:[lib]libbz2_64.olb
 LIBFFI = oss$root:[lib]libffi64.olb
 LIBGDBM = wrk_disk:[vorfolomeev.gdbm.vms]libgdbm64.olb

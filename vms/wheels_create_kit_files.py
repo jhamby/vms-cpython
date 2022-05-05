@@ -65,7 +65,7 @@ def create_content(type, major, minor, level, edit):
     kit_template = '''--
 -- (C) Copyright 2022 VMS Software Inc.
 --
-product VSI I64VMS PYTHWHLS {type}{major}.{minor}-{level}{edit} FULL ;
+product VSI AXPVMS PYTHWHLS {type}{major}.{minor}-{level}{edit} FULL ;
 
 --
 -- Directories...
@@ -121,7 +121,7 @@ end product;
     with open('pythwhls.pcsi$desc', 'w') as file:
         file.write(kit_content)
 
-    text_template = '''=product VSI I64VMS PYTHWHLS {type}{major}.{minor}-{level}{edit} full
+    text_template = '''=product VSI AXPVMS PYTHWHLS {type}{major}.{minor}-{level}{edit} full
 1 'PRODUCT
 =prompt Python wheels collection for OpenVMS Python 3.10
 
